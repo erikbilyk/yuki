@@ -246,7 +246,7 @@ def open_action_card(
     elif action.status is ActionStatus.DRAFT:
         action = actions.set_status(uow, action, ActionStatus.AWAITING_APPROVAL)
     else:
-        raise _state_refusal(action).error()
+        raise state_refusal(action).error()
     expires_at = action_card_expiry(now)
     terms = action_terms(action, expires_at)
     card = approvals.insert_card(
@@ -565,7 +565,7 @@ def request_challenge(
         raise WgError(code, {"logical_action_id": logical_action_id})
     assert approval is not None
     if action.status is not ActionStatus.AWAITING_STEPUP:
-        raise _state_refusal(action).error()
+        raise state_refusal(action).error()
     check_not_locked(uow, customer_id, action.plan_id)
     return issue_challenge(uow, step_up, action, approval, now)
 
@@ -627,7 +627,7 @@ def verify_code(
         _invalidate(uow, step_up, challenge, now, reason)
         return _refuse(uow, challenge, refusal)
     if action.status is not ActionStatus.AWAITING_STEPUP:
-        return _refuse(uow, challenge, _state_refusal(action).code)
+        return _refuse(uow, challenge, state_refusal(action).code)
     check_not_locked(uow, customer_id, action.plan_id)
 
     if not correct:
@@ -827,7 +827,7 @@ _STATE_REFUSALS: dict[ActionStatus, ErrorCode] = {
 }
 
 
-def _state_refusal(action: ActionRow) -> Refusal:
+def state_refusal(action: ActionRow) -> Refusal:
     """The refusal for a step that the action's current status does not allow.
 
     READY, SUBMITTED and UNKNOWN actions are past approval and step-up; asking for either
