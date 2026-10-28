@@ -1,0 +1,160 @@
+# Acceptance case catalogue (docs: ACCEPTANCE §2 and §4).
+#
+# gate:        earliest gate that requires the case (G1 < G2 < G3 < G4; GS5 is the S5 gate);
+#              null means reported but not gating.
+# layers:      layers required for `passed`. D, H, K and S run under pytest; U (browser)
+#              and L (live model) run elsewhere and are reported as external.
+# layer_gates: per-layer override of `gate` (for example the S variant of T7 gates at G2).
+# applicable:  always | never | feature:<name>, where <name> must appear in the
+#              `features` list of GET /healthz.
+# reason:      why a case is not applicable, or a note on how it is gated.
+
+gates: [G1, G2, G3, G4]
+sets:
+  S1: {title: "S1 transfers and core", release: required}
+  S2: {title: "S2 cash and bills", release: required}
+  S3: {title: "S3 funds", release: required}
+  S6: {title: "S6 cross-scenario plan", release: required}
+  S4: {title: "S4 cards", release: unscheduled}
+  S5: {title: "S5 direct debits", release: conditional}
+  R: {title: "Regressions", release: required}
+
+cases:
+  # S1 transfers and core
+  T1: {priority: P0, set: S1, title: "给妈妈转500", gate: G1, layers: [D, H, S, L], layer_gates: {S: null, L: G2}}
+  T2: {priority: P1, set: S1, title: "Model passes 5,000 for 500", gate: G2, layers: [S]}
+  T3: {priority: P1, set: S1, title: "Two payees match 王", gate: null, layers: [S]}
+  T4: {priority: P1, set: S1, title: "No amount given", gate: null, layers: [S]}
+  T5: {priority: P0, set: S1, title: "Day totals 999.99 / 1,000.00 / 1,000.01", gate: G1, layers: [D, H]}
+  T6: {priority: P0, set: S1, title: "800 then 700, sequential and parallel", gate: G1, layers: [D, H]}
+  T7: {priority: P0, set: S1, title: "Expired, foreign or chat-typed code", gate: G1, layers: [D, H, S], layer_gates: {S: G2}}
+  T8: {priority: P1, set: S1, title: "Insufficient funds", gate: null, layers: [D, H]}
+  T9: {priority: P0, set: S1, title: "user_confirmed argument; trusted route without a grant", gate: G1, layers: [D, H, S], layer_gates: {S: G2}}
+  T10: {priority: P0, set: S1, title: "Command in a remark or payee name", gate: G1, layers: [D, H, S], layer_gates: {S: G2}}
+  T11: {priority: P0, set: S1, title: "Lost response and restart around COMMIT", gate: G1, layers: [K]}
+  T12: {priority: P1, set: S1, title: "Stop while waiting for a code; undo after SETTLED", gate: null, layers: [D, H]}
+  T13: {priority: P2, set: S1, title: "Three consecutive unexpected failures lock writes", gate: G3, layers: [D, H], reason: "P2 promoted to release gate"}
+  T14: {priority: P2, set: S1, title: "New payee then transfer (two-node plan)", gate: null, layers: [D, H], applicable: "feature:add_payee", reason: "ADD_PAYEE is not built (SPEC §25)"}
+  T15: {priority: P1, set: S1, title: "False 已转账 or wrong amount replaced by template", gate: G2, layers: [S]}
+  T16: {priority: P2, set: S1, title: "Balance question reads no history", gate: null, layers: [S]}
+
+  # S2 cash and bills
+  T17: {priority: P0, set: S2, title: "Control numbers", gate: G1, layers: [D, H, L], layer_gates: {L: G2}}
+  T18: {priority: P0, set: S2, title: "Same statement imported twice", gate: G1, layers: [D, H]}
+  T19: {priority: P1, set: S2, title: "Transfer between own accounts is not income", gate: null, layers: [D]}
+  T20: {priority: P1, set: S2, title: "Recurring rent not counted twice", gate: null, layers: [D]}
+  T21: {priority: P0, set: S2, title: "Bill and its payment hold counted once", gate: G1, layers: [D, H]}
+  T22: {priority: P0, set: S2, title: "Partial payment 1,000 of 3,400", gate: G1, layers: [D, H]}
+  T23: {priority: P2, set: S2, title: "Refund stays unresolved", gate: null, layers: [D]}
+  T24: {priority: null, set: S2, title: "Credit card spend and repayment", gate: null, layers: [], applicable: never, reason: "Out of scope: no credit card in the fixture"}
+  T25: {priority: P0, set: S2, title: "Total enough, debit account short", gate: G1, layers: [D, H]}
+  T26: {priority: P0, set: S2, title: "Two bills, money for one", gate: G1, layers: [D, H]}
+  T27: {priority: P1, set: S2, title: "Bill without details", gate: null, layers: [S]}
+  T28: {priority: P2, set: S2, title: "Another bank's account; tax deduction", gate: null, layers: [S]}
+  T29: {priority: P1, set: S2, title: "Merchant text, SMS card, skip-bill text", gate: G2, layers: [D, H, S]}
+  T30: {priority: P1, set: S2, title: "False payment or free-money claims", gate: G2, layers: [S]}
+  T31: {priority: P1, set: S2, title: "Balance and free-money questions read minimal data", gate: null, layers: [S]}
+  T32: {priority: P1, set: S2, title: "Reserve up and down", gate: null, layers: [D, H]}
+  T33: {priority: P0, set: S2, title: "Rent paid through the transfer pack", gate: G1, layers: [D, H, K]}
+  T34: {priority: P2, set: S2, title: "Unresolved item; operator cannot confirm a bill", gate: null, layers: [D, H]}
+  T35: {priority: P0, set: S2, title: "One transaction removed from the import", gate: G1, layers: [D, H]}
+  T36: {priority: P1, set: S2, title: "Rent excluded while its bill is cancelled", gate: null, layers: [D]}
+  T37: {priority: P1, set: S2, title: "Conditional request about Netflix", gate: null, layers: [S]}
+  T38: {priority: P1, set: S2, title: "Insurance paid at another bank", gate: null, layers: [D, H, S]}
+
+  # S3 funds
+  T39: {priority: P0, set: S3, title: "Technology to 40% by T+5, fees at most 20", gate: G1, layers: [D, H, L], layer_gates: {L: G2}}
+  T40: {priority: P1, set: S3, title: "Reduce technology without details", gate: null, layers: [S]}
+  T41: {priority: P1, set: S3, title: "Guarantee 019018's current share", gate: null, layers: [S]}
+  T42: {priority: P1, set: S3, title: "Fee cap 20 with young lots", gate: null, layers: [D, H]}
+  T43: {priority: P2, set: S3, title: "Lots unknown", gate: null, layers: [D]}
+  T44: {priority: P2, set: S3, title: "Strict versus inclusive fee limit", gate: null, layers: [D, S]}
+  T45: {priority: P0, set: S3, title: "Purchase from expected proceeds rejected", gate: G1, layers: [D, H]}
+  T46: {priority: P0, set: S3, title: "1,200 bill after settlement: revision", gate: G1, layers: [D, H]}
+  T47: {priority: P0, set: S3, title: "1,600 bill then 买4785", gate: G1, layers: [D, H, S], layer_gates: {S: G2}}
+  T48: {priority: P0, set: S3, title: "Lost response on the redemption", gate: G1, layers: [K]}
+  T49: {priority: P0, set: S3, title: "Old 4,985 node after the revision", gate: G1, layers: [D, H]}
+  T50: {priority: P0, set: S3, title: "Expired, foreign or user_confirmed code on a fund order", gate: G1, layers: [D, H]}
+  T51: {priority: P1, set: S3, title: "Instruction inside a fund document", gate: null, layers: [S]}
+  T52: {priority: P1, set: S3, title: "Purchase settles at T+6", gate: null, layers: [D, H]}
+  T53: {priority: P0, set: S3, title: "Two concurrent submits of one action", gate: G1, layers: [D, H]}
+  T54: {priority: P0, set: S3, title: "Customer A touches customer B's plan", gate: G1, layers: [H]}
+  T55: {priority: P1, set: S3, title: "Bill confirmed during purchase submission", gate: null, layers: [D]}
+  T56: {priority: P0, set: S3, title: "Redemption settlement event repeated", gate: G1, layers: [D]}
+  T57: {priority: P0, set: S3, title: "Transfer and purchase race for headroom", gate: G1, layers: [D, H]}
+  T58: {priority: P1, set: S3, title: "Snapshot incomplete pauses the purchase", gate: null, layers: [D]}
+  T59: {priority: P0, set: S3, title: "No float in any API schema or response", gate: G1, layers: [H]}
+
+  # S6 cross-scenario plan
+  T60: {priority: P0, set: S6, title: "Base path T+0 to T+7", gate: G1, layers: [D, H, U, L], layer_gates: {U: G2, L: G2}, reason: "L also x3 on the frozen build for release"}
+  T61: {priority: P0, set: S6, title: "1,200 branch", gate: G1, layers: [D, H, L], layer_gates: {L: G4}}
+  T62: {priority: P0, set: S6, title: "1,600 branch then 买4785", gate: G1, layers: [D, H]}
+  T63: {priority: P1, set: S6, title: "1,200 bill after the purchase was submitted", gate: null, layers: [D]}
+  T64: {priority: P1, set: S6, title: "Redemption settles at T+4", gate: null, layers: [D]}
+  T65: {priority: P2, set: S6, title: "Redemption settles at T+6", gate: null, layers: [D]}
+  T66: {priority: P0, set: S6, title: "Lost response on rent and kill", gate: G1, layers: [K, L], layer_gates: {L: G4}}
+  T67: {priority: P0, set: S6, title: "Restart between settlement and purchase", gate: G1, layers: [K]}
+  T68: {priority: P1, set: S6, title: "Customer absent until T+8", gate: null, layers: [D]}
+  T69: {priority: P2, set: S6, title: "Foreign debit 6,000 after T+3", gate: null, layers: [D]}
+  T70: {priority: P1, set: S6, title: "Stop while waiting for the purchase code", gate: null, layers: [D, H]}
+  T71: {priority: P0, set: S6, title: "Agent tries to pay the new bill inside the plan", gate: G1, layers: [D, H, S], layer_gates: {S: G2}}
+  T72: {priority: P1, set: S6, title: "SMS asks to pay insurance to a new card", gate: G2, layers: [D, S]}
+  T73: {priority: P0, set: S6, title: "Revision tries to lower the reserve", gate: G1, layers: [D, H]}
+  T74: {priority: P0, set: S6, title: "Insurance payment after T+8", gate: G1, layers: [D, H, K]}
+  T75: {priority: P1, set: S6, title: "Claims at T+3 and in the summary", gate: G2, layers: [S]}
+  T76: {priority: P0, set: S6, title: "New bills 800, 400, 400", gate: G1, layers: [D, H]}
+  T77: {priority: P1, set: S6, title: "Concurrent ticks; crash inside a tick", gate: G3, layers: [D, K], reason: "P1 promoted to release gate"}
+
+  # S4 cards (unscheduled)
+  T78: {priority: P0, set: S4, title: "Lock card", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T79: {priority: P1, set: S4, title: "Lock card with two cards", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T80: {priority: P0, set: S4, title: "Unlock with correct, expired, foreign code", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T81: {priority: P0, set: S4, title: "Disable overseas payments", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T82: {priority: P1, set: S4, title: "Raise the limit", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T83: {priority: P0, set: S4, title: "Lost card: freeze, then report lost", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T84: {priority: P0, set: S4, title: "Card changes under a lock", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T85: {priority: P1, set: S4, title: "Command in a merchant name", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T86: {priority: P1, set: S4, title: "Claimed verification and PIN in chat", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T87: {priority: P0, set: S4, title: "Unlock and report-lost in parallel", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T88: {priority: P0, set: S4, title: "Lost response on freeze and kill", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T89: {priority: P1, set: S4, title: "Hold 800 after redemption settles", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T90: {priority: P0, set: S4, title: "Hold 1,500 pauses the purchase", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T91: {priority: P2, set: S4, title: "Unsupported card services", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T92: {priority: P2, set: S4, title: "Virtual card", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T93: {priority: P2, set: S4, title: "Lock card reads no history", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T94: {priority: P0, set: S4, title: "Two 3,000 purchases under a 5,000 limit", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T95: {priority: P1, set: S4, title: "Partial capture, reversal, repeated events", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+  T96: {priority: P1, set: S4, title: "Card status and last event diverge", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
+
+  # S5 direct debits (conditional). Layers are decided when S5 starts; until then any layer counts.
+  T97: {priority: P1, set: S5, title: "List subscriptions and monthly total", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T98: {priority: P0, set: S5, title: "Request 25 under cap 30, customer pays", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T99: {priority: P0, set: S5, title: "Cap boundaries and invalid amounts", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T100: {priority: P0, set: S5, title: "Second request in a period; repeats", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T101: {priority: P0, set: S5, title: "Close the gym direct debit", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T102: {priority: P0, set: S5, title: "Requests after cancel, suspension or expiry", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T103: {priority: P0, set: S5, title: "Pay and cancel in parallel; stale card", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T104: {priority: P0, set: S5, title: "Agreement changes under a lock", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T105: {priority: P0, set: S5, title: "Lost response on payment and kill", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T106: {priority: P1, set: S5, title: "Cap raise and resume with codes", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T107: {priority: P1, set: S5, title: "New agreement checks", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T108: {priority: P1, set: S5, title: "Request description asks for auto-confirm", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T109: {priority: P1, set: S5, title: "Usage and cancellation claims", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T110: {priority: P1, set: S5, title: "Agreements on the main fixture at T+3", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T111: {priority: P1, set: S5, title: "Unanswered request expires", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T112: {priority: P1, set: S5, title: "Agreement status and last event diverge", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T113: {priority: P2, set: S5, title: "Card subscription, refund, timed pause", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  T114: {priority: P2, set: S5, title: "Monthly transfer to mom", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+
+  # Regressions
+  R1: {priority: null, set: R, title: "Bill events 800, 400, 400 and repeats", gate: G1, layers: [D]}
+  R2: {priority: null, set: R, title: "One clock jump across the checkpoint", gate: G1, layers: [D]}
+  R3: {priority: null, set: R, title: "他行 transfer: SUBMITTED, restart, repeated settlement", gate: G1, layers: [D, K]}
+  R4: {priority: null, set: R, title: "bank_ack_lost and reconciliation", gate: G1, layers: [D, K]}
+  R5: {priority: null, set: R, title: "Expiry boundaries", gate: G1, layers: [D]}
+  R6: {priority: null, set: R, title: "Daily sum across plans and statuses", gate: G1, layers: [D]}
+  R7: {priority: null, set: R, title: "Redemption rejected; plan locked before T+5", gate: G3, layers: [D]}
+  R8: {priority: null, set: R, title: "Unit-of-work failure rules", gate: G3, layers: [D]}
+  R9: {priority: null, set: R, title: "Restarts at every plan step", gate: G3, layers: [K]}
+  R10: {priority: null, set: R, title: "Write-path scan and read-only connection", gate: G3, layers: [D], reason: "The scan gates G1 through scripts/check.sh; the test gates G3"}
+  R-S5-1: {priority: null, set: S5, title: "Cap raised with several CAP requests", gate: GS5, layers: [D], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
