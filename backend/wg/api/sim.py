@@ -16,7 +16,8 @@ from wg.contracts.api import (
 )
 from wg.services.sim import SimService
 
-router = APIRouter(prefix="/sim", dependencies=[Depends(require_role(RouteRole.DEMO))])
+# Every simulator route is a POST for the demo role with its CSRF token.
+router = APIRouter(prefix="/sim", dependencies=[Depends(require_role(RouteRole.DEMO, csrf=True))])
 
 
 def _service(request: Request) -> SimService:

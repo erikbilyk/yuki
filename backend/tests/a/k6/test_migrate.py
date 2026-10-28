@@ -20,7 +20,7 @@ SCHEMA_V1_TABLES = {
     "customer_settings", "plans", "actions", "approvals", "challenges", "sms_outbox",
     "operations", "operation_events", "reservations", "ledger_entries", "receipts",
     "bank_requests", "domain_events", "event_cursors", "audit_log", "locks", "breaker_state",
-    "failure_records", "faults", "chat_messages", "read_scopes",
+    "failure_records", "faults", "chat_messages", "read_scopes", "cards",
     # S2
     "import_batches", "categories", "transactions", "commitments", "commitment_events",
     "reserves", "allowances", "cash_snapshots",
