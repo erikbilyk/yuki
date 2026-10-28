@@ -17,15 +17,19 @@ TABLES = frozenset(
         "audit_log",
         "cash_snapshots",
         "challenges",
+        "checkpoint_results",
         "commitment_events",
         "commitments",
         "domain_events",
+        "event_cursors",
         "import_batches",
         "ledger_entries",
         "locks",
         "operation_events",
         "operations",
+        "plan_revisions",
         "plans",
+        "positions",
         "receipts",
         "reservations",
         "reserves",
@@ -132,6 +136,18 @@ class DbView:
             "SELECT inputs_hash FROM cash_snapshots WHERE snapshot_id = ?", (snapshot_id,)
         )
         return rows[0]["inputs_hash"]
+
+    def position_shares(self, product_id: str) -> str:
+        """Shares of a product in the customer's single position, as stored text."""
+        rows = self.rows("SELECT shares FROM positions WHERE product_id = ?", (product_id,))
+        assert len(rows) == 1, f"{len(rows)} positions for {product_id}"
+        return rows[0]["shares"]
+
+    def fund_operations(self, kind: str) -> list[dict[str, Any]]:
+        return self.rows("SELECT * FROM operations WHERE kind = ? ORDER BY submitted_at", (kind,))
+
+    def checkpoints(self, plan_id: str) -> list[dict[str, Any]]:
+        return self.rows("SELECT * FROM checkpoint_results WHERE plan_id = ?", (plan_id,))
 
     def events(self, event_type: str) -> list[dict[str, Any]]:
         return self.rows("SELECT * FROM domain_events WHERE type = ? ORDER BY seq", (event_type,))

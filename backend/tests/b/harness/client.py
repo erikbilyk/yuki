@@ -24,19 +24,25 @@ from wg.contracts.api import (
     BalanceView,
     BillsView,
     CancelResult,
+    CandidatesView,
     Card,
     CashSnapshotView,
     ChallengeView,
     ClockView,
     ConfirmResult,
     DraftResult,
+    ExposureView,
     FaultsView,
+    FeeEstimateView,
     ImportResult,
     LocksView,
     LockView,
     OperationView,
     PayeesView,
+    PlanDraftResult,
     PlansView,
+    PlanView,
+    PositionsView,
     ReceiptView,
     ReconcileResult,
     Route,
@@ -48,6 +54,7 @@ from wg.contracts.api import (
     SimSmsResult,
     SmsView,
     SpendingView,
+    StressView,
     TransactionsView,
     TransferHistoryView,
     UnresolvedView,
@@ -466,6 +473,51 @@ class WgClient:
 
     def plans(self) -> PlansView:
         return self.ok(self.get("/v1/plans"), PlansView, (200,))
+
+    def plan_response(self, plan_id: str) -> httpx.Response:
+        return self.get(f"/v1/plans/{plan_id}")
+
+    def plan(self, plan_id: str) -> PlanView:
+        return self.ok(self.plan_response(plan_id), PlanView, (200,))
+
+    def positions(self) -> PositionsView:
+        return self.ok(self.get("/v1/funds/positions"), PositionsView, (200,))
+
+    def exposure(
+        self, key: str = "technology", target_max_pct: str | None = "40.0000"
+    ) -> ExposureView:
+        response = self.get("/v1/funds/exposure", key=key, target_max_pct=target_max_pct)
+        return self.ok(response, ExposureView, (200,))
+
+    def fee_estimate_response(self, product_id: str, shares: str) -> httpx.Response:
+        return self.get("/v1/funds/fees/estimate", product_id=product_id, shares=shares)
+
+    def fee_estimate(self, product_id: str, shares: str) -> FeeEstimateView:
+        response = self.fee_estimate_response(product_id, shares)
+        return self.ok(response, FeeEstimateView, (200,))
+
+    # Funds plans (SPEC §14, §19.2)
+
+    def candidates_response(self, **body: Any) -> httpx.Response:
+        return self.post("/v1/funds/candidates", body)
+
+    def candidates(self, **body: Any) -> CandidatesView:
+        return self.ok(self.candidates_response(**body), CandidatesView)
+
+    def stress(self, calc_result_id: str) -> StressView:
+        response = self.post("/v1/funds/stress", {"calc_result_id": calc_result_id})
+        return self.ok(response, StressView)
+
+    def draft_plan_response(self, calc_result_id: str, with_bounds: bool = False) -> httpx.Response:
+        body = {"calc_result_id": calc_result_id, "with_bounds": with_bounds}
+        return self.post("/v1/funds/plans", body)
+
+    def draft_plan(self, calc_result_id: str, with_bounds: bool = False) -> PlanDraftResult:
+        response = self.draft_plan_response(calc_result_id, with_bounds)
+        return self.ok(response, PlanDraftResult, (201,))
+
+    def stop_plan_response(self, plan_id: str) -> httpx.Response:
+        return self.post(f"/v1/plans/{plan_id}/stop")
 
     def audit(self) -> AuditView:
         return self.ok(self.get("/v1/audit"), AuditView, (200,))
