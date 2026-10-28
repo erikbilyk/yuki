@@ -9,20 +9,33 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 
-from wg.contracts.api import Card, ChallengeView, ConfirmResult, SmsMessage, SmsView, VerifyResult
-from wg.contracts.enums import AuditActor
+from wg.contracts.api import (
+    Card,
+    ChallengeView,
+    ConfirmResult,
+    OperationView,
+    SmsMessage,
+    SmsView,
+    VerifyResult,
+)
 from wg.contracts.errors import ErrorClass, WgError
 from wg.core import k4_approval as k4
 from wg.core.k4_approval import Confirmation, Refusal, StepUp, Verified
-from wg.k6 import actions, audit, challenges
+from wg.k6 import actions, challenges
+from wg.k6.actions import ActionRow
 from wg.k6.db import Database, UnitOfWork
 from wg.k6.simtime import now
+from wg.services.actions import ActionService
+from wg.services.refusals import record_refusal
 
 
 class TrustedService:
-    def __init__(self, db: Database, step_up: StepUp) -> None:
+    """The customer's own steps; a step that leaves the action READY submits it at once."""
+
+    def __init__(self, db: Database, step_up: StepUp, action_service: ActionService) -> None:
         self.db = db
         self.step_up = step_up
+        self.action_service = action_service
 
     def card(self, customer_id: str, card_id: str) -> Card:
         with self._audited(customer_id, "card_read_refused", card_id):
@@ -47,7 +60,7 @@ class TrustedService:
 
         with self._audited(customer_id, "confirm_refused", card_id):
             done = self.db.run_in_uow(run, "confirm card")
-        action = done.action
+            action, operation = self._execute(customer_id, done.action)
         result = ConfirmResult(
             card_id=done.card.card_id,
             approval_id=done.approval.approval_id,
@@ -55,6 +68,7 @@ class TrustedService:
             logical_action_id=action.logical_action_id if action else None,
             action_status=action.status if action else None,
             challenge=k4.challenge_view(done.challenge) if done.challenge else None,
+            operation=operation,
         )
         return result, not done.repeated
 
@@ -98,11 +112,14 @@ class TrustedService:
         if isinstance(outcome, Refusal):
             # The refusal and its audit row were committed with the attempt count.
             raise outcome.error()
+        with self._audited(customer_id, "verify_refused", challenge_id):
+            action, operation = self._execute(customer_id, outcome.action)
         return VerifyResult(
             challenge_id=outcome.challenge.challenge_id,
-            logical_action_id=outcome.action.logical_action_id,
-            revision=outcome.action.revision,
-            action_status=outcome.action.status,
+            logical_action_id=action.logical_action_id,
+            revision=action.revision,
+            action_status=action.status,
+            operation=operation,
         )
 
     def sms(self, customer_id: str) -> SmsView:
@@ -127,6 +144,16 @@ class TrustedService:
                 )
         return SmsView(messages=tuple(messages))
 
+    def _execute(
+        self, customer_id: str, action: ActionRow | None
+    ) -> tuple[ActionRow | None, OperationView | None]:
+        """Submit a READY action; return the action as it stands afterwards and its operation."""
+        operation = self.action_service.execute(customer_id, action)
+        if action is None:
+            return None, None
+        with self.db.read() as conn:
+            return actions.get_revision(conn, action.logical_action_id, action.revision), operation
+
     def _issue(
         self,
         event: str,
@@ -147,18 +174,3 @@ class TrustedService:
             if error.error_class is ErrorClass.EXPECTED:
                 record_refusal(self.db, customer_id, event, ref, error)
             raise
-
-
-def record_refusal(db: Database, customer_id: str, event: str, ref: str, error: WgError) -> None:
-    """One audit row for a refused customer request, in a unit of its own."""
-    db.run_in_uow(
-        lambda uow: audit.record(
-            uow,
-            AuditActor.CUSTOMER,
-            event,
-            customer_id=customer_id,
-            ref=ref[:64],
-            decision=error.code.value,
-        ),
-        "audit refusal",
-    )

@@ -15,10 +15,12 @@ from wg.contracts.api import (
     ChallengeView,
     ConfirmRequest,
     ConfirmResult,
+    OperationView,
     SmsView,
     VerifyRequest,
     VerifyResult,
 )
+from wg.contracts.enums import OperationStatus
 from wg.core.k1_session import Principal
 from wg.services.trusted import TrustedService
 
@@ -36,6 +38,16 @@ def _service(request: Request) -> TrustedService:
     return request.app.state.trusted
 
 
+def execution_status(operation: OperationView | None, created: bool) -> int:
+    """202 while the outcome is pending (SUBMITTED or UNKNOWN), else 201 or 200 (SPEC §19.3)."""
+    if operation is not None and operation.status in (
+        OperationStatus.SUBMITTED,
+        OperationStatus.UNKNOWN,
+    ):
+        return status.HTTP_202_ACCEPTED
+    return status.HTTP_201_CREATED if created else status.HTTP_200_OK
+
+
 @router.get("/cards/{id}")
 def get_card(id: str, request: Request, principal: CardReader) -> Card:
     return _service(request).card(principal.customer_id, id)
@@ -45,9 +57,12 @@ def get_card(id: str, request: Request, principal: CardReader) -> Card:
 def confirm_card(
     id: str, body: ConfirmRequest, request: Request, response: Response, principal: CardConfirmer
 ) -> ConfirmResult:
-    """The client sends the terms hash of the card it displayed (201; 200 for a repeat)."""
+    """The client sends the terms hash of the card it displayed (201; 200 for a repeat).
+
+    A YELLOW action is submitted at once and the result carries its operation.
+    """
     result, created = _service(request).confirm(principal.customer_id, id, body.terms_hash)
-    response.status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+    response.status_code = execution_status(result.operation, created)
     return result
 
 
@@ -57,8 +72,13 @@ def request_challenge(id: str, request: Request, principal: CodeRequester) -> Ch
 
 
 @router.post("/challenges/{id}/verify")
-def verify(id: str, body: VerifyRequest, request: Request, principal: CodeVerifier) -> VerifyResult:
-    return _service(request).verify(principal.customer_id, id, body.code)
+def verify(
+    id: str, body: VerifyRequest, request: Request, response: Response, principal: CodeVerifier
+) -> VerifyResult:
+    """A correct code makes the action READY, and it is submitted at once."""
+    result = _service(request).verify(principal.customer_id, id, body.code)
+    response.status_code = execution_status(result.operation, created=False)
+    return result
 
 
 @router.post("/challenges/{id}/reissue", status_code=status.HTTP_201_CREATED)

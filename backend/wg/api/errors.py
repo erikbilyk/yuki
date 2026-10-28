@@ -34,6 +34,11 @@ MESSAGES_ZH: dict[ErrorCode, str] = {
     ErrorCode.GRANT_CONSUMED: "该验证码已使用",
     ErrorCode.SUPERSEDED: "该操作已被新版本取代",
     ErrorCode.ALREADY_SETTLED: "该操作已完成，无法撤销；如需退回请发起新的转账",
+    ErrorCode.INSUFFICIENT_FUNDS: "账户可用余额不足",
+    ErrorCode.INSUFFICIENT_HEADROOM: "超出可自由支配金额，受保护的资金不能用于这笔转账",
+    ErrorCode.UNTRUSTED_SOURCE: "收款人或金额来自外部文字，不能作为指令",
+    ErrorCode.IDEMPOTENCY_MISMATCH: "同一操作的内容不一致，未执行",
+    ErrorCode.UNKNOWN_ACTION_KIND: "暂不支持该操作",
 }
 
 CLASS_MESSAGES_ZH: dict[ErrorClass, str] = {

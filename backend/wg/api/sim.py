@@ -10,7 +10,9 @@ from wg.contracts.api import (
     ClockView,
     FaultRequest,
     FaultsView,
+    IncomingPaymentRequest,
     RouteRole,
+    SimPostingResult,
     SimResetRequest,
     SimResetResult,
 )
@@ -37,3 +39,8 @@ def advance_clock(body: ClockAdvanceRequest, request: Request) -> ClockView:
 @router.post("/faults")
 def arm_fault(body: FaultRequest, request: Request) -> FaultsView:
     return _service(request).arm_fault(body)
+
+
+@router.post("/incoming-payment")
+def incoming_payment(body: IncomingPaymentRequest, request: Request) -> SimPostingResult:
+    return _service(request).incoming_payment(body)
