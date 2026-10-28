@@ -65,15 +65,26 @@ def test_claim_check_result_passes_without_violations():
 
 
 def test_amount_match():
-    match = AmountMatch(fen=340000, start=0, end=6, text="¥3,400", comparator=None, strict=False)
-    assert match.fen == 340000
-    AmountMatch(fen=1, start=0, end=2, text="低于", comparator=Comparator.UPPER, strict=True)
+    match = AmountMatch(fen=340000, start=0, end=6, text="¥3,400")
+    assert (match.comparator, match.strict) == (None, False)
+    limit = AmountMatch(fen=1, start=2, end=4, text="1元", comparator="<", strict=True)
+    assert limit.comparator is Comparator.LT
+    AmountMatch(fen=1, start=0, end=2, text="1元", comparator=Comparator.LE, strict=False)
     with pytest.raises(ValidationError):
-        AmountMatch(fen=1, start=0, end=1, text="1", comparator=None, strict=True)
+        AmountMatch(fen=1, start=0, end=1, text="1", strict=True)
     with pytest.raises(ValidationError):
-        AmountMatch(fen=1, start=3, end=3, text="", comparator=None, strict=False)
+        AmountMatch(fen=1, start=0, end=1, text="1", comparator=Comparator.LE, strict=True)
+    with pytest.raises(ValidationError):
+        AmountMatch(fen=1, start=0, end=1, text="1", comparator=Comparator.GT, strict=False)
+    with pytest.raises(ValidationError):
+        AmountMatch(fen=1, start=0, end=1, text="1", comparator="≤")
+    with pytest.raises(ValidationError):
+        AmountMatch(fen=1, start=3, end=3, text="")
 
 
 def test_mask_result():
-    result = MaskResult(text="验证码 [已隐藏]", kinds=(MaskKind.STEPUP_CODE,))
-    assert result.model_dump(mode="json")["kinds"] == ["stepup_code"]
+    result = MaskResult(text="验证码 [已隐藏]", kinds=("code", MaskKind.CARD))
+    assert result.model_dump(mode="json")["kinds"] == ["code", "card"]
+    assert MaskResult(text="x").kinds == ()
+    with pytest.raises(ValidationError):
+        MaskResult(text="x", kinds=("phone",))
