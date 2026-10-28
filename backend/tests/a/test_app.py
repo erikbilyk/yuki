@@ -1,3 +1,4 @@
+import tempfile
 from dataclasses import replace
 from pathlib import Path
 
@@ -9,7 +10,9 @@ from wg.settings import SettingsError, load_settings
 
 
 def make_client(demo: bool, **kwargs) -> TestClient:
-    settings = replace(load_settings(), demo_mode=demo)
+    """An app on a database of its own, so no test touches the working copy's database."""
+    db_path = Path(tempfile.mkdtemp(prefix="wg-app-")) / "wg.db"
+    settings = replace(load_settings(), demo_mode=demo, db_path=db_path)
     return TestClient(create_app(settings, **kwargs))
 
 

@@ -10,7 +10,7 @@ from wg.contracts.tools import READ_SCOPES
 from wg.k6 import faults, fixture
 from wg.k6.clock import advance_clock
 from wg.k6.db import Database
-from wg.k6.migrate import migrate
+from wg.k6.migrate import discover, migrate
 from wg.k6.passwords import verify_password
 from wg.k6.simtime import read_clock
 
@@ -209,7 +209,8 @@ def test_command_line_load(tmp_path, capsys):
         == 0
     )
     out = capsys.readouterr().out
-    assert "variant=t52" in out and "schema=4" in out and "2026-11-02T09:00:00+08:00" in out
+    assert "variant=t52" in out and f"schema={len(discover())}" in out
+    assert "clock=2026-11-02T09:00:00+08:00" in out
     assert fixture.main(["load", "--db", str(path)]) == 1
     assert "already holds a profile" in capsys.readouterr().err
     assert fixture.main(["load", "--variant", "nope", "--db", str(tmp_path / "x.db")]) == 1

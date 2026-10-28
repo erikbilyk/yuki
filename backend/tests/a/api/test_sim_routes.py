@@ -1,14 +1,14 @@
-from dataclasses import replace
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-from wg.api.app import create_app
 from wg.contracts.api import ClockView, FaultsView, SimResetResult
 from wg.contracts.errors import ErrorBody
+from wg.core.k1_session import CSRF_HEADER
 from wg.k6.migrate import current_version, discover
-from wg.settings import load_settings
+
+from .conftest import LOGINS, make_client
 
 pytestmark = pytest.mark.layer("H")
 
@@ -16,8 +16,13 @@ EPOCH = "2026-11-02T09:00:00+08:00"
 
 
 def client_for(db_path: Path, demo: bool = True) -> TestClient:
-    settings = replace(load_settings(), db_path=db_path, demo_mode=demo)
-    return TestClient(create_app(settings, frontend_dist=db_path.parent / "no-dist"))
+    """A client logged in as the demo panel, sending its CSRF token on every request."""
+    client = make_client(db_path, demo)
+    if demo:
+        handle, password = LOGINS["opr_demo"]
+        login = client.post("/v1/auth/login", json={"handle": handle, "password": password})
+        client.headers[CSRF_HEADER] = login.json()["csrf_token"]
+    return client
 
 
 @pytest.fixture

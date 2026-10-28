@@ -9,12 +9,15 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 
-from wg.api import sim
+from wg.api import audit, auth, sim, trusted
 from wg.api.errors import install_error_handlers
-from wg.k6 import faults
-from wg.k6.db import open_database
+from wg.core.k1_session import SessionService
+from wg.core.k4_approval import SimulatedSms, StepUp
+from wg.k6 import faults, fixture
+from wg.k6.db import Database, open_database
 from wg.k6.migrate import migrate
 from wg.services.sim import SimService
+from wg.services.trusted import TrustedService
 from wg.settings import REPO_ROOT, Settings
 
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
@@ -72,7 +75,12 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
     migrate(db)
     with db.unit_of_work("startup") as uow:
         faults.clear_transient(uow)
-    app.state.sim = SimService(db)
+    if settings.demo_mode:
+        _load_demo_profile(db)
+    step_up = StepUp(code_key=settings.code_hmac_key, provider=SimulatedSms())
+    app.state.sessions = SessionService(db, settings.session_secret)
+    app.state.trusted = TrustedService(db, step_up)
+    app.state.sim = SimService(db, step_up)
     install_error_handlers(app)
     build_id = resolve_build_id()
 
@@ -90,12 +98,23 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
     def healthz() -> dict[str, object]:
         return {"status": "ok", "build": build_id, "demo": settings.demo_mode, "features": []}
 
+    app.include_router(auth.router)
+    app.include_router(trusted.router)
+    app.include_router(audit.router)
     if settings.demo_mode:
         app.include_router(sim.router)
 
     if (frontend_dist / "index.html").is_file():
         _serve_frontend(app, frontend_dist.resolve())
     return app
+
+
+def _load_demo_profile(db: Database) -> None:
+    """In demo mode a new database starts with the base profile, so the demo panel can log in."""
+    with db.read() as conn:
+        empty = fixture.is_empty(conn)
+    if empty:
+        fixture.load_into_empty(db, fixture.read_profile(fixture.DEFAULT_PROFILE))
 
 
 def _serve_frontend(app: FastAPI, dist: Path) -> None:

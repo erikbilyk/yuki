@@ -1,7 +1,8 @@
 """Load a fixture profile into the database (SPEC §23).
 
 `load_into_empty` fills an empty database in one unit of work; `reset` wipes every table
-and loads in one unit, so a failed reset leaves the previous state. Opening balances are
+and loads in one unit, so a failed reset leaves the previous state. Login sessions survive
+a reset when their customer or operator exists in the new profile. Opening balances are
 posted as one balanced OPENING operation at the epoch.
 
 Command line:
@@ -22,7 +23,7 @@ from wg.contracts.enums import AuditActor, OperationEventKind, OperationStatus
 from wg.contracts.fixture import Fixture, FixtureError, load_fixture
 from wg.contracts.ids import IdPrefix, new_id
 from wg.contracts.tools import READ_SCOPES
-from wg.k6 import audit
+from wg.k6 import audit, sessions
 from wg.k6.clock import start_clock
 from wg.k6.db import Database, Reader, UnitOfWork, open_database
 from wg.k6.migrate import migrate
@@ -42,6 +43,7 @@ INTERNAL_ACCOUNTS = {
     "acc_sys_fee_income": "fee income",
 }
 RESERVE_KIND = "emergency"
+DEFAULT_PROFILE = "fixture_v1"
 
 
 class NotEmptyError(RuntimeError):
@@ -93,15 +95,20 @@ def reset(db: Database, fixture: Fixture, variant: str | None = None) -> ClockSt
     hashes = hash_logins(fixture)
     with db.unit_of_work("fixture reset") as uow:
         wipe(uow)
-        return load_profile(uow, fixture, variant, hashes)
+        state = load_profile(uow, fixture, variant, hashes)
+        sessions.delete_orphaned_sessions(uow)
+        return state
 
 
 def wipe(uow: UnitOfWork) -> None:
-    """Delete every row except the schema version; foreign keys are checked at commit."""
+    """Delete every row except the schema version and the sessions.
+
+    Foreign keys are checked at commit, after the profile is loaded again.
+    """
     uow.execute("PRAGMA defer_foreign_keys = ON")
     tables = uow.execute(
         "SELECT name FROM sqlite_master WHERE type = 'table'"
-        " AND name NOT LIKE 'sqlite_%' AND name <> 'schema_version'"
+        " AND name NOT LIKE 'sqlite_%' AND name NOT IN ('schema_version', 'sessions')"
     ).fetchall()
     for (name,) in tables:
         uow.execute(f'DELETE FROM "{name}"')
@@ -426,7 +433,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m wg.k6.fixture")
     commands = parser.add_subparsers(dest="command", required=True)
     load = commands.add_parser("load", help="load a profile into an empty database")
-    load.add_argument("--profile", default="fixture_v1")
+    load.add_argument("--profile", default=DEFAULT_PROFILE)
     load.add_argument("--variant")
     load.add_argument("--db", type=Path, help="database file (default: WG_DB_PATH)")
     args = parser.parse_args(argv)
