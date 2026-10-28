@@ -15,7 +15,7 @@ import pytest
 
 from .data import by_id, date_at, epoch_date, load_expected, load_fixture, load_raw_fixture
 
-VARIANTS = ["t25", "t35", "t42", "t43", "t52", "t64", "t65"]
+VARIANTS = ["t23", "t25", "t35", "t42", "t43", "t52", "t64", "t65"]
 HUNDRED = Decimal(100)
 FEN_PLACES = Decimal(1)
 PCT_PLACES = Decimal("0.0001")
@@ -758,6 +758,11 @@ def test_revision_sequence_goldens(exp: dict[str, Any]) -> None:
 # --- variants --------------------------------------------------------------
 
 ALLOWED_CHANGES = {
+    "t23": (
+        "accounts.acc_main.opening_fen",
+        "statements.stm_main_2611.closing_fen",
+        "statements.stm_main_2611.transactions.",
+    ),
     "t25": (
         "accounts.acc_main.opening_fen",
         "accounts.acc_savings.opening_fen",
@@ -796,6 +801,28 @@ def test_applying_a_variant_leaves_the_base_untouched(fx: dict[str, Any]) -> Non
     for variant in VARIANTS:
         load_fixture(variant)
     assert load_fixture() == before == fx
+
+
+def test_t23_adds_an_unclassified_refund(fx: dict[str, Any]) -> None:
+    doc = load_fixture("t23")
+    assert unreconciled(doc) == {}
+    refunds = [
+        t
+        for s in doc["statements"]
+        for t in s["transactions"]
+        if t["source_txn_id"] == "MAIN-202611-004"
+    ]
+    assert len(refunds) == 1
+    refund = refunds[0]
+    assert refund["amount_fen"] > 0 and refund["category_hint"] is None
+    assert refund["counterparty"] == "模拟超市" and refund["description_raw"].startswith("退款")
+    accounts = by_id(doc["accounts"])
+    base_accounts = by_id(fx["accounts"])
+    assert accounts["acc_main"]["opening_fen"] == (
+        base_accounts["acc_main"]["opening_fen"] + refund["amount_fen"]
+    )
+    assert doc["income_this_month_fen"] == fx["income_this_month_fen"]
+    assert doc["spent_this_month_fen"] == fx["spent_this_month_fen"]
 
 
 def test_t25_moves_money_between_accounts(exp: dict[str, Any]) -> None:
