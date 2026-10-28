@@ -9,6 +9,12 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 
+from wg.api import sim
+from wg.api.errors import install_error_handlers
+from wg.k6 import faults
+from wg.k6.db import open_database
+from wg.k6.migrate import migrate
+from wg.services.sim import SimService
 from wg.settings import REPO_ROOT, Settings
 
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
@@ -62,6 +68,12 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
         openapi_url="/openapi.json" if docs else None,
     )
     app.state.settings = settings
+    app.state.db = db = open_database(settings.db_path)
+    migrate(db)
+    with db.unit_of_work("startup") as uow:
+        faults.clear_transient(uow)
+    app.state.sim = SimService(db)
+    install_error_handlers(app)
     build_id = resolve_build_id()
 
     @app.middleware("http")
@@ -77,6 +89,9 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
     @app.get("/healthz")
     def healthz() -> dict[str, object]:
         return {"status": "ok", "build": build_id, "demo": settings.demo_mode, "features": []}
+
+    if settings.demo_mode:
+        app.include_router(sim.router)
 
     if (frontend_dist / "index.html").is_file():
         _serve_frontend(app, frontend_dist.resolve())
