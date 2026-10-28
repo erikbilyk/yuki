@@ -1,0 +1,196 @@
+# Golden values for fixture_v1, recomputed independently from its inputs.
+# Money is integer fen. Percentages and shares are strings with four places.
+# A value marked approx is an explanation figure: compare to the stated precision only.
+version: 1
+
+# Fund letters used in the documents map to the fixture's product codes.
+products: {A: "990001", B: "990002", C: "990003", D: "990004"}
+
+cash:
+  # C posted money, E reserve, L allowance left, B unpaid bills, M margin, U unpaired holds.
+  start:
+    c_fen: 1800000
+    e_fen: 400000
+    l_fen: 300000
+    b_fen: 840000
+    m_fen: 60000
+    u_fen: 0
+    protected_fen: 1600000
+    headroom_fen: 200000
+    shortfall_fen: 0
+  reserve_raised:
+    c_fen: 1800000
+    e_fen: 500000
+    protected_fen: 1700000
+    headroom_fen: 100000
+  rent_paid:
+    c_fen: 1460000
+    protected_fen: 1360000
+    headroom_fen: 100000
+  # Derived from start by paying 100000 of the 340000 rent (C and B fall together).
+  rent_partial_payment:
+    paid_fen: 100000
+    unpaid_fen: 240000
+    c_fen: 1700000
+    protected_fen: 1500000
+    headroom_fen: 200000
+    headroom_change_fen: 0
+  monthly_estimate:
+    value_fen: 0
+    income_fen: 1200000
+    spent_fen: 60000
+    allowance_left_fen: 300000
+    bills_due_this_month_fen: 840000
+
+funds:
+  holdings_value_fen: {A: 2000000, B: 1500000, C: 1000000, D: 500000}
+  total_value_fen: 5000000
+  technology:
+    value_fen: 2275000
+    pct: "45.5000"
+  issuer_x:
+    value_fen: 355000
+    pct: "7.1000"
+  redemption:
+    product: C
+    shares: "5000.0000"
+    gross_fen: 500000
+    fee_fen: 1500
+    net_fen: 498500
+  # Plan outcomes at the T+5 checkpoint. Technology value is exact: 1974850 fen is 19,748.50 yuan.
+  base_plan:
+    purchase_fen: 498500
+    technology_fen: 1974850
+    assets_fen: 4998500
+    technology_pct: "39.5089"
+    d_weight_pct: "19.9760"
+    turnover_fen: 998500
+  revision:
+    purchase_fen: 478500
+    technology_fen: 1972850
+    assets_fen: 4978500
+    technology_pct: "39.6274"
+    d_weight_pct: "19.6545"
+    turnover_fen: 978500
+  # Feasible but outside the approved bounds: needs a new approval.
+  hypothetical_purchase:
+    purchase_fen: 438500
+    technology_pct: "39.8674"
+  no_purchase_branch:
+    technology_fen: 1925000
+    assets_fen: 4500000
+    technology_pct: "42.7778"
+  swap_c_to_d_4000:
+    gross_fen: 400000
+    technology_pct: "40.7074"
+    passes_target: false
+  continuous_threshold:
+    approx: true
+    gross_fen: 459022
+    overpay_vs_grid_fen: 40978
+  single_leg:
+    needed_gross_fen: 916667
+    approx: true
+    sell_only_fee_fen: 2750
+    sell_only_fails: FEE_CAP
+    buy_only_fails: INSUFFICIENT_HEADROOM
+  candidate_grid:
+    ordered_pairs: 12
+    amounts_fen: [100000, 200000, 300000, 400000, 500000]
+    swaps: 60
+    extra_candidates: [no_trade, sell_only, buy_only]
+    passing: [{sell: C, buy: D, gross_fen: 500000}]
+  # The four fixed shocks (percent loss per fund A, B, C, D). Losses include the 1500 fen fee.
+  stress:
+    shocks_pct:
+      market: ["20", "22", "25", "18"]
+      technology: ["12", "20", "35", "4"]
+      target_fund: ["10", "15", "5", "40"]
+      macro: ["15", "18", "20", "16"]
+    loss_fen:
+      market: {no_trade: 1070000, base: 1036230, revision: 1032630}
+      technology: {no_trade: 910000, base: 756440, revision: 755640}
+      target_fund: {no_trade: 675000, base: 850900, revision: 842900}
+      macro: {no_trade: 850000, base: 831260, revision: 828060}
+    adverse_target_fund_vs_no_trade_fen: 175900
+
+# Cash (C), protected and headroom in fen at each step of the cross-scenario plan.
+s6:
+  base:
+    t0_start: {c_fen: 1800000, protected_fen: 1600000, headroom_fen: 200000}
+    t0_plan_confirmed: {c_fen: 1800000, protected_fen: 1700000, headroom_fen: 100000}
+    t0_redemption_submitted: {c_fen: 1800000, protected_fen: 1700000, headroom_fen: 100000}
+    t2_rent_paid: {c_fen: 1460000, protected_fen: 1360000, headroom_fen: 100000}
+    t3_redemption_settled: {c_fen: 1958500, protected_fen: 1360000, headroom_fen: 598500}
+    t3_purchase: {c_fen: 1460000, protected_fen: 1360000, headroom_fen: 100000}
+    t5_checkpoint: {result: passed, technology_pct: "39.5089"}
+    t7_insurance_paid: {c_fen: 960000, protected_fen: 860000, headroom_fen: 100000}
+  branch_1200:
+    new_bill_fen: 120000
+    new_bill_due_offset_days: 9
+    t0_start: {c_fen: 1800000, protected_fen: 1600000, headroom_fen: 200000}
+    t0_plan_confirmed: {c_fen: 1800000, protected_fen: 1700000, headroom_fen: 100000}
+    t0_redemption_submitted: {c_fen: 1800000, protected_fen: 1700000, headroom_fen: 100000}
+    t2_rent_paid: {c_fen: 1460000, protected_fen: 1360000, headroom_fen: 100000}
+    t3_redemption_settled: {c_fen: 1958500, protected_fen: 1360000, headroom_fen: 598500}
+    t3_bill_confirmed: {c_fen: 1958500, protected_fen: 1480000, headroom_fen: 478500}
+    t3_purchase: {c_fen: 1480000, protected_fen: 1480000, headroom_fen: 0, purchase_fen: 478500}
+    t5_checkpoint: {result: passed, technology_pct: "39.6274"}
+    t7_insurance_paid: {c_fen: 980000, protected_fen: 980000, headroom_fen: 0}
+  branch_1600:
+    new_bill_fen: 160000
+    t0_start: {c_fen: 1800000, protected_fen: 1600000, headroom_fen: 200000}
+    t0_plan_confirmed: {c_fen: 1800000, protected_fen: 1700000, headroom_fen: 100000}
+    t0_redemption_submitted: {c_fen: 1800000, protected_fen: 1700000, headroom_fen: 100000}
+    t2_rent_paid: {c_fen: 1460000, protected_fen: 1360000, headroom_fen: 100000}
+    t3_redemption_settled: {c_fen: 1958500, protected_fen: 1360000, headroom_fen: 598500}
+    t3_bill_confirmed: {c_fen: 1958500, protected_fen: 1520000, headroom_fen: 438500, purchase: paused}
+    t5_checkpoint: {result: checkpoint_missed, technology_pct: "42.7778"}
+    t7_insurance_paid: {c_fen: 1458500, protected_fen: 1020000, headroom_fen: 438500}
+
+  # Shortfall cases after the T+3 settlement (protected figures from the table above).
+  foreign_debit_6000:
+    debit_fen: 600000
+    after: t3_redemption_settled
+    shortfall_fen: 1500
+  bill_1200_after_purchase:
+    bill_fen: 120000
+    after: t3_purchase
+    shortfall_fen: 20000
+  bill_500_without_bounds:
+    bill_fen: 50000
+    after: t3_redemption_settled
+    headroom_fen: 548500
+    purchase_paused: false
+
+# Purchase revision decisions. x_fen is the cumulative confirmed bill increase,
+# headroom_fen the headroom at the T+3 settlement after that increase.
+revision_sequence:
+  bounds: {p0_fen: 498500, spare0_fen: 100000, max_added_fen: 120000, max_retained_fen: 20000, min_purchase_fen: 478500}
+  steps:
+    - {event: bill_800, x_fen: 80000, current_fen: 498500, headroom_fen: 518500, decision: unchanged, purchase_fen: 498500, reasons: []}
+    - {event: bill_400, x_fen: 120000, current_fen: 498500, headroom_fen: 478500, decision: revise, purchase_fen: 478500, reasons: []}
+    - {event: bill_400_again, x_fen: 160000, current_fen: 478500, headroom_fen: 438500, decision: pause, purchase_fen: 438500, reasons: [BILL_INCREASE_OVER_LIMIT, RETENTION_OVER_LIMIT, PURCHASE_BELOW_MIN]}
+  # The same events delivered again leave the decision unchanged.
+  repeats:
+    - {event: bill_800, x_fen: 80000, current_fen: 498500, headroom_fen: 518500, decision: unchanged, purchase_fen: 498500}
+    - {event: bill_400, x_fen: 120000, current_fen: 478500, headroom_fen: 478500, decision: unchanged, purchase_fen: 478500}
+  rejected_sketch_purchase_fen: 458500
+
+# Facts each variant must produce from the fixture.
+variants:
+  t25:
+    acc_main_posted_fen: 200000
+    acc_savings_posted_fen: 1600000
+    total_posted_fen: 1800000
+  t35:
+    missing_source_txn_id: MAIN-202610-009
+    unreconciled_account: acc_main
+    imbalance_fen: 100000
+  t42:
+    redemption_fee_fen: 2500
+  t43:
+    lots_for_product: []
+  t52: {purchase_settle_days: 3}
+  t64: {redeem_settle_days: 4}
+  t65: {redeem_settle_days: 6}
