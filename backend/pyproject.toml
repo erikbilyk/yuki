@@ -1,0 +1,44 @@
+[project]
+name = "wg"
+version = "0.1.0"
+description = "WealthGuard banking agent prototype"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic>=2",
+    "httpx",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+public = ["pdfplumber"]
+feishu = ["lark-oapi"]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["wg"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "case(id): acceptance case identifier, for example T48",
+    "layer(name): test layer D, H, K, S, U or L",
+    "slow: test that takes more than a few seconds",
+]
