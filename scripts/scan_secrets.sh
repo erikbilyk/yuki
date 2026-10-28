@@ -19,8 +19,9 @@ report() {
 
 report "api key" 'sk-[[:alnum:]_]{20,}'
 report "private key" '-----BEGIN [A-Z ]*PRIVATE KEY'
+# A value starting with a bracket is a container literal (for example a tuple of dict keys).
 report "secret assignment" \
-  '[A-Z0-9_]*(KEY|SECRET|TOKEN)[A-Z0-9_]*[[:space:]]*=[[:space:]]*["'"'"']?[^[:space:]"'"'"']' \
+  '[A-Z0-9_]*(KEY|SECRET|TOKEN)[A-Z0-9_]*[[:space:]]*=[[:space:]]*["'"'"']?[^][[:space:]"'"'"'({]' \
   ':!:.env.example'
 
 if [ "$status" -eq 0 ]; then
