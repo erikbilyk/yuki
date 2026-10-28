@@ -15,8 +15,6 @@ from wg.k6.db import Database
 
 pytestmark = pytest.mark.layer("D")
 
-SECRET = "test-session-secret-" + "1" * 32
-
 
 class Clock:
     def __init__(self) -> None:
@@ -33,7 +31,7 @@ def clock() -> Clock:
 
 @pytest.fixture
 def service(db: Database, clock: Clock) -> SessionService:
-    return SessionService(db, SECRET, clock)
+    return SessionService(db, session_secret="test-session-secret-" + "1" * 32, clock=clock)
 
 
 def test_login_opens_a_session_of_the_handles_role(service: SessionService, db: Database):
