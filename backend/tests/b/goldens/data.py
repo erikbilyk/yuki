@@ -1,4 +1,5 @@
 """Plain-YAML access to the shared fixture and golden files; no application code."""
+
 from __future__ import annotations
 
 import copy

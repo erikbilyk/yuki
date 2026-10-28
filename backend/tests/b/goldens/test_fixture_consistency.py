@@ -2,11 +2,13 @@
 
 Everything here is plain arithmetic on the YAML files; no application code is imported.
 """
+
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any, Iterator
+from typing import Any
 
 import pytest
 
@@ -34,7 +36,9 @@ def money(amount: Decimal) -> int:
 
 
 def percent(part: Decimal | int, whole: Decimal | int) -> str:
-    return str((Decimal(part) / Decimal(whole) * HUNDRED).quantize(PCT_PLACES, rounding=ROUND_HALF_UP))
+    return str(
+        (Decimal(part) / Decimal(whole) * HUNDRED).quantize(PCT_PLACES, rounding=ROUND_HALF_UP)
+    )
 
 
 def walk(node: Any, path: str = "") -> Iterator[tuple[str, Any]]:
@@ -54,7 +58,9 @@ def walk(node: Any, path: str = "") -> Iterator[tuple[str, Any]]:
 
 def changed_paths(base: dict[str, Any], other: dict[str, Any]) -> set[str]:
     left, right = dict(walk(base)), dict(walk(other))
-    return {p for p in left.keys() | right.keys() if left.get(p, KeyError) != right.get(p, KeyError)}
+    return {
+        p for p in left.keys() | right.keys() if left.get(p, KeyError) != right.get(p, KeyError)
+    }
 
 
 def statement_sum(statement: dict[str, Any]) -> int:
@@ -72,19 +78,26 @@ def unreconciled(doc: dict[str, Any]) -> dict[str, int]:
 def fund_values(doc: dict[str, Any]) -> dict[str, Decimal]:
     """Value of each fund in fen (shares x NAV)."""
     nav = {p["id"]: Decimal(p["nav"]) for p in doc["products"]}
-    return {pos["product"]: Decimal(pos["shares"]) * nav[pos["product"]] * HUNDRED for pos in doc["positions"]}
+    return {
+        pos["product"]: Decimal(pos["shares"]) * nav[pos["product"]] * HUNDRED
+        for pos in doc["positions"]
+    }
 
 
 def sector_weight(doc: dict[str, Any], sector: str) -> dict[str, Decimal]:
     return {
-        s["product"]: sum((Decimal(r["weight"]) for r in s["rows"] if r["sector"] == sector), Decimal(0))
+        s["product"]: sum(
+            (Decimal(r["weight"]) for r in s["rows"] if r["sector"] == sector), Decimal(0)
+        )
         for s in doc["holdings_snapshots"]
     }
 
 
 def issuer_weight(doc: dict[str, Any], issuer: str) -> dict[str, Decimal]:
     return {
-        s["product"]: sum((Decimal(r["weight"]) for r in s["rows"] if r["issuer"] == issuer), Decimal(0))
+        s["product"]: sum(
+            (Decimal(r["weight"]) for r in s["rows"] if r["issuer"] == issuer), Decimal(0)
+        )
         for s in doc["holdings_snapshots"]
     }
 
@@ -95,7 +108,9 @@ def redemption_fee(gross_fen: int, rate: str) -> int:
 
 def tier_rate(schedule: dict[str, Any], days_held: int) -> str:
     for tier in schedule["tiers"]:
-        if tier["min_days"] <= days_held and (tier["max_days"] is None or days_held <= tier["max_days"]):
+        if tier["min_days"] <= days_held and (
+            tier["max_days"] is None or days_held <= tier["max_days"]
+        ):
             return tier["rate"]
     raise LookupError(days_held)
 
@@ -120,10 +135,25 @@ def technology_after(fx: dict[str, Any], values: dict[str, Decimal]) -> Decimal:
 
 def test_top_level_keys(fx: dict[str, Any]) -> None:
     assert set(fx) == {
-        "profile", "epoch", "customers", "operators", "accounts", "payees", "statements",
-        "commitments", "reserve", "allowance", "margin_fen", "income_this_month_fen",
-        "spent_this_month_fen", "products", "fee_schedules", "positions", "lots",
-        "holdings_snapshots", "plan_constants",
+        "profile",
+        "epoch",
+        "customers",
+        "operators",
+        "accounts",
+        "payees",
+        "statements",
+        "commitments",
+        "reserve",
+        "allowance",
+        "margin_fen",
+        "income_this_month_fen",
+        "spent_this_month_fen",
+        "products",
+        "fee_schedules",
+        "positions",
+        "lots",
+        "holdings_snapshots",
+        "plan_constants",
     }
     assert fx["profile"] == "fixture_v1"
     assert epoch_date(fx) == date(2026, 11, 2)
@@ -154,8 +184,12 @@ def test_decimal_fields_are_strings_with_four_places(fx: dict[str, Any]) -> None
 
 def test_ids_are_unique_and_prefixed(fx: dict[str, Any]) -> None:
     prefixes = {
-        "customers": "cus_", "operators": "opr_", "accounts": "acc_", "payees": "pay_",
-        "statements": "stm_", "commitments": "cmt_",
+        "customers": "cus_",
+        "operators": "opr_",
+        "accounts": "acc_",
+        "payees": "pay_",
+        "statements": "stm_",
+        "commitments": "cmt_",
     }
     for section, prefix in prefixes.items():
         ids = [item["id"] for item in fx[section]]
@@ -226,7 +260,10 @@ def test_statements_reconcile_and_chain(fx: dict[str, Any]) -> None:
 def test_statement_periods_and_dates(fx: dict[str, Any]) -> None:
     main = [s for s in fx["statements"] if s["account"] == "acc_main"]
     assert [s["period"] for s in main] == [
-        "2026-08-01/2026-08-31", "2026-09-01/2026-09-30", "2026-10-01/2026-10-31", "2026-11-01/2026-11-02",
+        "2026-08-01/2026-08-31",
+        "2026-09-01/2026-09-30",
+        "2026-10-01/2026-10-31",
+        "2026-11-01/2026-11-02",
     ]
     for statement in fx["statements"]:
         start, end = (date.fromisoformat(part) for part in statement["period"].split("/"))
@@ -250,25 +287,34 @@ def test_current_month_income_and_spending(fx: dict[str, Any]) -> None:
     salary = [t for t in txns if t["category_hint"] == "salary"]
     assert [(t["amount_fen"], t["posted_offset_days"]) for t in salary] == [(1200000, -1)]
     assert sum(t["amount_fen"] for t in salary) == fx["income_this_month_fen"]
-    spent = -sum(t["amount_fen"] for t in txns if t["amount_fen"] < 0 and t["category_hint"] != "own_transfer")
+    spent = -sum(
+        t["amount_fen"]
+        for t in txns
+        if t["amount_fen"] < 0 and t["category_hint"] != "own_transfer"
+    )
     assert spent == fx["spent_this_month_fen"] == 60000
 
 
 def test_unresolved_transfer_and_own_transfer(fx: dict[str, Any]) -> None:
     payees = by_id(fx["payees"])
-    transactions = [
-        (s["account"], t) for s in fx["statements"] for t in s["transactions"]
-    ]
+    transactions = [(s["account"], t) for s in fx["statements"] for t in s["transactions"]]
     unresolved = [(a, t) for a, t in transactions if t["category_hint"] is None]
     assert len(unresolved) == 1
     account, txn = unresolved[0]
-    assert (account, txn["amount_fen"], txn["counterparty"]) == ("acc_main", -200000, payees["pay_liming"]["alias"])
+    assert (account, txn["amount_fen"], txn["counterparty"]) == (
+        "acc_main",
+        -200000,
+        payees["pay_liming"]["alias"],
+    )
     own = [(a, t) for a, t in transactions if t["category_hint"] == "own_transfer"]
     assert own, "an own-account transfer is part of the history"
     for account, txn in own:
         mirror = [
-            t for a, t in own
-            if a != account and t["posted_offset_days"] == txn["posted_offset_days"] and t["amount_fen"] == -txn["amount_fen"]
+            t
+            for a, t in own
+            if a != account
+            and t["posted_offset_days"] == txn["posted_offset_days"]
+            and t["amount_fen"] == -txn["amount_fen"]
         ]
         assert len(mirror) == 1, txn["source_txn_id"]
 
@@ -290,9 +336,13 @@ def test_cash_start_values(fx: dict[str, Any], exp: dict[str, Any]) -> None:
     unpaid = sum(
         c["unpaid_fen"]
         for c in fx["commitments"]
-        if c["customer"] == "cus_main" and c["status"] in {"CONFIRMED", "PARTIALLY_PAID"} and c["due_offset_days"] <= horizon_end
+        if c["customer"] == "cus_main"
+        and c["status"] in {"CONFIRMED", "PARTIALLY_PAID"}
+        and c["due_offset_days"] <= horizon_end
     )
-    protected = fx["reserve"]["target_fen"] + fx["allowance"]["remaining_fen"] + unpaid + fx["margin_fen"]
+    protected = (
+        fx["reserve"]["target_fen"] + fx["allowance"]["remaining_fen"] + unpaid + fx["margin_fen"]
+    )
     assert posted == start["c_fen"] == 1800000
     assert unpaid == start["b_fen"] == 840000
     assert protected == start["protected_fen"] == 1600000
@@ -306,8 +356,16 @@ def test_cash_start_values(fx: dict[str, Any], exp: dict[str, Any]) -> None:
 def test_commitments(fx: dict[str, Any]) -> None:
     bills = by_id(fx["commitments"])
     rent, insurance = bills["cmt_rent"], bills["cmt_insurance"]
-    assert (rent["payee"], rent["amount_fen"], rent["due_offset_days"]) == ("pay_wanglei", 340000, 2)
-    assert (insurance["payee"], insurance["amount_fen"], insurance["due_offset_days"]) == ("pay_insurer", 500000, 7)
+    assert (rent["payee"], rent["amount_fen"], rent["due_offset_days"]) == (
+        "pay_wanglei",
+        340000,
+        2,
+    )
+    assert (insurance["payee"], insurance["amount_fen"], insurance["due_offset_days"]) == (
+        "pay_insurer",
+        500000,
+        7,
+    )
     for bill in bills.values():
         assert bill["status"] == "CONFIRMED" and bill["unpaid_fen"] == bill["amount_fen"]
         assert date_at(fx, bill["due_offset_days"]).month == 11
@@ -315,18 +373,27 @@ def test_commitments(fx: dict[str, Any]) -> None:
 
 def test_monthly_estimate_and_allowance(fx: dict[str, Any], exp: dict[str, Any]) -> None:
     month = exp["cash"]["monthly_estimate"]
-    due_this_month = sum(c["unpaid_fen"] for c in fx["commitments"] if date_at(fx, c["due_offset_days"]).month == 11)
+    due_this_month = sum(
+        c["unpaid_fen"] for c in fx["commitments"] if date_at(fx, c["due_offset_days"]).month == 11
+    )
     assert due_this_month == month["bills_due_this_month_fen"]
-    estimate = fx["income_this_month_fen"] - (fx["spent_this_month_fen"] + fx["allowance"]["remaining_fen"] + due_this_month)
+    estimate = fx["income_this_month_fen"] - (
+        fx["spent_this_month_fen"] + fx["allowance"]["remaining_fen"] + due_this_month
+    )
     assert estimate == month["value_fen"] == 0
-    assert fx["allowance"]["budget_fen"] == fx["allowance"]["remaining_fen"] + fx["spent_this_month_fen"]
+    assert (
+        fx["allowance"]["budget_fen"]
+        == fx["allowance"]["remaining_fen"] + fx["spent_this_month_fen"]
+    )
     assert fx["allowance"]["period"] == "2026-11"
 
 
 def test_cash_goldens_are_arithmetically_consistent(exp: dict[str, Any]) -> None:
     cash = exp["cash"]
     start = cash["start"]
-    assert start["protected_fen"] == start["e_fen"] + start["l_fen"] + start["b_fen"] + start["m_fen"]
+    assert (
+        start["protected_fen"] == start["e_fen"] + start["l_fen"] + start["b_fen"] + start["m_fen"]
+    )
     assert start["headroom_fen"] == start["c_fen"] - start["protected_fen"] - start["u_fen"]
     raised = cash["reserve_raised"]
     assert raised["e_fen"] - start["e_fen"] == 100000
@@ -334,7 +401,10 @@ def test_cash_goldens_are_arithmetically_consistent(exp: dict[str, Any]) -> None
     assert raised["headroom_fen"] == raised["c_fen"] - raised["protected_fen"]
     rent = 340000
     paid = cash["rent_paid"]
-    assert (paid["c_fen"], paid["protected_fen"]) == (raised["c_fen"] - rent, raised["protected_fen"] - rent)
+    assert (paid["c_fen"], paid["protected_fen"]) == (
+        raised["c_fen"] - rent,
+        raised["protected_fen"] - rent,
+    )
     assert paid["headroom_fen"] == raised["headroom_fen"]
     part = cash["rent_partial_payment"]
     assert part["unpaid_fen"] == rent - part["paid_fen"]
@@ -347,26 +417,50 @@ def test_s6_table_is_arithmetically_consistent(exp: dict[str, Any]) -> None:
     for branch in ("base", "branch_1200", "branch_1600"):
         for step, row in exp["s6"][branch].items():
             if isinstance(row, dict) and "c_fen" in row:
-                assert row["headroom_fen"] == max(0, row["c_fen"] - row["protected_fen"]), (branch, step)
+                assert row["headroom_fen"] == max(0, row["c_fen"] - row["protected_fen"]), (
+                    branch,
+                    step,
+                )
     s6 = exp["s6"]
-    assert s6["base"]["t0_start"] == {"c_fen": 1800000, "protected_fen": 1600000, "headroom_fen": 200000}
+    assert s6["base"]["t0_start"] == {
+        "c_fen": 1800000,
+        "protected_fen": 1600000,
+        "headroom_fen": 200000,
+    }
     for column in ("branch_1200", "branch_1600"):
-        for step in ("t0_start", "t0_plan_confirmed", "t0_redemption_submitted", "t2_rent_paid", "t3_redemption_settled"):
+        for step in (
+            "t0_start",
+            "t0_plan_confirmed",
+            "t0_redemption_submitted",
+            "t2_rent_paid",
+            "t3_redemption_settled",
+        ):
             assert s6[column][step] == s6["base"][step], (column, step)
     settled = s6["base"]["t3_redemption_settled"]
     foreign = s6["foreign_debit_6000"]
-    assert max(0, settled["protected_fen"] - (settled["c_fen"] - foreign["debit_fen"])) == foreign["shortfall_fen"]
+    assert (
+        max(0, settled["protected_fen"] - (settled["c_fen"] - foreign["debit_fen"]))
+        == foreign["shortfall_fen"]
+    )
     late = s6["bill_1200_after_purchase"]
     purchased = s6["base"]["t3_purchase"]
-    assert max(0, purchased["protected_fen"] + late["bill_fen"] - purchased["c_fen"]) == late["shortfall_fen"]
+    assert (
+        max(0, purchased["protected_fen"] + late["bill_fen"] - purchased["c_fen"])
+        == late["shortfall_fen"]
+    )
     small = s6["bill_500_without_bounds"]
-    assert settled["c_fen"] - (settled["protected_fen"] + small["bill_fen"]) == small["headroom_fen"]
+    assert (
+        settled["c_fen"] - (settled["protected_fen"] + small["bill_fen"]) == small["headroom_fen"]
+    )
     for column, bill in (("branch_1200", 120000), ("branch_1600", 160000)):
         confirmed = s6[column]["t3_bill_confirmed"]
         assert confirmed["protected_fen"] == settled["protected_fen"] + bill
     revised = s6["branch_1200"]["t3_purchase"]
     assert revised["c_fen"] == settled["c_fen"] - revised["purchase_fen"]
-    assert s6["base"]["t3_purchase"]["c_fen"] == settled["c_fen"] - exp["funds"]["base_plan"]["purchase_fen"]
+    assert (
+        s6["base"]["t3_purchase"]["c_fen"]
+        == settled["c_fen"] - exp["funds"]["base_plan"]["purchase_fen"]
+    )
     for column in ("base", "branch_1200", "branch_1600"):
         before = s6[column].get("t3_purchase") or s6[column]["t3_bill_confirmed"]
         after = s6[column]["t7_insurance_paid"]
@@ -380,7 +474,9 @@ def test_s6_table_is_arithmetically_consistent(exp: dict[str, Any]) -> None:
 def test_fund_values_and_exposure(fx: dict[str, Any], exp: dict[str, Any]) -> None:
     codes = exp["products"]
     values = fund_values(fx)
-    assert {letter: int(values[code]) for letter, code in codes.items()} == exp["funds"]["holdings_value_fen"]
+    assert {letter: int(values[code]) for letter, code in codes.items()} == exp["funds"][
+        "holdings_value_fen"
+    ]
     total = sum(values.values())
     assert total == exp["funds"]["total_value_fen"] == 5000000
     technology = technology_after(fx, values)
@@ -394,7 +490,9 @@ def test_fund_values_and_exposure(fx: dict[str, Any], exp: dict[str, Any]) -> No
 def test_documented_weights(fx: dict[str, Any], exp: dict[str, Any]) -> None:
     codes = exp["products"]
     technology = sector_weight(fx, "technology")
-    assert technology[codes["C"]] == Decimal("0.7000") and technology[codes["D"]] == Decimal("0.1000")
+    assert technology[codes["C"]] == Decimal("0.7000") and technology[codes["D"]] == Decimal(
+        "0.1000"
+    )
     # The split between A and B is a reconstruction: only this sum is documented.
     a, b = Decimal("20000") * technology[codes["A"]], Decimal("15000") * technology[codes["B"]]
     assert a + b == Decimal("15250")
@@ -413,7 +511,10 @@ def test_holdings_rows(fx: dict[str, Any]) -> None:
         x_rows = [r for r in snapshot["rows"] if r["issuer"] == "发行人X"]
         assert len(x_rows) == 1 and x_rows[0]["sector"] == "technology"
         for row in snapshot["rows"]:
-            assert identity.setdefault(row["security_code"], (row["issuer"], row["sector"])) == (row["issuer"], row["sector"])
+            assert identity.setdefault(row["security_code"], (row["issuer"], row["sector"])) == (
+                row["issuer"],
+                row["sector"],
+            )
             assert Decimal(row["weight"]) > 0
 
 
@@ -425,8 +526,16 @@ def test_positions_and_lots(fx: dict[str, Any]) -> None:
         assert sum(Decimal(lot["shares"]) for lot in lots) == shares
         assert lots[0]["acquired_offset_days"] == -60
         assert lots[0]["cost_fen"] == int(shares * Decimal(product["nav"]) * HUNDRED)
-        assert (product["share_class"], product["nav"], product["nav_date_offset_days"]) == ("C", "1.0000", 0)
-        assert (product["redeem_settle_days"], product["purchase_settle_days"], product["min_purchase_fen"]) == (3, 0, 10000)
+        assert (product["share_class"], product["nav"], product["nav_date_offset_days"]) == (
+            "C",
+            "1.0000",
+            0,
+        )
+        assert (
+            product["redeem_settle_days"],
+            product["purchase_settle_days"],
+            product["min_purchase_fen"],
+        ) == (3, 0, 10000)
 
 
 def test_fee_schedules(fx: dict[str, Any]) -> None:
@@ -446,7 +555,11 @@ def test_redemption_golden(fx: dict[str, Any], exp: dict[str, Any]) -> None:
     gross = money(Decimal(redemption["shares"]) * Decimal(product["nav"]) * HUNDRED)
     rate = by_id(fx["fee_schedules"])[product["fee_schedule"]]["tiers"][0]["rate"]
     fee = redemption_fee(gross, rate)
-    assert (gross, fee, gross - fee) == (redemption["gross_fen"], redemption["fee_fen"], redemption["net_fen"])
+    assert (gross, fee, gross - fee) == (
+        redemption["gross_fen"],
+        redemption["fee_fen"],
+        redemption["net_fen"],
+    )
     assert redemption_fee(1, "0.0030") == 0 and redemption_fee(1000000, "0.00305") == 3050
 
 
@@ -459,8 +572,18 @@ def test_plan_constants_match_goldens(fx: dict[str, Any], exp: dict[str, Any]) -
     assert bounds["spare0_fen"] == s6["t0_plan_confirmed"]["headroom_fen"]
     assert bounds["min_purchase_fen"] == bounds["p0_fen"] - bounds["max_retained_fen"]
     assert plan["reserve_after_plan_fen"] == exp["cash"]["reserve_raised"]["e_fen"]
-    assert (plan["target_max_pct"], plan["checkpoint_day"], plan["fee_cap_fen"], plan["turnover_cap_fen"], plan["expiry_day"]) == (
-        "40.0000", 5, 2000, 1000000, 8,
+    assert (
+        plan["target_max_pct"],
+        plan["checkpoint_day"],
+        plan["fee_cap_fen"],
+        plan["turnover_cap_fen"],
+        plan["expiry_day"],
+    ) == (
+        "40.0000",
+        5,
+        2000,
+        1000000,
+        8,
     )
     assert exp["revision_sequence"]["bounds"] == bounds
     assert redemption["fee_fen"] <= plan["fee_cap_fen"]
@@ -470,7 +593,9 @@ def test_plan_constants_match_goldens(fx: dict[str, Any], exp: dict[str, Any]) -
     ("golden", "purchase"),
     [("base_plan", 498500), ("revision", 478500), ("hypothetical_purchase", 438500)],
 )
-def test_plan_outcome_goldens(fx: dict[str, Any], exp: dict[str, Any], golden: str, purchase: int) -> None:
+def test_plan_outcome_goldens(
+    fx: dict[str, Any], exp: dict[str, Any], golden: str, purchase: int
+) -> None:
     codes = exp["products"]
     values = fund_values(fx)
     values[codes["C"]] -= 500000
@@ -502,10 +627,14 @@ def test_swap_c_to_d_4000_fails_target(fx: dict[str, Any], exp: dict[str, Any]) 
     pct = percent(technology_after(fx, result["values"]), sum(result["values"].values()))
     want = exp["funds"]["swap_c_to_d_4000"]
     assert pct == want["technology_pct"]
-    assert (Decimal(pct) <= Decimal(fx["plan_constants"]["target_max_pct"])) is want["passes_target"]
+    assert (Decimal(pct) <= Decimal(fx["plan_constants"]["target_max_pct"])) is want[
+        "passes_target"
+    ]
 
 
-def test_candidate_grid_has_exactly_one_passing_swap(fx: dict[str, Any], exp: dict[str, Any]) -> None:
+def test_candidate_grid_has_exactly_one_passing_swap(
+    fx: dict[str, Any], exp: dict[str, Any]
+) -> None:
     plan = fx["plan_constants"]
     grid = exp["funds"]["candidate_grid"]
     codes = [p["id"] for p in fx["products"]]
@@ -576,10 +705,20 @@ def test_stress_goldens(fx: dict[str, Any], exp: dict[str, Any]) -> None:
         scenarios[name] = (values, fee)
     for shock, percents in stress["shocks_pct"].items():
         for name, (values, trade_fee) in scenarios.items():
-            loss = sum((values[code] * Decimal(p) / HUNDRED for code, p in zip(codes, percents)), Decimal(0)) + trade_fee
+            loss = (
+                sum(
+                    (values[code] * Decimal(p) / HUNDRED for code, p in zip(codes, percents)),
+                    Decimal(0),
+                )
+                + trade_fee
+            )
             assert loss == stress["loss_fen"][shock][name], (shock, name)
     target = stress["loss_fen"]["target_fund"]
-    assert target["base"] - target["no_trade"] == stress["adverse_target_fund_vs_no_trade_fen"] == 175900
+    assert (
+        target["base"] - target["no_trade"]
+        == stress["adverse_target_fund_vs_no_trade_fen"]
+        == 175900
+    )
 
 
 def test_revision_sequence_goldens(exp: dict[str, Any]) -> None:
@@ -597,12 +736,18 @@ def test_revision_sequence_goldens(exp: dict[str, Any]) -> None:
                 reasons.append("PURCHASE_BELOW_MIN")
             if candidate > step["headroom_fen"]:
                 reasons.append("INSUFFICIENT_HEADROOM")
-        decision = "pause" if reasons else ("unchanged" if candidate == step["current_fen"] else "revise")
+        decision = (
+            "pause" if reasons else ("unchanged" if candidate == step["current_fen"] else "revise")
+        )
         assert (decision, candidate) == (step["decision"], step["purchase_fen"]), step["event"]
         assert reasons == step.get("reasons", []), step["event"]
     settled = exp["s6"]["base"]["t3_redemption_settled"]["headroom_fen"]
     first, second, third = exp["revision_sequence"]["steps"]
-    assert [s["headroom_fen"] for s in (first, second, third)] == [settled - 80000, settled - 120000, settled - 160000]
+    assert [s["headroom_fen"] for s in (first, second, third)] == [
+        settled - 80000,
+        settled - 120000,
+        settled - 160000,
+    ]
     assert exp["revision_sequence"]["rejected_sketch_purchase_fen"] == 458500
 
 
@@ -610,16 +755,25 @@ def test_revision_sequence_goldens(exp: dict[str, Any]) -> None:
 
 ALLOWED_CHANGES = {
     "t25": (
-        "accounts.acc_main.opening_fen", "accounts.acc_savings.opening_fen",
-        "statements.stm_main_2611.closing_fen", "statements.stm_main_2611.transactions.",
-        "statements.stm_sav_2611.closing_fen", "statements.stm_sav_2611.transactions.",
+        "accounts.acc_main.opening_fen",
+        "accounts.acc_savings.opening_fen",
+        "statements.stm_main_2611.closing_fen",
+        "statements.stm_main_2611.transactions.",
+        "statements.stm_sav_2611.closing_fen",
+        "statements.stm_sav_2611.transactions.",
     ),
     "t35": ("statements.stm_main_2610.transactions.MAIN-202610-009.",),
     "t42": ("lots.lot_c1.acquired_offset_days", "products.990003.fee_schedule"),
     "t43": ("lots.lot_c1.",),
-    "t52": tuple(f"products.{code}.purchase_settle_days" for code in ("990001", "990002", "990003", "990004")),
-    "t64": tuple(f"products.{code}.redeem_settle_days" for code in ("990001", "990002", "990003", "990004")),
-    "t65": tuple(f"products.{code}.redeem_settle_days" for code in ("990001", "990002", "990003", "990004")),
+    "t52": tuple(
+        f"products.{code}.purchase_settle_days" for code in ("990001", "990002", "990003", "990004")
+    ),
+    "t64": tuple(
+        f"products.{code}.redeem_settle_days" for code in ("990001", "990002", "990003", "990004")
+    ),
+    "t65": tuple(
+        f"products.{code}.redeem_settle_days" for code in ("990001", "990002", "990003", "990004")
+    ),
 }
 
 
@@ -646,13 +800,28 @@ def test_t25_moves_money_between_accounts(exp: dict[str, Any]) -> None:
     accounts = by_id(doc["accounts"])
     assert accounts["acc_main"]["opening_fen"] == want["acc_main_posted_fen"]
     assert accounts["acc_savings"]["opening_fen"] == want["acc_savings_posted_fen"]
-    assert accounts["acc_main"]["opening_fen"] + accounts["acc_savings"]["opening_fen"] == want["total_posted_fen"]
+    assert (
+        accounts["acc_main"]["opening_fen"] + accounts["acc_savings"]["opening_fen"]
+        == want["total_posted_fen"]
+    )
     rent = by_id(doc["commitments"])["cmt_rent"]["amount_fen"]
     assert accounts["acc_main"]["opening_fen"] < rent <= want["total_posted_fen"]
     assert unreconciled(doc) == {}
-    november = [t for s in doc["statements"] if s["id"] == "stm_main_2611" for t in s["transactions"]]
-    assert -sum(t["amount_fen"] for t in november if t["amount_fen"] < 0 and t["category_hint"] != "own_transfer") == doc["spent_this_month_fen"]
-    assert sum(t["amount_fen"] for t in november if t["category_hint"] == "salary") == doc["income_this_month_fen"]
+    november = [
+        t for s in doc["statements"] if s["id"] == "stm_main_2611" for t in s["transactions"]
+    ]
+    assert (
+        -sum(
+            t["amount_fen"]
+            for t in november
+            if t["amount_fen"] < 0 and t["category_hint"] != "own_transfer"
+        )
+        == doc["spent_this_month_fen"]
+    )
+    assert (
+        sum(t["amount_fen"] for t in november if t["category_hint"] == "salary")
+        == doc["income_this_month_fen"]
+    )
 
 
 def test_t35_leaves_one_statement_unreconciled(fx: dict[str, Any], exp: dict[str, Any]) -> None:
@@ -660,7 +829,10 @@ def test_t35_leaves_one_statement_unreconciled(fx: dict[str, Any], exp: dict[str
     doc = load_fixture("t35")
     assert unreconciled(doc) == {"stm_main_2610": want["imbalance_fen"]}
     removed = [
-        t for s in fx["statements"] for t in s["transactions"] if t["source_txn_id"] == want["missing_source_txn_id"]
+        t
+        for s in fx["statements"]
+        for t in s["transactions"]
+        if t["source_txn_id"] == want["missing_source_txn_id"]
     ]
     assert len(removed) == 1 and removed[0]["amount_fen"] == -want["imbalance_fen"]
     assert removed[0]["category_hint"] is not None
@@ -684,12 +856,17 @@ def test_t42_tiered_fee_on_young_lots(fx: dict[str, Any], exp: dict[str, Any]) -
 
 def test_t43_removes_only_the_lots_of_fund_c(fx: dict[str, Any], exp: dict[str, Any]) -> None:
     doc = load_fixture("t43")
-    assert [lot["product"] for lot in doc["lots"] if lot["product"] == "990003"] == exp["variants"]["t43"]["lots_for_product"]
+    assert [lot["product"] for lot in doc["lots"] if lot["product"] == "990003"] == exp["variants"][
+        "t43"
+    ]["lots_for_product"]
     assert {lot["id"] for lot in fx["lots"]} - {lot["id"] for lot in doc["lots"]} == {"lot_c1"}
     assert doc["positions"] == fx["positions"]
 
 
-@pytest.mark.parametrize(("variant", "field"), [("t52", "purchase_settle_days"), ("t64", "redeem_settle_days"), ("t65", "redeem_settle_days")])
+@pytest.mark.parametrize(
+    ("variant", "field"),
+    [("t52", "purchase_settle_days"), ("t64", "redeem_settle_days"), ("t65", "redeem_settle_days")],
+)
 def test_settlement_variants(exp: dict[str, Any], variant: str, field: str) -> None:
     doc = load_fixture(variant)
     assert {p[field] for p in doc["products"]} == {exp["variants"][variant][field]}
