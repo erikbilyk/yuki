@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -22,29 +22,38 @@ from wg.contracts.api import (
     ApprovalRequestResult,
     AuditView,
     BalanceView,
+    BillsView,
     CancelResult,
     Card,
+    CashSnapshotView,
     ChallengeView,
     ClockView,
     ConfirmResult,
     DraftResult,
     FaultsView,
+    ImportResult,
     LocksView,
     LockView,
     OperationView,
+    PayeesView,
     PlansView,
     ReceiptView,
     ReconcileResult,
     Route,
     RouteRole,
     SessionEntry,
+    SimCommitmentResult,
     SimPostingResult,
     SimResetResult,
+    SimSmsResult,
     SmsView,
+    SpendingView,
+    TransactionsView,
     TransferHistoryView,
+    UnresolvedView,
     VerifyResult,
 )
-from wg.contracts.enums import Fault, Role
+from wg.contracts.enums import CommitmentStatus, Fault, Role
 from wg.contracts.errors import HTTP_STATUS, ErrorBody, ErrorCode
 from wg.contracts.fixture import Fixture, load_fixture
 
@@ -238,6 +247,41 @@ class WgClient:
         }
         return self.ok(self.post("/sim/incoming-payment", body), SimPostingResult)
 
+    def external_debit(
+        self, amount_fen: int, merchant_raw: str, account_id: str = MAIN_ACCOUNT
+    ) -> SimPostingResult:
+        body = {"account_id": account_id, "amount_fen": amount_fen, "merchant_raw": merchant_raw}
+        return self.ok(self.post("/sim/external-debit", body), SimPostingResult)
+
+    def import_response(self, statement_id: str) -> httpx.Response:
+        return self.post("/sim/import", {"statement_id": statement_id})
+
+    def import_statement(self, statement_id: str) -> ImportResult:
+        return self.ok(self.import_response(statement_id), ImportResult)
+
+    def ebill(
+        self,
+        payee_id: str,
+        kind: str,
+        amount_fen: int,
+        due_date: date,
+        customer_id: str = MAIN_CUSTOMER,
+    ) -> SimCommitmentResult:
+        """A trusted e-bill from the bank: it arrives as a CANDIDATE commitment."""
+        body = {
+            "customer_id": customer_id,
+            "payee_id": payee_id,
+            "kind": kind,
+            "amount_fen": amount_fen,
+            "due_date": due_date.isoformat(),
+        }
+        return self.ok(self.post("/sim/bills/ebill", body), SimCommitmentResult)
+
+    def sms_text(self, text: str, customer_id: str = MAIN_CUSTOMER) -> SimSmsResult:
+        """Untrusted SMS text delivered to the customer's phone."""
+        body = {"customer_id": customer_id, "text": text}
+        return self.ok(self.post("/sim/sms", body), SimSmsResult)
+
     # Drafts and approval (SPEC §9)
 
     def draft_transfer_response(
@@ -311,6 +355,65 @@ class WgClient:
     def cancel(self, logical_action_id: str) -> CancelResult:
         return self.ok(self.cancel_response(logical_action_id), CancelResult)
 
+    # S2 drafts (SPEC §19.2)
+
+    def draft_response(self, path: str, body: dict[str, Any]) -> httpx.Response:
+        return self.post(f"/v1/drafts/{path}", body)
+
+    def draft(self, path: str, body: dict[str, Any]) -> DraftResult:
+        return self.ok(self.draft_response(path, body), DraftResult, (201,))
+
+    def draft_reserve(self, target_fen: int) -> DraftResult:
+        return self.draft("reserve", {"target_fen": target_fen})
+
+    def pay_bill_response(
+        self, commitment_id: str, amount_fen: int | None = None, account_id: str | None = None
+    ) -> httpx.Response:
+        body: dict[str, Any] = {"commitment_id": commitment_id}
+        if amount_fen is not None:
+            body["amount_fen"] = amount_fen
+        if account_id is not None:
+            body["account_id"] = account_id
+        return self.draft_response("pay-bill", body)
+
+    def draft_pay_bill(
+        self, commitment_id: str, amount_fen: int | None = None, account_id: str | None = None
+    ) -> DraftResult:
+        response = self.pay_bill_response(commitment_id, amount_fen, account_id)
+        return self.ok(response, DraftResult, (201,))
+
+    def draft_confirm_bill(self, commitment_id: str) -> DraftResult:
+        return self.draft("bill", {"commitment_id": commitment_id})
+
+    def draft_new_bill(
+        self, purpose: str, payee_id: str, amount_fen: int, due_date: date
+    ) -> DraftResult:
+        body = {
+            "purpose": purpose,
+            "payee_id": payee_id,
+            "amount_fen": amount_fen,
+            "due_date": due_date.isoformat(),
+        }
+        return self.draft("bill", body)
+
+    def draft_mark_paid_external(self, commitment_id: str) -> DraftResult:
+        return self.draft("mark-paid-external", {"commitment_id": commitment_id})
+
+    def draft_cancel_bill(self, commitment_id: str) -> DraftResult:
+        return self.draft("cancel-bill", {"commitment_id": commitment_id})
+
+    def draft_resolution(self, txn_id: str, category: str) -> DraftResult:
+        return self.draft("resolution", {"txn_id": txn_id, "category": category})
+
+    def approve(self, draft: DraftResult) -> TransferOutcome:
+        """Ask for approval, confirm the card and, for a RED card, verify the SMS code."""
+        card = self.open_card(draft.logical_action_id)
+        confirm = self.confirm(card)
+        verify = None
+        if confirm.challenge is not None:
+            verify = self.verify(confirm.challenge.challenge_id)
+        return TransferOutcome(draft=draft, card=card, confirm=confirm, verify=verify)
+
     def transfer(self, payee_id: str, amount_fen: int, **options: Any) -> TransferOutcome:
         """Draft, approve and, for a RED card, verify the SMS code: the customer's whole path."""
         draft = self.draft_transfer(payee_id, amount_fen, **options)
@@ -340,6 +443,26 @@ class WgClient:
 
     def receipt(self, operation_id: str) -> ReceiptView:
         return self.ok(self.get(f"/v1/receipts/{operation_id}"), ReceiptView, (200,))
+
+    def payees(self) -> PayeesView:
+        return self.ok(self.get("/v1/payees"), PayeesView, (200,))
+
+    def snapshot(self) -> CashSnapshotView:
+        return self.ok(self.get("/v1/cash/snapshot"), CashSnapshotView, (200,))
+
+    def bills(self, status: CommitmentStatus | None = None) -> BillsView:
+        query = {"status": status.value} if status is not None else {}
+        return self.ok(self.get("/v1/bills", **query), BillsView, (200,))
+
+    def unresolved(self) -> UnresolvedView:
+        return self.ok(self.get("/v1/unresolved"), UnresolvedView, (200,))
+
+    def spending(self, days: int = 30) -> SpendingView:
+        return self.ok(self.get("/v1/spending", days=days), SpendingView, (200,))
+
+    def transactions(self, days: int = 90, limit: int = 100) -> TransactionsView:
+        response = self.get("/v1/transactions", days=days, limit=limit)
+        return self.ok(response, TransactionsView, (200,))
 
     def plans(self) -> PlansView:
         return self.ok(self.get("/v1/plans"), PlansView, (200,))

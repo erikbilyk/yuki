@@ -259,6 +259,16 @@ variants:
       statements.stm_sav_2611.closing_fen: 1600000
       statements.stm_sav_2611.transactions:
         - {source_txn_id: SAV-202611-001, posted_offset_days: 0, amount_fen: 1600000, counterparty: "本人活期账户", description_raw: "转入储蓄", category_hint: own_transfer}  # 2026-11-02
+  # A refund from a merchant on the posting day: no rule classifies it, so it stays unresolved.
+  t23:
+    set:
+      accounts.acc_main.opening_fen: 1836000
+      statements.stm_main_2611.closing_fen: 1836000
+      statements.stm_main_2611.transactions:
+        - {source_txn_id: MAIN-202611-001, posted_offset_days: -1, amount_fen: 1200000, counterparty: "模拟科技有限公司", description_raw: "工资 2026年11月", category_hint: salary}  # 2026-11-01
+        - {source_txn_id: MAIN-202611-002, posted_offset_days: -1, amount_fen: -36000, counterparty: "模拟超市", description_raw: "超市购物", category_hint: groceries}  # 2026-11-01
+        - {source_txn_id: MAIN-202611-003, posted_offset_days: 0, amount_fen: -24000, counterparty: "模拟出行", description_raw: "交通出行", category_hint: transport}  # 2026-11-02
+        - {source_txn_id: MAIN-202611-004, posted_offset_days: 0, amount_fen: 36000, counterparty: "模拟超市", description_raw: "退款 超市购物", category_hint: null}  # 2026-11-02
   t35:
     remove:
       statements.stm_main_2610.transactions: [MAIN-202610-009]
