@@ -15,6 +15,7 @@ from wg.contracts.api import (
 )
 from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.fixture import FixtureError
+from wg.core.k4_approval import StepUp, expire_open_challenges
 from wg.k6 import faults, fixture
 from wg.k6.clock import advance_clock
 from wg.k6.db import Database, UnitOfWork
@@ -26,8 +27,9 @@ def clock_view(state: ClockState) -> ClockView:
 
 
 class SimService:
-    def __init__(self, db: Database) -> None:
+    def __init__(self, db: Database, step_up: StepUp) -> None:
         self.db = db
+        self.step_up = step_up
 
     def reset(self, request: SimResetRequest) -> SimResetResult:
         """Load the profile and variant in place of the current content; the clock returns to T0."""
@@ -55,11 +57,14 @@ class SimService:
                     days=request.days or 0, minutes=request.minutes or 0
                 )
             try:
-                return advance_clock(uow, target)
+                state = advance_clock(uow, target)
             except ClockError:
                 raise WgError(
                     ErrorCode.UNSUPPORTED_REQUEST, {"reason": "clock_backwards"}
                 ) from None
+            # Codes whose five simulated minutes are over close now, so none stays stored.
+            expire_open_challenges(uow, self.step_up, state.now)
+            return state
 
         return clock_view(self.db.run_in_uow(advance, "sim clock advance"))
 

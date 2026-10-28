@@ -9,13 +9,15 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 
-from wg.api import auth, sim
+from wg.api import audit, auth, sim, trusted
 from wg.api.errors import install_error_handlers
 from wg.core.k1_session import SessionService
+from wg.core.k4_approval import SimulatedSms, StepUp
 from wg.k6 import faults, fixture
 from wg.k6.db import Database, open_database
 from wg.k6.migrate import migrate
 from wg.services.sim import SimService
+from wg.services.trusted import TrustedService
 from wg.settings import REPO_ROOT, Settings
 
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
@@ -75,8 +77,10 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
         faults.clear_transient(uow)
     if settings.demo_mode:
         _load_demo_profile(db)
+    step_up = StepUp(code_key=settings.code_hmac_key, provider=SimulatedSms())
     app.state.sessions = SessionService(db, settings.session_secret)
-    app.state.sim = SimService(db)
+    app.state.trusted = TrustedService(db, step_up)
+    app.state.sim = SimService(db, step_up)
     install_error_handlers(app)
     build_id = resolve_build_id()
 
@@ -95,6 +99,8 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
         return {"status": "ok", "build": build_id, "demo": settings.demo_mode, "features": []}
 
     app.include_router(auth.router)
+    app.include_router(trusted.router)
+    app.include_router(audit.router)
     if settings.demo_mode:
         app.include_router(sim.router)
 

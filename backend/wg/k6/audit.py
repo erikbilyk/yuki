@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -42,18 +43,22 @@ def record(
 
 
 def list_audit(
-    reader: Reader, *, customer_id: str | None = None, limit: int = 200
+    reader: Reader,
+    *,
+    customer_id: str | None = None,
+    refs: Collection[str] | None = None,
+    limit: int = 200,
 ) -> list[AuditRow]:
-    """Newest first; with `customer_id`, only that customer's rows."""
-    if customer_id is None:
-        rows = reader.execute(
-            "SELECT * FROM audit_log ORDER BY audit_id DESC LIMIT ?", (limit,)
-        ).fetchall()
-    else:
-        rows = reader.execute(
-            "SELECT * FROM audit_log WHERE customer_id = ? ORDER BY audit_id DESC LIMIT ?",
-            (customer_id, limit),
-        ).fetchall()
+    """Newest first; with `customer_id`, only that customer's rows; with `refs`, only those refs."""
+    sql = "SELECT * FROM audit_log WHERE 1 = 1"
+    params: list[object] = []
+    if customer_id is not None:
+        sql += " AND customer_id = ?"
+        params.append(customer_id)
+    if refs is not None:
+        sql += f" AND ref IN ({', '.join('?' for _ in refs) or 'NULL'})"
+        params.extend(refs)
+    rows = reader.execute(sql + " ORDER BY audit_id DESC LIMIT ?", (*params, limit)).fetchall()
     return [
         AuditRow(
             audit_id=row["audit_id"],
