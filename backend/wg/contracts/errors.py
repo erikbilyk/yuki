@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from enum import StrEnum
 from types import MappingProxyType
 
-from pydantic import Field, JsonValue
+from pydantic import Field, JsonValue, field_validator
 
 from wg.contracts._base import ContractModel
 
@@ -164,6 +164,24 @@ class ErrorBody(ContractModel):
     code: ErrorCode
     message_zh: str
     detail: dict[str, JsonValue] = Field(default_factory=dict)
+
+    @field_validator("detail")
+    @classmethod
+    def _no_floats(cls, detail: dict[str, JsonValue]) -> dict[str, JsonValue]:
+        _reject_floats(detail)
+        return detail
+
+
+def _reject_floats(value: JsonValue) -> None:
+    # Money is fen and Decimals are strings in error details too (T59).
+    if isinstance(value, float):
+        raise ValueError("error detail must not contain floats")
+    if isinstance(value, dict):
+        for item in value.values():
+            _reject_floats(item)
+    elif isinstance(value, list):
+        for item in value:
+            _reject_floats(item)
 
 
 class WgError(Exception):

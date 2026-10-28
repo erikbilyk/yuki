@@ -34,6 +34,7 @@ class IdPrefix(StrEnum):
     MANDATE = "mdt_"
     DEBIT_REQUEST = "req_"
     MERCHANT = "mer_"
+    CARD = "crd_"
 
 
 def new_id(prefix: IdPrefix) -> str:
@@ -69,6 +70,7 @@ FeeScheduleId = Annotated[str, _prefixed(IdPrefix.FEE_SCHEDULE)]
 MandateRef = Annotated[str, _prefixed(IdPrefix.MANDATE)]
 DebitRequestId = Annotated[str, _prefixed(IdPrefix.DEBIT_REQUEST)]
 MerchantId = Annotated[str, _prefixed(IdPrefix.MERCHANT)]
+CardId = Annotated[str, _prefixed(IdPrefix.CARD)]
 
 # Fund codes are six-digit strings and keep their leading zeros ("010737").
 FundCode = Annotated[str, StringConstraints(strict=True, pattern=r"^[0-9]{6}$")]
