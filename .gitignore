@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+
+# Local configuration and state
+.env
+.env.*
+!.env.example
+var/
+*.db
+*.db-wal
+*.db-shm
+data/public/raw/
+evals/out/
+dist/
+
+# Editors and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
