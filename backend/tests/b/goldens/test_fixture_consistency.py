@@ -8,6 +8,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
+from itertools import pairwise
 from typing import Any
 
 import pytest
@@ -252,7 +253,7 @@ def test_statements_reconcile_and_chain(fx: dict[str, Any]) -> None:
     for account_id, account in accounts.items():
         chain = [s for s in fx["statements"] if s["account"] == account_id]
         assert chain, account_id
-        for previous, current in zip(chain, chain[1:]):
+        for previous, current in pairwise(chain):
             assert current["opening_fen"] == previous["closing_fen"], current["id"]
         assert chain[-1]["closing_fen"] == account["opening_fen"], account_id
 
@@ -707,7 +708,10 @@ def test_stress_goldens(fx: dict[str, Any], exp: dict[str, Any]) -> None:
         for name, (values, trade_fee) in scenarios.items():
             loss = (
                 sum(
-                    (values[code] * Decimal(p) / HUNDRED for code, p in zip(codes, percents)),
+                    (
+                        values[code] * Decimal(p) / HUNDRED
+                        for code, p in zip(codes, percents, strict=True)
+                    ),
                     Decimal(0),
                 )
                 + trade_fee
