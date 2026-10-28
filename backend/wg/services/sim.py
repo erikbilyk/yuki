@@ -1,4 +1,4 @@
-"""Simulator controls for demos and tests: reset, clock, faults (SPEC §12.7, §15.3, §19.2)."""
+"""Simulator controls for demos and tests: reset, clock, faults, payments in (SPEC §12.7, §15.3)."""
 
 from __future__ import annotations
 
@@ -10,16 +10,20 @@ from wg.contracts.api import (
     FaultRequest,
     FaultsView,
     FaultView,
+    IncomingPaymentRequest,
+    SimPostingResult,
     SimResetRequest,
     SimResetResult,
 )
 from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.fixture import FixtureError
+from wg.core.k1_session import not_found
 from wg.core.k4_approval import StepUp, expire_open_challenges
-from wg.k6 import faults, fixture
+from wg.k6 import accounts, bank, faults, fixture
 from wg.k6.clock import advance_clock
 from wg.k6.db import Database, UnitOfWork
-from wg.k6.simtime import ClockError, ClockState, read_clock
+from wg.k6.gateway import Gateway
+from wg.k6.simtime import ClockError, ClockState, now, read_clock
 
 
 def clock_view(state: ClockState) -> ClockView:
@@ -27,9 +31,10 @@ def clock_view(state: ClockState) -> ClockView:
 
 
 class SimService:
-    def __init__(self, db: Database, step_up: StepUp) -> None:
+    def __init__(self, db: Database, step_up: StepUp, gateway: Gateway) -> None:
         self.db = db
         self.step_up = step_up
+        self.gateway = gateway
 
     def reset(self, request: SimResetRequest) -> SimResetResult:
         """Load the profile and variant in place of the current content; the clock returns to T0."""
@@ -66,7 +71,10 @@ class SimService:
             expire_open_challenges(uow, self.step_up, state.now)
             return state
 
-        return clock_view(self.db.run_in_uow(advance, "sim clock advance"))
+        state = self.db.run_in_uow(advance, "sim clock advance")
+        # Settlements that fell due by the new time, each in its own unit of work.
+        self.gateway.settle_due()
+        return clock_view(state)
 
     def arm_fault(self, request: FaultRequest) -> FaultsView:
         def arm(uow: UnitOfWork) -> FaultsView:
@@ -84,3 +92,30 @@ class SimService:
             )
 
         return self.db.run_in_uow(arm, "sim arm fault")
+
+    def incoming_payment(self, request: IncomingPaymentRequest) -> SimPostingResult:
+        """Money from outside arrives; payer name and remark are untrusted text (T10)."""
+
+        def post(uow: UnitOfWork) -> SimPostingResult:
+            account = accounts.find_account(uow, request.account_id)
+            if account is None or account.customer_id is None:
+                raise not_found()
+            operation = bank.post_incoming_payment(
+                uow,
+                customer_id=account.customer_id,
+                account_id=account.account_id,
+                amount_fen=request.amount_fen,
+                payer_name=request.payer_name,
+                remark=request.remark,
+                at=now(uow),
+            )
+            after = accounts.find_account(uow, account.account_id)
+            assert after is not None
+            return SimPostingResult(
+                operation_id=operation.operation_id,
+                account_id=account.account_id,
+                amount_fen=request.amount_fen,
+                posted_fen_after=after.balance_fen,
+            )
+
+        return self.db.run_in_uow(post, "sim incoming payment")

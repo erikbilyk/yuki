@@ -49,18 +49,21 @@ def new_lines(browser: Browser, before: Counter[str]) -> list[str]:
     return list((audit_lines(browser) - before).elements())
 
 
-def test_yellow_card_confirms_to_ready(browser: Browser):
+def test_yellow_card_confirms_and_executes(browser: Browser):
     card = card_of(browser, YELLOW_FEN)
     assert card.status is CardStatus.OPEN and card.tier is Tier.YELLOW and not card.requires_code
     response = confirm(browser, card)
     assert response.status_code == 201
     result = ConfirmResult.model_validate(response.json())
-    assert result.action_status is ActionStatus.READY and result.challenge is None
+    assert result.action_status is ActionStatus.SETTLED and result.challenge is None
+    assert result.operation is not None and result.operation.amount_fen == YELLOW_FEN
     after = Card.model_validate(browser.get(f"/v1/cards/{card.card_id}").json())
     assert after.status is CardStatus.CONFIRMED and after.approval_id == result.approval_id
     repeat = confirm(browser, card)
     assert repeat.status_code == 200
-    assert ConfirmResult.model_validate(repeat.json()).approval_id == result.approval_id
+    repeated = ConfirmResult.model_validate(repeat.json())
+    assert repeated.approval_id == result.approval_id
+    assert repeated.operation == result.operation
 
 
 @pytest.mark.case("T7")
@@ -78,7 +81,8 @@ def test_red_card_needs_the_code_from_the_sms_panel(browser: Browser):
     response = browser.post(f"/v1/challenges/{challenge.challenge_id}/verify", {"code": code})
     assert response.status_code == 200, response.text
     verified = VerifyResult.model_validate(response.json())
-    assert verified.action_status is ActionStatus.READY
+    assert verified.action_status is ActionStatus.SETTLED
+    assert verified.operation is not None and verified.operation.amount_fen == RED_FEN
     assert SmsView.model_validate(browser.get("/v1/sms").json()).messages == ()
     with browser.db.read() as conn:
         stored = conn.execute(

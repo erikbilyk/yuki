@@ -39,6 +39,18 @@ EVENT_TEXT: dict[str, str] = {
     "clock_advanced": "模拟时间前进",
     "lock_set": "操作已暂停",
     "lock_cleared": "操作暂停已解除",
+    "draft_created": "创建了草稿",
+    "draft_refused": "草稿未被接受",
+    "approval_request_refused": "显示确认卡片未被接受",
+    "action_cancelled": "操作已取消",
+    "cancel_refused": "取消未被接受",
+    "tier_changed": "当日累计金额已变化，需要短信验证码",
+    "operation_submitted": "已提交执行",
+    "operation_settled": "已完成",
+    "operation_rejected": "银行未受理，资金未转出",
+    "operation_unknown": "执行结果待核实",
+    "operation_reconciled": "执行结果已核实",
+    "incoming_payment": "收到转入款项",
 }
 
 

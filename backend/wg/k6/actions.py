@@ -125,6 +125,22 @@ def find_current(reader: Reader, logical_action_id: str) -> ActionRow | None:
     return None if row is None else _action(row)
 
 
+def set_tier(uow: UnitOfWork, action: ActionRow, tier: Tier) -> ActionRow:
+    """Record the tier recomputed before a card is shown; only a DRAFT row changes tier."""
+    if action.status is not ActionStatus.DRAFT:
+        raise IllegalTransition(f"{action.logical_action_id} r{action.revision} is {action.status}")
+    cursor = uow.execute(
+        "UPDATE actions SET tier = ?, version = version + 1"
+        " WHERE logical_action_id = ? AND revision = ? AND version = ?",
+        (Tier(tier).value, action.logical_action_id, action.revision, action.version),
+    )
+    if cursor.rowcount != 1:
+        raise IllegalTransition(
+            f"{action.logical_action_id} r{action.revision} changed since version {action.version}"
+        )
+    return get_revision(uow, action.logical_action_id, action.revision)
+
+
 def set_status(
     uow: UnitOfWork,
     action: ActionRow,
