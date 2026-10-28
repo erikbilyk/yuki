@@ -493,3 +493,26 @@ def test_lock_clearance_invalidates_grants_and_waits_for_a_new_code(db: Database
     with pytest.raises(WgError) as refused:
         consume(db, action_id)
     assert refused.value.code is ErrorCode.APPROVAL_REQUIRED
+
+
+@pytest.mark.parametrize(
+    ("status", "code"),
+    [
+        (ActionStatus.CANCELLED, ErrorCode.APPROVAL_EXPIRED),
+        (ActionStatus.PAUSED, ErrorCode.APPROVAL_EXPIRED),
+        (ActionStatus.SUPERSEDED, ErrorCode.SUPERSEDED),
+    ],
+)
+def test_a_closed_draft_gets_no_card(db: Database, status: ActionStatus, code: ErrorCode):
+    action = draft_transfer(db, YELLOW_FEN)
+    with db.unit_of_work("close") as uow:
+        set_status(
+            uow,
+            action,
+            status,
+            superseded_by=2 if status is ActionStatus.SUPERSEDED else None,
+            pause_reasons=["DATA_INCOMPLETE"] if status is ActionStatus.PAUSED else None,
+        )
+    with pytest.raises(WgError) as refused:
+        open_card(db, current(db, action.logical_action_id))
+    assert refused.value.code is code and refused.value.http_status == 409

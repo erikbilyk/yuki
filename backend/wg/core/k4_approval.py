@@ -815,16 +815,26 @@ def _refuse(
     return Refusal(code, {"challenge_id": challenge.challenge_id, **(detail or {})})
 
 
+_STATE_REFUSALS: dict[ActionStatus, ErrorCode] = {
+    ActionStatus.DRAFT: ErrorCode.APPROVAL_REQUIRED,
+    ActionStatus.AWAITING_APPROVAL: ErrorCode.APPROVAL_REQUIRED,
+    ActionStatus.SETTLED: ErrorCode.ALREADY_SETTLED,
+    ActionStatus.SUPERSEDED: ErrorCode.SUPERSEDED,
+    # A closed action can no longer be approved, as its card shows (status "expired").
+    ActionStatus.CANCELLED: ErrorCode.APPROVAL_EXPIRED,
+    ActionStatus.REJECTED: ErrorCode.APPROVAL_EXPIRED,
+    ActionStatus.PAUSED: ErrorCode.APPROVAL_EXPIRED,
+}
+
+
 def _state_refusal(action: ActionRow) -> Refusal:
-    """The refusal for a step that the action's current status does not allow."""
+    """The refusal for a step that the action's current status does not allow.
+
+    READY, SUBMITTED and UNKNOWN actions are past approval and step-up; asking for either
+    again is UNSUPPORTED_REQUEST.
+    """
     detail: dict[str, JsonValue] = {
         "logical_action_id": action.logical_action_id,
         "status": action.status.value,
     }
-    if action.status is ActionStatus.SETTLED:
-        return Refusal(ErrorCode.ALREADY_SETTLED, detail)
-    if action.status is ActionStatus.SUPERSEDED:
-        return Refusal(ErrorCode.SUPERSEDED, detail)
-    if action.status in (ActionStatus.DRAFT, ActionStatus.AWAITING_APPROVAL):
-        return Refusal(ErrorCode.APPROVAL_REQUIRED, detail)
-    return Refusal(ErrorCode.UNSUPPORTED_REQUEST, detail)
+    return Refusal(_STATE_REFUSALS.get(action.status, ErrorCode.UNSUPPORTED_REQUEST), detail)
