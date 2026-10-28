@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from wg.textcheck.types import MaskResult
+from wg.contracts.textcheck import MaskResult
 
 MASK = "[已隐藏]"
 

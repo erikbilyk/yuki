@@ -10,7 +10,7 @@ import re
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Literal
 
-from wg.textcheck.types import AmountMatch
+from wg.contracts.textcheck import AmountMatch
 
 QuoteVerdict = Literal["ok", "AMOUNT_MISMATCH", "MISSING_SLOT"]
 Span = tuple[int, int]
