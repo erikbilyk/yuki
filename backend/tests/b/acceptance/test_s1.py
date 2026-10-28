@@ -33,10 +33,19 @@ from wg.contracts.enums import (
     Role,
     Tier,
 )
-from wg.contracts.errors import ErrorBody, ErrorCode
+from wg.contracts.errors import ErrorCode
 
 from ..conftest import Live
 from ..harness.client import MAIN_ACCOUNT, MAIN_CUSTOMER, WgClient
+from .common import (
+    AFTER_COMMIT,
+    LOST_RESPONSE_FAULTS,
+    active_locks,
+    assert_audited,
+    assert_refused_without_session,
+    audit_snapshot,
+    lose_response,
+)
 
 MOM = "pay_mom"
 WANGFANG = "pay_wangfang"
@@ -44,7 +53,6 @@ START_FEN = 1_800_000
 YUAN_500 = 50_000
 # Above the daily YELLOW limit of ¥1,000.00, inside the ¥2,000 headroom of the base fixture.
 RED_AMOUNT = 150_000
-CRASH_EXIT_STATUS = 137
 
 
 # Helpers
@@ -110,35 +118,6 @@ def distinct_code(wg: WgClient, challenge_id: str, other_code: str) -> tuple[str
 
 def open_challenges(wg: WgClient) -> set[str]:
     return {message.challenge_id for message in wg.sms().messages}
-
-
-def audit_snapshot(wg: WgClient) -> Counter[str]:
-    return Counter(line.model_dump_json() for line in wg.audit().lines)
-
-
-def new_audit_lines(wg: WgClient, before: Counter[str]) -> list[str]:
-    return list((audit_snapshot(wg) - before).elements())
-
-
-def assert_audited(wg: WgClient, before: Counter[str], code: ErrorCode | None = None) -> None:
-    lines = new_audit_lines(wg, before)
-    assert lines, "the refusal left no audit line"
-    if code is not None:
-        assert any(code.value in line for line in lines), f"no audit line names {code}: {lines}"
-
-
-def assert_refused_without_session(response: httpx.Response) -> None:
-    assert response.status_code in (401, 403), response.text
-    body = ErrorBody.model_validate_json(response.content)
-    assert body.code in (
-        ErrorCode.SESSION_EXPIRED,
-        ErrorCode.FORBIDDEN_ROUTE,
-        ErrorCode.CSRF_FAILED,
-    )
-
-
-def active_locks(wg: WgClient) -> list:
-    return list(wg.locks().locks)
 
 
 # T1
@@ -504,29 +483,6 @@ def test_t10_remark_with_command_pays_only_the_stated_amount(wg: WgClient) -> No
 
 
 # T11
-
-
-LOST_RESPONSE_FAULTS = (
-    Fault.CRASH_BEFORE_COMMIT,
-    Fault.CRASH_AFTER_COMMIT,
-    Fault.PAUSE_BEFORE_COMMIT,
-    Fault.PAUSE_AFTER_COMMIT,
-)
-AFTER_COMMIT = (Fault.CRASH_AFTER_COMMIT, Fault.PAUSE_AFTER_COMMIT)
-PAUSE = (Fault.PAUSE_BEFORE_COMMIT, Fault.PAUSE_AFTER_COMMIT)
-
-
-def lose_response(live: Live, fault: Fault, send: Callable[[], httpx.Response]) -> None:
-    """Send while the fault ends the process: by itself (crash) or by SIGKILL (pause)."""
-    with ThreadPoolExecutor(1) as pool:
-        pending = pool.submit(send)
-        if fault in PAUSE:
-            live.server.wait_for_fault_marker()
-            live.server.kill()
-        else:
-            assert live.server.wait_exit() == CRASH_EXIT_STATUS
-        with pytest.raises(httpx.TransportError):
-            pending.result(timeout=30)
 
 
 @pytest.mark.case("T11")

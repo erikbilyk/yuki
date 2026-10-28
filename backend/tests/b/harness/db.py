@@ -15,8 +15,12 @@ TABLES = frozenset(
         "actions",
         "approvals",
         "audit_log",
+        "cash_snapshots",
         "challenges",
+        "commitment_events",
+        "commitments",
         "domain_events",
+        "import_batches",
         "ledger_entries",
         "locks",
         "operation_events",
@@ -24,8 +28,10 @@ TABLES = frozenset(
         "plans",
         "receipts",
         "reservations",
+        "reserves",
         "sim_clock",
         "sms_outbox",
+        "transactions",
     }
 )
 
@@ -98,3 +104,34 @@ class DbView:
 
     def clock(self) -> dict[str, Any]:
         return self.rows("SELECT * FROM sim_clock")[0]
+
+    def commitment(self, commitment_id: str) -> dict[str, Any]:
+        rows = self.rows("SELECT * FROM commitments WHERE commitment_id = ?", (commitment_id,))
+        if not rows:
+            raise AssertionError(f"no commitment {commitment_id}")
+        return rows[0]
+
+    def commitments(self) -> list[dict[str, Any]]:
+        return self.rows("SELECT * FROM commitments ORDER BY commitment_id")
+
+    def commitment_events(self, commitment_id: str) -> list[dict[str, Any]]:
+        return self.rows(
+            "SELECT * FROM commitment_events WHERE commitment_id = ? ORDER BY commitment_event_id",
+            (commitment_id,),
+        )
+
+    def reserve_target(self, customer_id: str) -> int:
+        rows = self.rows(
+            "SELECT target_fen FROM reserves WHERE customer_id = ? AND kind = 'emergency'",
+            (customer_id,),
+        )
+        return rows[0]["target_fen"]
+
+    def snapshot_hash(self, snapshot_id: str) -> str:
+        rows = self.rows(
+            "SELECT inputs_hash FROM cash_snapshots WHERE snapshot_id = ?", (snapshot_id,)
+        )
+        return rows[0]["inputs_hash"]
+
+    def events(self, event_type: str) -> list[dict[str, Any]]:
+        return self.rows("SELECT * FROM domain_events WHERE type = ? ORDER BY seq", (event_type,))
