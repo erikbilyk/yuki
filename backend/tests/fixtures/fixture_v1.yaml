@@ -1,0 +1,289 @@
+# fixture_v1: base profile of the simulator.
+# Money is integer fen (credits positive, debits negative in statements).
+# Shares, NAV, weights and rates are strings. Dates that move with the epoch
+# are offsets in days from it; other dates are calendar dates (Asia/Shanghai).
+# Variant paths address list elements by their id (source_txn_id for transactions).
+profile: fixture_v1
+epoch: "2026-11-02T09:00:00+08:00"
+
+customers:
+  - {id: cus_main, handle: demo-main, password: wg-demo-main-2026, display_name: "周宁"}
+  - {id: cus_other, handle: demo-other, password: wg-demo-other-2026, display_name: "赵一"}
+
+# role: operator (wg_operator cookie) or demo (wg_demo cookie).
+operators:
+  - {id: opr_ops, handle: demo-ops, password: wg-demo-ops-2026, role: operator}
+  - {id: opr_demo, handle: demo-panel, password: wg-demo-panel-2026, role: demo}
+
+# opening_fen is the posted balance at the epoch (the loader's OPENING operation).
+accounts:
+  - {id: acc_main, customer: cus_main, name: "主账户", covered: true, opening_fen: 1800000}
+  - {id: acc_savings, customer: cus_main, name: "储蓄账户", covered: true, opening_fen: 0}
+  - {id: acc_other, customer: cus_other, name: "主账户", covered: true, opening_fen: 500000}
+
+# bank: same is shown as 本行, other as 他行; account_masked holds the last four digits.
+payees:
+  - {id: pay_mom, customer: cus_main, alias: "妈妈", display_name: "妈妈", bank: same, account_masked: "··1234", account_ref: "SIM-0001-1234"}
+  - {id: pay_dad, customer: cus_main, alias: "爸爸", display_name: "爸爸", bank: other, account_masked: "··5678", account_ref: "SIM-0002-5678"}
+  - {id: pay_wanglei, customer: cus_main, alias: "王磊", display_name: "王磊", bank: same, account_masked: "··3344", account_ref: "SIM-0003-3344"}
+  - {id: pay_wangfang, customer: cus_main, alias: "王芳", display_name: "王芳", bank: same, account_masked: "··5566", account_ref: "SIM-0004-5566"}
+  - {id: pay_insurer, customer: cus_main, alias: "保险公司", display_name: "模拟人寿保险", bank: same, account_masked: "··7788", account_ref: "SIM-0005-7788"}
+  - {id: pay_liming, customer: cus_main, alias: "李明", display_name: "李明", bank: other, account_masked: "··9900", account_ref: "SIM-0006-9900"}
+  - {id: pay_brother, customer: cus_other, alias: "弟弟", display_name: "弟弟", bank: same, account_masked: "··2468", account_ref: "SIM-0007-2468"}
+
+# Statements chain per account: opening + transactions = closing, and each
+# opening equals the previous closing. The last closing equals accounts[].opening_fen.
+statements:
+  - id: stm_main_2608
+    account: acc_main
+    period: "2026-08-01/2026-08-31"
+    opening_fen: 100000
+    closing_fen: 270000
+    transactions:
+      - {source_txn_id: MAIN-202608-001, posted_offset_days: -93, amount_fen: 1200000, counterparty: "模拟科技有限公司", description_raw: "工资 2026年8月", category_hint: salary}  # 2026-08-01
+      - {source_txn_id: MAIN-202608-002, posted_offset_days: -90, amount_fen: -340000, counterparty: "王磊", description_raw: "8月房租", category_hint: rent}  # 2026-08-04
+      - {source_txn_id: MAIN-202608-003, posted_offset_days: -88, amount_fen: -82000, counterparty: "模拟超市", description_raw: "超市购物", category_hint: groceries}  # 2026-08-06
+      - {source_txn_id: MAIN-202608-004, posted_offset_days: -85, amount_fen: -200000, counterparty: "妈妈", description_raw: "转账", category_hint: family_transfer}  # 2026-08-09
+      - {source_txn_id: MAIN-202608-005, posted_offset_days: -82, amount_fen: -58000, counterparty: "模拟餐厅", description_raw: "餐饮", category_hint: dining}  # 2026-08-12
+      - {source_txn_id: MAIN-202608-006, posted_offset_days: -79, amount_fen: -65000, counterparty: "模拟水电燃气", description_raw: "水电燃气费", category_hint: utilities}  # 2026-08-15
+      - {source_txn_id: MAIN-202608-007, posted_offset_days: -74, amount_fen: -100000, counterparty: "本人储蓄账户", description_raw: "转入储蓄", category_hint: own_transfer}  # 2026-08-20
+      - {source_txn_id: MAIN-202608-008, posted_offset_days: -70, amount_fen: -130000, counterparty: "模拟网购平台", description_raw: "网购订单", category_hint: shopping}  # 2026-08-24
+      - {source_txn_id: MAIN-202608-009, posted_offset_days: -66, amount_fen: -55000, counterparty: "模拟出行", description_raw: "交通出行", category_hint: transport}  # 2026-08-28
+  - id: stm_main_2609
+    account: acc_main
+    period: "2026-09-01/2026-09-30"
+    opening_fen: 270000
+    closing_fen: 660000
+    transactions:
+      - {source_txn_id: MAIN-202609-001, posted_offset_days: -62, amount_fen: 1200000, counterparty: "模拟科技有限公司", description_raw: "工资 2026年9月", category_hint: salary}  # 2026-09-01
+      - {source_txn_id: MAIN-202609-002, posted_offset_days: -59, amount_fen: -340000, counterparty: "王磊", description_raw: "9月房租", category_hint: rent}  # 2026-09-04
+      - {source_txn_id: MAIN-202609-003, posted_offset_days: -58, amount_fen: -76000, counterparty: "模拟超市", description_raw: "超市购物", category_hint: groceries}  # 2026-09-05
+      - {source_txn_id: MAIN-202609-004, posted_offset_days: -54, amount_fen: -200000, counterparty: "妈妈", description_raw: "转账", category_hint: family_transfer}  # 2026-09-09
+      - {source_txn_id: MAIN-202609-005, posted_offset_days: -53, amount_fen: 100000, counterparty: "本人储蓄账户", description_raw: "储蓄转回", category_hint: own_transfer}  # 2026-09-10
+      - {source_txn_id: MAIN-202609-006, posted_offset_days: -50, amount_fen: -64000, counterparty: "模拟餐厅", description_raw: "餐饮", category_hint: dining}  # 2026-09-13
+      - {source_txn_id: MAIN-202609-007, posted_offset_days: -47, amount_fen: -58000, counterparty: "模拟水电燃气", description_raw: "水电燃气费", category_hint: utilities}  # 2026-09-16
+      - {source_txn_id: MAIN-202609-008, posted_offset_days: -41, amount_fen: -120000, counterparty: "模拟网购平台", description_raw: "网购订单", category_hint: shopping}  # 2026-09-22
+      - {source_txn_id: MAIN-202609-009, posted_offset_days: -36, amount_fen: -52000, counterparty: "模拟出行", description_raw: "交通出行", category_hint: transport}  # 2026-09-27
+  - id: stm_main_2610
+    account: acc_main
+    period: "2026-10-01/2026-10-31"
+    opening_fen: 660000
+    closing_fen: 660000
+    transactions:
+      - {source_txn_id: MAIN-202610-001, posted_offset_days: -32, amount_fen: 1200000, counterparty: "模拟科技有限公司", description_raw: "工资 2026年10月", category_hint: salary}  # 2026-10-01
+      - {source_txn_id: MAIN-202610-002, posted_offset_days: -29, amount_fen: -340000, counterparty: "王磊", description_raw: "10月房租", category_hint: rent}  # 2026-10-04
+      - {source_txn_id: MAIN-202610-003, posted_offset_days: -26, amount_fen: -80000, counterparty: "模拟超市", description_raw: "超市购物", category_hint: groceries}  # 2026-10-07
+      - {source_txn_id: MAIN-202610-004, posted_offset_days: -24, amount_fen: -200000, counterparty: "妈妈", description_raw: "转账", category_hint: family_transfer}  # 2026-10-09
+      - {source_txn_id: MAIN-202610-005, posted_offset_days: -22, amount_fen: -62000, counterparty: "模拟餐厅", description_raw: "餐饮", category_hint: dining}  # 2026-10-11
+      - {source_txn_id: MAIN-202610-006, posted_offset_days: -19, amount_fen: -60000, counterparty: "模拟水电燃气", description_raw: "水电燃气费", category_hint: utilities}  # 2026-10-14
+      - {source_txn_id: MAIN-202610-007, posted_offset_days: -18, amount_fen: -200000, counterparty: "李明", description_raw: "转账", category_hint: null}  # 2026-10-15
+      - {source_txn_id: MAIN-202610-008, posted_offset_days: -15, amount_fen: -100000, counterparty: "爸爸", description_raw: "转账", category_hint: family_transfer}  # 2026-10-18
+      - {source_txn_id: MAIN-202610-009, posted_offset_days: -12, amount_fen: -100000, counterparty: "模拟网购平台", description_raw: "网购订单", category_hint: shopping}  # 2026-10-21
+      - {source_txn_id: MAIN-202610-010, posted_offset_days: -7, amount_fen: -58000, counterparty: "模拟出行", description_raw: "交通出行", category_hint: transport}  # 2026-10-26
+  - id: stm_main_2611
+    account: acc_main
+    period: "2026-11-01/2026-11-02"
+    opening_fen: 660000
+    closing_fen: 1800000
+    transactions:
+      - {source_txn_id: MAIN-202611-001, posted_offset_days: -1, amount_fen: 1200000, counterparty: "模拟科技有限公司", description_raw: "工资 2026年11月", category_hint: salary}  # 2026-11-01
+      - {source_txn_id: MAIN-202611-002, posted_offset_days: -1, amount_fen: -36000, counterparty: "模拟超市", description_raw: "超市购物", category_hint: groceries}  # 2026-11-01
+      - {source_txn_id: MAIN-202611-003, posted_offset_days: 0, amount_fen: -24000, counterparty: "模拟出行", description_raw: "交通出行", category_hint: transport}  # 2026-11-02
+  - id: stm_sav_2608
+    account: acc_savings
+    period: "2026-08-01/2026-08-31"
+    opening_fen: 0
+    closing_fen: 100000
+    transactions:
+      - {source_txn_id: SAV-202608-001, posted_offset_days: -74, amount_fen: 100000, counterparty: "本人活期账户", description_raw: "转入储蓄", category_hint: own_transfer}  # 2026-08-20
+  - id: stm_sav_2609
+    account: acc_savings
+    period: "2026-09-01/2026-09-30"
+    opening_fen: 100000
+    closing_fen: 0
+    transactions:
+      - {source_txn_id: SAV-202609-001, posted_offset_days: -53, amount_fen: -100000, counterparty: "本人活期账户", description_raw: "储蓄转回", category_hint: own_transfer}  # 2026-09-10
+  - id: stm_sav_2610
+    account: acc_savings
+    period: "2026-10-01/2026-10-31"
+    opening_fen: 0
+    closing_fen: 0
+    transactions: []
+  - id: stm_sav_2611
+    account: acc_savings
+    period: "2026-11-01/2026-11-02"
+    opening_fen: 0
+    closing_fen: 0
+    transactions: []
+  - id: stm_other_2611
+    account: acc_other
+    period: "2026-11-01/2026-11-02"
+    opening_fen: 500000
+    closing_fen: 500000
+    transactions: []
+
+# rent: a regular payment excluded from the daily allowance, so it must point at an active commitment.
+commitments:
+  - {id: cmt_rent, customer: cus_main, purpose_id: pur_rent, kind: rent, payee: pay_wanglei, amount_fen: 340000, unpaid_fen: 340000, due_offset_days: 2, recurrence: monthly, source: trusted_ebill, status: CONFIRMED}
+  - {id: cmt_insurance, customer: cus_main, purpose_id: pur_insurance, kind: insurance, payee: pay_insurer, amount_fen: 500000, unpaid_fen: 500000, due_offset_days: 7, recurrence: none, source: trusted_ebill, status: CONFIRMED}
+
+reserve: {target_fen: 400000}
+
+# budget_fen is the amount spent so far this month (60000) plus remaining_fen.
+allowance:
+  period: "2026-11"
+  budget_fen: 360000
+  remaining_fen: 300000
+  excluded_purpose_ids: [pur_rent]
+
+margin_fen: 60000
+income_this_month_fen: 1200000
+spent_this_month_fen: 60000
+
+# Fund codes are strings. All four share class C; NAV is constant in the base profile.
+products:
+  - {id: "990001", name: "基金A", share_class: C, nav: "1.0000", nav_date_offset_days: 0, fee_schedule: fee_flat_v1, min_purchase_fen: 10000, redeem_settle_days: 3, purchase_settle_days: 0}
+  - {id: "990002", name: "基金B", share_class: C, nav: "1.0000", nav_date_offset_days: 0, fee_schedule: fee_flat_v1, min_purchase_fen: 10000, redeem_settle_days: 3, purchase_settle_days: 0}
+  - {id: "990003", name: "基金C", share_class: C, nav: "1.0000", nav_date_offset_days: 0, fee_schedule: fee_flat_v1, min_purchase_fen: 10000, redeem_settle_days: 3, purchase_settle_days: 0}
+  - {id: "990004", name: "基金D", share_class: C, nav: "1.0000", nav_date_offset_days: 0, fee_schedule: fee_flat_v1, min_purchase_fen: 10000, redeem_settle_days: 3, purchase_settle_days: 0}
+
+# Rates are fractions (0.0030 is 0.3%). Tier bounds are whole days held, inclusive;
+# the public tiers apply to 0 < N days, so the first tier starts at 1. purchase_rate applies to purchases.
+fee_schedules:
+  - id: fee_flat_v1
+    terms_version: synthetic_0.3pct_v1
+    purchase_rate: "0.0000"
+    tiers:
+      - {min_days: 1, max_days: null, rate: "0.0030"}
+  - id: fee_public_c_v1
+    terms_version: public_c_share_v1
+    purchase_rate: "0.0000"
+    tiers:
+      - {min_days: 1, max_days: 6, rate: "0.0150"}
+      - {min_days: 7, max_days: 29, rate: "0.0050"}
+      - {min_days: 30, max_days: null, rate: "0.0000"}
+
+positions:
+  - {account: acc_main, product: "990001", shares: "20000.0000"}
+  - {account: acc_main, product: "990002", shares: "15000.0000"}
+  - {account: acc_main, product: "990003", shares: "10000.0000"}
+  - {account: acc_main, product: "990004", shares: "5000.0000"}
+
+# One lot per fund, acquired 60 days before the epoch, cost at NAV 1.0000.
+lots:
+  - {id: lot_a1, product: "990001", shares: "20000.0000", acquired_offset_days: -60, cost_fen: 2000000}
+  - {id: lot_b1, product: "990002", shares: "15000.0000", acquired_offset_days: -60, cost_fen: 1500000}
+  - {id: lot_c1, product: "990003", shares: "10000.0000", acquired_offset_days: -60, cost_fen: 1000000}
+  - {id: lot_d1, product: "990004", shares: "5000.0000", acquired_offset_days: -60, cost_fen: 500000}
+
+# Rows per fund sum to 1 (unresolved_weight 0). The same security carries the same issuer
+# and sector in every fund. SYN-X is issuer X, in the technology sector.
+holdings_snapshots:
+  - product: "990001"
+    as_of: "2026-10-31"
+    source_id: fixture_v1
+    executable: true
+    taxonomy_version: syn_taxonomy_v1
+    unresolved_weight: "0.0000"
+    rows:
+      - {security_code: SYN-X, issuer: "发行人X", sector: technology, weight: "0.0800"}
+      - {security_code: SYN-T01, issuer: "发行人T1", sector: technology, weight: "0.2200"}
+      - {security_code: SYN-T02, issuer: "发行人T2", sector: technology, weight: "0.2000"}
+      - {security_code: SYN-C01, issuer: "发行人C1", sector: consumer, weight: "0.2000"}
+      - {security_code: SYN-F01, issuer: "发行人F1", sector: finance, weight: "0.1800"}
+      - {security_code: SYN-H01, issuer: "发行人H1", sector: healthcare, weight: "0.1200"}
+  - product: "990002"
+    as_of: "2026-10-31"
+    source_id: fixture_v1
+    executable: true
+    taxonomy_version: syn_taxonomy_v1
+    unresolved_weight: "0.0000"
+    rows:
+      - {security_code: SYN-X, issuer: "发行人X", sector: technology, weight: "0.0700"}
+      - {security_code: SYN-T01, issuer: "发行人T1", sector: technology, weight: "0.1500"}
+      - {security_code: SYN-T03, issuer: "发行人T3", sector: technology, weight: "0.1300"}
+      - {security_code: SYN-C01, issuer: "发行人C1", sector: consumer, weight: "0.2500"}
+      - {security_code: SYN-F01, issuer: "发行人F1", sector: finance, weight: "0.2500"}
+      - {security_code: SYN-H01, issuer: "发行人H1", sector: healthcare, weight: "0.1500"}
+  - product: "990003"
+    as_of: "2026-10-31"
+    source_id: fixture_v1
+    executable: true
+    taxonomy_version: syn_taxonomy_v1
+    unresolved_weight: "0.0000"
+    rows:
+      - {security_code: SYN-X, issuer: "发行人X", sector: technology, weight: "0.0600"}
+      - {security_code: SYN-T01, issuer: "发行人T1", sector: technology, weight: "0.3000"}
+      - {security_code: SYN-T02, issuer: "发行人T2", sector: technology, weight: "0.2400"}
+      - {security_code: SYN-T04, issuer: "发行人T4", sector: technology, weight: "0.1000"}
+      - {security_code: SYN-C01, issuer: "发行人C1", sector: consumer, weight: "0.1200"}
+      - {security_code: SYN-F01, issuer: "发行人F1", sector: finance, weight: "0.1000"}
+      - {security_code: SYN-H01, issuer: "发行人H1", sector: healthcare, weight: "0.0800"}
+  - product: "990004"
+    as_of: "2026-10-31"
+    source_id: fixture_v1
+    executable: true
+    taxonomy_version: syn_taxonomy_v1
+    unresolved_weight: "0.0000"
+    rows:
+      - {security_code: SYN-X, issuer: "发行人X", sector: technology, weight: "0.0600"}
+      - {security_code: SYN-T05, issuer: "发行人T5", sector: technology, weight: "0.0400"}
+      - {security_code: SYN-C01, issuer: "发行人C1", sector: consumer, weight: "0.2500"}
+      - {security_code: SYN-F01, issuer: "发行人F1", sector: finance, weight: "0.4000"}
+      - {security_code: SYN-H01, issuer: "发行人H1", sector: healthcare, weight: "0.1500"}
+      - {security_code: SYN-I01, issuer: "发行人I1", sector: industrial, weight: "0.1000"}
+
+# target_max_pct is a percent; expiry_day is the last day (end of day) the plan approval is valid.
+plan_constants:
+  sector: technology
+  target_max_pct: "40.0000"
+  checkpoint_day: 5
+  fee_cap_fen: 2000
+  turnover_cap_fen: 1000000
+  expiry_day: 8
+  reserve_after_plan_fen: 500000
+  bounds: {p0_fen: 498500, spare0_fen: 100000, max_added_fen: 120000, max_retained_fen: 20000, min_purchase_fen: 478500}
+
+# Overlays applied by the loader; set replaces the value at a path, remove deletes list elements by id.
+variants:
+  t25:
+    set:
+      accounts.acc_main.opening_fen: 200000
+      accounts.acc_savings.opening_fen: 1600000
+      statements.stm_main_2611.closing_fen: 200000
+      statements.stm_main_2611.transactions:
+        - {source_txn_id: MAIN-202611-001, posted_offset_days: -1, amount_fen: 1200000, counterparty: "模拟科技有限公司", description_raw: "工资 2026年11月", category_hint: salary}  # 2026-11-01
+        - {source_txn_id: MAIN-202611-002, posted_offset_days: -1, amount_fen: -36000, counterparty: "模拟超市", description_raw: "超市购物", category_hint: groceries}  # 2026-11-01
+        - {source_txn_id: MAIN-202611-003, posted_offset_days: 0, amount_fen: -24000, counterparty: "模拟出行", description_raw: "交通出行", category_hint: transport}  # 2026-11-02
+        - {source_txn_id: MAIN-202611-004, posted_offset_days: 0, amount_fen: -1600000, counterparty: "本人储蓄账户", description_raw: "转入储蓄", category_hint: own_transfer}  # 2026-11-02
+      statements.stm_sav_2611.closing_fen: 1600000
+      statements.stm_sav_2611.transactions:
+        - {source_txn_id: SAV-202611-001, posted_offset_days: 0, amount_fen: 1600000, counterparty: "本人活期账户", description_raw: "转入储蓄", category_hint: own_transfer}  # 2026-11-02
+  t35:
+    remove:
+      statements.stm_main_2610.transactions: [MAIN-202610-009]
+  t42:
+    set:
+      lots.lot_c1.acquired_offset_days: -20
+      products.990003.fee_schedule: fee_public_c_v1
+  t43:
+    remove:
+      lots: [lot_c1]
+  t52:
+    set:
+      products.990001.purchase_settle_days: 3
+      products.990002.purchase_settle_days: 3
+      products.990003.purchase_settle_days: 3
+      products.990004.purchase_settle_days: 3
+  t64:
+    set:
+      products.990001.redeem_settle_days: 4
+      products.990002.redeem_settle_days: 4
+      products.990003.redeem_settle_days: 4
+      products.990004.redeem_settle_days: 4
+  t65:
+    set:
+      products.990001.redeem_settle_days: 6
+      products.990002.redeem_settle_days: 6
+      products.990003.redeem_settle_days: 6
+      products.990004.redeem_settle_days: 6
