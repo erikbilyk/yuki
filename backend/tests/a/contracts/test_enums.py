@@ -21,6 +21,7 @@ SPEC_ENUMS = {
     "MARK_PAID_EXTERNAL REDEEM PURCHASE CHECK_OUTCOME ADD_PAYEE",
     enums.LockScope: "plan customer global",
     enums.Role: "customer operator demo",
+    enums.Channel: "web im",
     enums.PlanKind: "single rebalance mixed",
     enums.PlanMode: "coordinated flat",
     enums.ApprovalScopeKind: "action plan",

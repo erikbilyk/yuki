@@ -162,6 +162,13 @@ class Role(StrEnum):
     DEMO = "demo"
 
 
+class Channel(StrEnum):
+    """Where an agent turn comes from: the web app or the IM channel (SPEC §21)."""
+
+    WEB = "web"
+    IM = "im"
+
+
 class PlanKind(StrEnum):
     SINGLE = "single"
     REBALANCE = "rebalance"

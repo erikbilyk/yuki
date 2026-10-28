@@ -6,7 +6,7 @@ from wg.contracts.ids import ApprovalId, FundCode, IdPrefix, MandateRef, new_id
 
 SPEC_PREFIXES = set(
     "cus_ ses_ opr_ acc_ pay_ pln_ act_ apr_ chl_ opn_ rsv_ rcp_ evt_ snp_ clc_ cmt_ lck_ "
-    "mdt_ req_ mer_".split()
+    "mdt_ req_ mer_ crd_".split()
 )
 FIXTURE_PREFIXES = set("pur_ stm_ lot_ fee_".split())
 
@@ -35,6 +35,7 @@ TYPE_BY_PREFIX = {
     IdPrefix.MANDATE: ids.MandateRef,
     IdPrefix.DEBIT_REQUEST: ids.DebitRequestId,
     IdPrefix.MERCHANT: ids.MerchantId,
+    IdPrefix.CARD: ids.CardId,
 }
 
 
