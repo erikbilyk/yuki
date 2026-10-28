@@ -19,9 +19,14 @@ report() {
 
 report "api key" 'sk-[[:alnum:]_]{20,}'
 report "private key" '-----BEGIN [A-Z ]*PRIVATE KEY'
-# A value starting with a bracket is a container literal (for example a tuple of dict keys).
+# A value is a quoted string, which may carry a Python prefix such as r, b or f, or a bare word
+# of three or more characters. A value starting with a bracket is a container literal (a tuple of
+# dict keys) or a regex character class (r"[a-z]") and is not reported.
+first='[^][[:space:]"'"'"'({]'
+quoted='[rRbBuUfF]{0,2}["'"'"']'"$first"
+bare="$first"'[^"'"'"'][^"'"'"']'
 report "secret assignment" \
-  '[A-Z0-9_]*(KEY|SECRET|TOKEN)[A-Z0-9_]*[[:space:]]*=[[:space:]]*["'"'"']?[^][[:space:]"'"'"'({]' \
+  "[A-Z0-9_]*(KEY|SECRET|TOKEN)[A-Z0-9_]*[[:space:]]*=[[:space:]]*($quoted|$bare)" \
   ':!:.env.example'
 
 if [ "$status" -eq 0 ]; then
