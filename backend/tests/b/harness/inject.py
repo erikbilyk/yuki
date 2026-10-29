@@ -4,8 +4,9 @@ T21 needs a commitment whose unpaid amount disagrees with its payments, which on
 defect or outside tampering can produce. T58 needs an imported transaction to disappear
 after a plan started, and T56 needs a domain event to be delivered a second time. R4
 needs the bank's record of an order to vanish, which reconciliation must treat as an
-integrity violation. Each write uses its own connection and one statement; the product
-must cope with the result.
+integrity violation. T52, T65 and R2 need the settlement calendar to slow down after the
+plan was approved, which a variant applied at reset cannot do. Each write uses its own
+connection and one statement; the product must cope with the result.
 """
 
 from __future__ import annotations
@@ -13,6 +14,9 @@ from __future__ import annotations
 import sqlite3
 from contextlib import closing
 from pathlib import Path
+from typing import Literal
+
+SettleColumn = Literal["redeem_settle_days", "purchase_settle_days"]
 
 
 def corrupt_unpaid(db_path: Path, commitment_id: str, unpaid_fen: int) -> None:
@@ -60,4 +64,12 @@ def delete_bank_request(db_path: Path, idempotency_key: str) -> None:
         if deleted != 1:
             conn.execute("ROLLBACK")
             raise AssertionError(f"{deleted} bank requests with key {idempotency_key}")
+        conn.execute("COMMIT")
+
+
+def set_settle_days(db_path: Path, column: SettleColumn, days: int) -> None:
+    """Set one settlement period on every product, as a variant would at reset."""
+    with closing(sqlite3.connect(db_path, timeout=10.0, isolation_level=None)) as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        conn.execute(f"UPDATE products SET {column} = ?", (days,))
         conn.execute("COMMIT")

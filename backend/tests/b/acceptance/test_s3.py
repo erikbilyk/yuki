@@ -69,7 +69,7 @@ from wg.contracts.errors import ErrorBody, ErrorCode
 
 from ..conftest import Live
 from ..harness.client import MAIN_ACCOUNT, MAIN_CUSTOMER, WgClient, describe, route_for
-from ..harness.inject import drop_imported_transaction, rewind_event_cursors
+from ..harness.inject import drop_imported_transaction, rewind_event_cursors, set_settle_days
 from ..harness.server import BackendServer
 from .common import (
     AFTER_COMMIT,
@@ -800,8 +800,9 @@ def test_t50_user_confirmed_gives_no_authority(wg: WgClient) -> None:
 
 @pytest.mark.case("T52")
 def test_t52_purchase_settling_after_the_checkpoint_is_missed(wg: WgClient) -> None:
-    load_variant(wg, "t52")
     plan = approved(wg)
+    # The purchase slows down after the plan was approved on the base calendar.
+    set_settle_days(wg.db.path, "purchase_settle_days", 3)
     plan.redeem()
     at_day(wg, 3)
     assert_redemption_settled(wg, plan)
