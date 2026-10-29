@@ -1,14 +1,15 @@
 """The tool registry: every call the model can make passes through here (SPEC §18.2).
 
 Order of checks: tool exists, channel, capability, arguments, read scope, then the handler.
-Handlers call `wg.services` only. A refusal comes back to the model as a `ToolError` and is
-written to the audit log by the agent actor.
+Draft handlers check every quoted slot with K2 (`wg.core.k2_context`) before they call a
+service. Handlers call `wg.services` only. A refusal comes back to the model as a `ToolError`
+and is written to the audit log by the agent actor.
 """
 
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any, NoReturn
@@ -48,6 +49,7 @@ from wg.contracts.tools import (
     ToolSpec,
     tool_schemas,
 )
+from wg.core.k2_context import Utterance, limit_is_strict, model_payload
 from wg.core.k3_policy import EXTRA_READ_EVENT, check_read_scope
 from wg.k6 import audit
 from wg.k6.db import Database
@@ -63,8 +65,6 @@ OPEN_PLAN_STATUSES = frozenset(
     {PlanStatus.DRAFT, PlanStatus.ACTIVE, PlanStatus.PAUSED, PlanStatus.LOCKED}
 )
 MAX_ALTERNATIVES = 3
-# Words that make a written limit exclusive ("低于 35%"); "不超过" and a bare number are inclusive.
-STRICT_MARKERS = ("低于", "少于", "小于", "不到", "<")
 BOTH_CAPABILITIES = frozenset({Capability.READ, Capability.DRAFT})
 
 
@@ -97,10 +97,10 @@ class ToolOutcome:
         return self.error is None
 
     def payload(self) -> str:
-        """The JSON text handed back to the model."""
+        """The JSON text handed back to the model, reduced by K2."""
         body = self.error if self.error is not None else self.result
         assert body is not None
-        return body.model_dump_json()
+        return model_payload(body)
 
 
 @dataclass(frozen=True)
@@ -125,21 +125,8 @@ class Services:
         )
 
 
-ProvenanceOf = Callable[[ToolContext, str], Provenance]
-
-
-def quote_provenance(context: ToolContext, quote: str) -> Provenance:
-    """A value counts as the customer's only when its quote is a fragment of their message.
-
-    Anything else is treated as untrusted and refused by the draft services.
-    """
-    found = bool(quote) and quote in context.utterance
-    return Provenance.USER_UTTERANCE if found else Provenance.UNTRUSTED_TEXT
-
-
-def is_inclusive(quote: str) -> bool:
-    """A limit is inclusive unless its quote says "below" ("低于", "少于", "小于", "<")."""
-    return not any(marker in quote for marker in STRICT_MARKERS)
+# A checked slot: its name, quote, and the parsed check to run once the quote is the customer's.
+QuotedSlot = tuple[str, str | None, Callable[[Utterance], None] | None]
 
 
 def candidate_summary(view: CandidatesView, target_max_pct: Decimal) -> CandidateSummary:
@@ -180,16 +167,9 @@ def _brief(candidate: Candidate) -> CandidateBrief:
 
 
 class ToolRegistry:
-    def __init__(
-        self,
-        db: Database,
-        services: Services,
-        *,
-        provenance_of: ProvenanceOf = quote_provenance,
-    ) -> None:
+    def __init__(self, db: Database, services: Services) -> None:
         self.db = db
         self.services = services
-        self._provenance_of = provenance_of
         self._handlers: Mapping[str, Callable[[ToolContext, Any], BaseModel]] = {
             "get_accounts": lambda c, a: services.reads.accounts(c.customer_id),
             "get_balance": lambda c, a: services.reads.balance(c.customer_id, a.account_id),
@@ -354,28 +334,56 @@ class ToolRegistry:
         )
         raise WgError(code, detail)
 
-    def _slot[T](self, context: ToolContext, value: T, quote: str) -> Slot[T]:
-        return Slot(value, self._provenance_of(context, quote), quote)
-
-    def _require_customer_quotes(
-        self, context: ToolContext, name: str, quotes: Mapping[str, str | None]
+    def _check_slots(
+        self,
+        context: ToolContext,
+        name: str,
+        utterance: Utterance,
+        slots: Iterable[QuotedSlot],
+        *,
+        refuse_untrusted: bool = True,
     ) -> None:
-        """Refuse a draft whose values do not come from the customer's own message."""
+        """K2: quotes must come from the message outside the remark and state the value."""
+        slots = [slot for slot in slots if slot[1] is not None]
         untrusted = [
             slot
-            for slot, quote in quotes.items()
-            if quote is not None
-            and self._provenance_of(context, quote) is Provenance.UNTRUSTED_TEXT
+            for slot, quote, _ in slots
+            if utterance.provenance(quote) is Provenance.UNTRUSTED_TEXT
         ]
         if untrusted:
-            self._refuse(context, name, ErrorCode.UNTRUSTED_SOURCE, {"slots": untrusted})
+            if refuse_untrusted:
+                self._refuse(context, name, ErrorCode.UNTRUSTED_SOURCE, {"slots": untrusted})
+            return
+        for slot, _, check in slots:
+            if check is None:
+                continue
+            try:
+                check(utterance)
+            except WgError as error:
+                self._refuse(context, name, error.code, {"slots": [slot]})
 
     # Draft handlers that read quotes
 
     def _draft_transfer(self, context: ToolContext, args: DraftTransferArgs) -> BaseModel:
+        utterance = Utterance.of(context.utterance, args.remark)
+        # An untrusted payee or amount is refused and audited by the draft service itself.
+        self._check_slots(
+            context,
+            "draft_transfer",
+            utterance,
+            [
+                ("payee_ref", args.payee_quote, None),
+                (
+                    "amount_fen",
+                    args.amount_quote,
+                    lambda u: u.check_amount("amount_fen", args.amount_quote, args.amount_fen),
+                ),
+            ],
+            refuse_untrusted=False,
+        )
         draft = TransferDraft(
-            payee=self._slot(context, args.payee_ref, args.payee_quote),
-            amount=self._slot(context, args.amount_fen, args.amount_quote),
+            payee=_slot(utterance, args.payee_ref, args.payee_quote),
+            amount=_slot(utterance, args.amount_fen, args.amount_quote),
             account_id=args.account_id,
             remark=args.remark,
         )
@@ -384,7 +392,16 @@ class ToolRegistry:
     def _pay_bill(self, context: ToolContext, args: PayBillArgs) -> BaseModel:
         amount = None
         if args.amount_fen is not None and args.amount_quote is not None:
-            amount = self._slot(context, args.amount_fen, args.amount_quote)
+            utterance = Utterance.of(context.utterance)
+            fen, quote = args.amount_fen, args.amount_quote
+            self._check_slots(
+                context,
+                "pay_bill",
+                utterance,
+                [("amount_fen", quote, lambda u: u.check_amount("amount_fen", quote, fen))],
+                refuse_untrusted=False,
+            )
+            amount = _slot(utterance, fen, quote)
         draft = PayBillDraft(
             commitment=Slot(args.commitment_id, Provenance.SERVER_RECORD),
             amount=amount,
@@ -405,10 +422,18 @@ class ToolRegistry:
             ]
             if absent:
                 self._refuse(context, "propose_bill", ErrorCode.MISSING_SLOT, {"slots": absent})
-        self._require_customer_quotes(
+        self._check_slots(
             context,
             "propose_bill",
-            {"payee_ref": args.payee_quote, "amount_fen": args.amount_quote},
+            Utterance.of(context.utterance),
+            [
+                ("payee_ref", args.payee_quote, None),
+                (
+                    "amount_fen",
+                    args.amount_quote,
+                    lambda u: u.check_amount("amount_fen", str(args.amount_quote), args.amount_fen),
+                ),
+            ],
         )
         request = BillDraftRequest(
             commitment_id=args.commitment_id,
@@ -422,8 +447,17 @@ class ToolRegistry:
     def _propose_reserve_change(
         self, context: ToolContext, args: ProposeReserveChangeArgs
     ) -> BaseModel:
-        self._require_customer_quotes(
-            context, "propose_reserve_change", {"target_fen": args.amount_quote}
+        self._check_slots(
+            context,
+            "propose_reserve_change",
+            Utterance.of(context.utterance),
+            [
+                (
+                    "target_fen",
+                    args.amount_quote,
+                    lambda u: u.check_amount("target_fen", args.amount_quote, args.target_fen),
+                )
+            ],
         )
         return self.services.actions.draft_reserve(
             context.customer_id, args.target_fen, AuditActor.AGENT
@@ -432,18 +466,32 @@ class ToolRegistry:
     def _search_candidates(
         self, context: ToolContext, args: SearchRebalanceCandidatesArgs
     ) -> BaseModel:
-        self._require_customer_quotes(
+        self._check_slots(
             context,
             "search_rebalance_candidates",
-            {"target_max_pct": args.target_quote, "fee_cap_fen": args.fee_cap_quote},
+            Utterance.of(context.utterance),
+            [
+                (
+                    "target_max_pct",
+                    args.target_quote,
+                    lambda u: u.check_percent(
+                        "target_max_pct", args.target_quote, args.target_max_pct
+                    ),
+                ),
+                (
+                    "fee_cap_fen",
+                    args.fee_cap_quote,
+                    lambda u: u.check_amount("fee_cap_fen", args.fee_cap_quote, args.fee_cap_fen),
+                ),
+            ],
         )
         request = CandidatesRequest(
             sector=args.sector,
             target_max_pct=args.target_max_pct,
-            target_inclusive=is_inclusive(args.target_quote),
+            target_inclusive=not limit_is_strict(args.target_quote),
             checkpoint_day=args.checkpoint_day,
             fee_cap_fen=args.fee_cap_fen,
-            fee_cap_inclusive=is_inclusive(args.fee_cap_quote),
+            fee_cap_inclusive=not limit_is_strict(args.fee_cap_quote),
             turnover_cap_fen=args.turnover_cap_fen,
         )
         view = self.services.funds.candidates(context.customer_id, request)
@@ -465,3 +513,7 @@ class ToolRegistry:
     def _compose_plan(self, context: ToolContext, args: ComposePlanArgs) -> BaseModel:
         request = ComposePlanRequest(draft_ids=args.draft_ids, depends_on=args.depends_on)
         return self.services.composer.compose(context.customer_id, request, AuditActor.AGENT)
+
+
+def _slot[T](utterance: Utterance, value: T, quote: str) -> Slot[T]:
+    return Slot(value, utterance.provenance(quote), quote)

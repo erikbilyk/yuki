@@ -6,11 +6,12 @@ import json
 
 import pytest
 
-from wg.agent.registry import ToolContext, ToolRegistry, is_inclusive
+from wg.agent.registry import ToolContext, ToolRegistry
 from wg.contracts.api import DraftResult
 from wg.contracts.enums import ActionStatus, Channel
 from wg.contracts.errors import ErrorCode
 from wg.contracts.tools import TOOLS, Capability, DataSource
+from wg.core.k2_context import limit_is_strict
 from wg.core.k3_policy import extra_read_count
 from wg.k6 import audit
 
@@ -251,14 +252,15 @@ def test_get_plan_status_without_a_plan_lists_no_open_plans(
 
 
 @pytest.mark.parametrize(
-    ("quote", "inclusive"),
+    ("quote", "strict"),
     [
-        ("不超过35%", True),
-        ("35%", True),
-        ("低于35%", False),
-        ("少于200元", False),
-        ("< 35%", False),
+        ("不超过35%", False),
+        ("35%", False),
+        ("低于35%", True),
+        ("少于200元", True),
+        ("不超过50元", False),
+        ("< 35%", True),
     ],
 )
-def test_limit_strictness_is_read_from_the_quote(quote: str, inclusive: bool):
-    assert is_inclusive(quote) is inclusive
+def test_limit_strictness_is_read_from_the_quote(quote: str, strict: bool):
+    assert limit_is_strict(quote) is strict
