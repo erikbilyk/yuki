@@ -16,9 +16,10 @@ from wg.contracts.api import (
     ReceiptView,
     TransferHistoryView,
 )
+from wg.contracts.tools import OperationStatusResult
 from wg.core.k1_session import not_found, owned
 from wg.core.k3_policy import DAILY_SUM_KINDS
-from wg.k6 import accounts, operations
+from wg.k6 import accounts, actions, operations
 from wg.k6.db import Database
 from wg.k6.simtime import now
 from wg.services.views import account_view, operation_view, payee_view, receipt_view, transfer_view
@@ -91,3 +92,31 @@ class ReadService:
             if receipt is None or operation.logical_action_id is None:
                 raise not_found()
             return receipt_view(conn, operation, receipt)
+
+    def action_status(
+        self,
+        customer_id: str,
+        logical_action_id: str | None = None,
+        operation_id: str | None = None,
+    ) -> OperationStatusResult:
+        """Where an action stands: its status and, once submitted, the operation and receipt."""
+        with self.db.read() as conn:
+            if operation_id is not None:
+                operation = owned(
+                    operations.find_operation(conn, operation_id), customer_id, _owner
+                )
+                if operation.logical_action_id is None:
+                    raise not_found()
+                logical_action_id = operation.logical_action_id
+            action = owned(actions.find_current(conn, str(logical_action_id)), customer_id, _owner)
+            operation = operations.find_by_key(
+                conn, operations.idempotency_key(action.logical_action_id, action.revision)
+            )
+            receipt = operations.receipt_of(conn, operation.operation_id) if operation else None
+            return OperationStatusResult(
+                logical_action_id=action.logical_action_id,
+                revision=action.revision,
+                action_status=action.status,
+                operation=operation_view(conn, operation) if operation else None,
+                receipt=receipt_view(conn, operation, receipt) if operation and receipt else None,
+            )

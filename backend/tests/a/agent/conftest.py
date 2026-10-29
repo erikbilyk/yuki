@@ -10,6 +10,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from wg.agent.llm import ModelAdapter, ModelReply, ToolCallRequest, Usage
+from wg.agent.registry import Services, ToolContext, ToolRegistry
+from wg.contracts.enums import Channel
 from wg.settings import Settings
 
 from ..api.conftest import make_client, make_settings
@@ -45,6 +47,17 @@ def reply(*calls: ToolCallRequest, text: str = "", usage: Usage | None = None) -
 def client(tmp_path: Path) -> Iterator[TestClient]:
     with make_client(tmp_path / "wg.db") as test_client:
         yield test_client
+
+
+@pytest.fixture
+def registry(client: TestClient) -> ToolRegistry:
+    state = client.app.state
+    return ToolRegistry(state.db, Services.from_state(state))
+
+
+@pytest.fixture
+def context() -> ToolContext:
+    return ToolContext(customer_id="cus_main", channel=Channel.WEB, utterance="给妈妈转500元")
 
 
 @pytest.fixture
