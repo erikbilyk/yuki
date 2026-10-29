@@ -849,10 +849,12 @@ def test_t53_two_concurrent_submits_make_one_effect(wg: WgClient, kind: ActionKi
 
     first, second = race(wg, [lambda tab: tab.verify_response(challenge.challenge_id, code)] * 2)
 
-    results = [r for r in (first, second) if r.status_code == 200]
+    # A redemption is still SUBMITTED when verify returns, so it answers 202 instead of 200.
+    accepted = (200, 202)
+    results = [r for r in (first, second) if r.status_code in accepted]
     assert results, f"neither submit succeeded: {describe(first)} / {describe(second)}"
     for response in (first, second):
-        if response.status_code != 200:
+        if response.status_code not in accepted:
             wg.refused(response, ErrorCode.GRANT_CONSUMED)
     returned = [VerifyResult.model_validate_json(r.content).operation for r in results]
     assert all(op is not None for op in returned)
