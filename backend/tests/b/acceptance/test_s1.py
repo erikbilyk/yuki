@@ -44,6 +44,7 @@ from .common import (
     assert_audited,
     assert_refused_without_session,
     audit_snapshot,
+    fail_verifying_three_times,
     lose_response,
 )
 
@@ -614,7 +615,7 @@ def test_t13_unlock_invalidates_the_grant(wg: WgClient) -> None:
     code = wg.sms_code(challenge_id)
     wg.login(Role.OPERATOR)
 
-    fail_three_times(wg, lambda: wg.verify_response(challenge_id, code))
+    fail_verifying_three_times(wg, draft.logical_action_id)
     locks = active_locks(wg)
     assert locks
     for lock in locks:

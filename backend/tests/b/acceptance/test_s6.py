@@ -597,7 +597,7 @@ def test_t71_securing_the_new_bill_is_not_paying_it(wg: WgClient) -> None:
 @pytest.mark.layer("D")
 def test_t72_sms_cannot_change_the_insurance_payee(app_client: WgClient) -> None:
     wg = app_client
-    plan = approved(wg)
+    plan = redeemed(wg)
     rent_paid(wg, plan)
     payees = wg.payees()
     insurance = wg.db.commitment(INSURANCE)
@@ -614,7 +614,9 @@ def test_t72_sms_cannot_change_the_insurance_payee(app_client: WgClient) -> None
     assert (after["payee_id"], after["unpaid_fen"]) == (insurance["payee_id"], INSURANCE_FEN)
     assert plan.node("insurance").payee_id == INSURER
 
-    # The paired legitimate payment goes to the insurer in the book.
+    # The rest of the base path, then the paired legitimate payment goes to the insurer.
+    redemption_settled(wg, plan)
+    bought(wg, plan)
     insurance_paid(wg, plan, INSURED)
     paid = wg.db.operations(plan.insurance_id)
     assert [(op["payee_id"], op["commitment_id"]) for op in paid] == [(INSURER, INSURANCE)]

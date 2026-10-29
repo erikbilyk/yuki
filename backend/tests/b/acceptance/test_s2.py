@@ -4,8 +4,7 @@ Cases are judged on the cash snapshot, the commitments, operations, ledger and r
 through the v1 routes and, where no route shows a fact, through a read-only view of the SPEC §7
 tables. The money figures are the golden values of ACCEPTANCE §3.1, written here in fen.
 T24 is out of scope (no credit card in the fixture). T27, T28, T30, T31 and T37 are scripted-model
-cases and the S variants of T29 and T38 come with them. The variant of T25 in which an internal
-transfer funds the payment is skipped: the contracts have no own-account transfer.
+cases and the S variants of T29 and T38 come with them.
 """
 
 from __future__ import annotations
@@ -472,10 +471,63 @@ def test_t25_rejected_payment_leaves_bill_unpaid(wg: WgClient) -> None:
 
 
 @pytest.mark.case("T25")
-@pytest.mark.skip(reason="no own-account transfer in the contracts: see the B06 handoff")
 def test_t25_internal_transfer_funds_the_payment(wg: WgClient) -> None:
-    """The payment waits for the transfer from savings to settle; if it is then rejected,
-    the bill stays unpaid and both balances are correct."""
+    load_variant(wg, "t25")
+    short_fen = RENT_FEN - 200_000
+    move = wg.draft_transfer("pay_self_main", short_fen, account_id=SAVINGS)
+    rent = wg.draft_pay_bill(RENT, account_id=MAIN_ACCOUNT)
+    assert not rent.feasible and ErrorCode.INSUFFICIENT_FUNDS in rent.reasons
+    plan = wg.compose(
+        [move.logical_action_id, rent.logical_action_id],
+        {rent.logical_action_id: [move.logical_action_id]},
+    )
+    assert plan.plan_id is not None
+    wg.confirm(wg.card(wg.plan(plan.plan_id).card_id))
+
+    def node_status(logical_action_id: str) -> ActionStatus:
+        node = next(
+            n for n in wg.plan(plan.plan_id).nodes if n.logical_action_id == logical_action_id
+        )
+        return node.status
+
+    # The payment waits: it has no code to ask for while the transfer is unsettled.
+    assert node_status(move.logical_action_id) is ActionStatus.AWAITING_STEPUP
+    assert node_status(rent.logical_action_id) is ActionStatus.DRAFT
+    wg.refused(wg.challenge_response(rent.logical_action_id), ErrorCode.APPROVAL_REQUIRED)
+    assert wg.db.operations(rent.logical_action_id) == []
+
+    # The transfer settles in its own unit: savings to main, no clearing leg.
+    wg.verify(wg.challenge(move.logical_action_id).challenge_id)
+    rows = wg.db.operations(move.logical_action_id)
+    assert len(rows) == 1 and rows[0]["status"] == OperationStatus.SETTLED
+    moved = {
+        e["account_id"]: e["amount_fen"] for e in wg.db.ledger_entries(rows[0]["operation_id"])
+    }
+    assert moved == {SAVINGS: -short_fen, MAIN_ACCOUNT: short_fen}
+    assert wg.account(MAIN_ACCOUNT).posted_fen == 200_000 + short_fen
+    assert wg.account(SAVINGS).posted_fen == 1_600_000 - short_fen
+    assert node_status(rent.logical_action_id) is ActionStatus.DRAFT
+    assert wg.db.operations(rent.logical_action_id) == []
+
+    # On its due date the payment asks for its code; the bank rejects it.
+    due = next(
+        n for n in wg.plan(plan.plan_id).nodes if n.logical_action_id == rent.logical_action_id
+    )
+    assert due.not_before is not None
+    wg.advance(to=due.not_before)
+    assert node_status(rent.logical_action_id) is ActionStatus.AWAITING_STEPUP
+    wg.arm(Fault.SETTLEMENT_REJECT)
+    wg.verify(wg.challenge(rent.logical_action_id).challenge_id)
+
+    paid = wg.db.operations(rent.logical_action_id)
+    assert len(paid) == 1 and paid[0]["status"] == OperationStatus.REJECTED
+    assert wg.receipt(paid[0]["operation_id"]).status is ReceiptStatus.REJECTED
+    assert wg.db.reservations("ACTIVE") == []
+    row = wg.db.commitment(RENT)
+    assert row["status"] == CommitmentStatus.CONFIRMED and row["unpaid_fen"] == RENT_FEN
+    # Both balances are exactly what the settled transfer left.
+    assert wg.account(MAIN_ACCOUNT).posted_fen == 200_000 + short_fen
+    assert wg.account(SAVINGS).posted_fen == 1_600_000 - short_fen
 
 
 # T26

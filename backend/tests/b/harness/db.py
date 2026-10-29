@@ -16,6 +16,8 @@ TABLES = frozenset(
         "approvals",
         "audit_log",
         "bank_requests",
+        "calc_results",
+        "cards",
         "cash_snapshots",
         "challenges",
         "checkpoint_results",
