@@ -7,6 +7,16 @@ from dataclasses import dataclass
 from wg.contracts.enums import PayeeBank
 from wg.k6.db import Reader
 
+# Every customer account has a payee in its owner's book, so money can move between the
+# customer's own accounts as an ordinary same-bank transfer (SPEC §13.5).
+OWN_PAYEE_PREFIX = "pay_self_"
+OWN_PAYEE_MASK = "本人账户"
+
+
+def own_payee_id(account_id: str) -> str:
+    """`acc_savings` → `pay_self_savings`."""
+    return OWN_PAYEE_PREFIX + account_id.removeprefix("acc_")
+
 
 @dataclass(frozen=True)
 class AccountRow:
@@ -74,6 +84,17 @@ def main_account(reader: Reader, customer_id: str) -> AccountRow | None:
 def find_payee(reader: Reader, payee_id: str) -> PayeeRow | None:
     row = reader.execute("SELECT * FROM payees WHERE payee_id = ?", (payee_id,)).fetchone()
     return None if row is None else _payee(row)
+
+
+def own_account(reader: Reader, payee_id: str) -> AccountRow | None:
+    """The customer account a payee stands for, or None for a payee outside the customer."""
+    row = reader.execute(
+        "SELECT a.* FROM payees p JOIN accounts a"
+        " ON a.account_id = p.account_ref AND a.customer_id = p.customer_id"
+        " WHERE p.payee_id = ? AND a.kind = 'customer'",
+        (payee_id,),
+    ).fetchone()
+    return None if row is None else _account(row)
 
 
 def customer_payees(reader: Reader, customer_id: str, query: str | None = None) -> list[PayeeRow]:

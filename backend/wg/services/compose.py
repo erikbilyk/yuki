@@ -257,6 +257,7 @@ def _money_facts(
                 bills[bill.commitment_id] = Bill(bill.status, bill.payee_id)
         elif node.kind is ActionKind.REDEEM:
             proceeds[node.logical_action_id] = _proceeds(reader, node.params, at)
+    book = accounts.customer_payees(reader, customer_id)
     return MoneyFacts(
         now=at,
         expires_at=expires_at,
@@ -265,8 +266,13 @@ def _money_facts(
         headroom_fen=compute_snapshot(cash_inputs_from_db(reader, customer_id, at)).headroom_fen,
         reserve_fen=reserves.reserve_target(reader, customer_id),
         bills=bills,
-        book=frozenset(p.payee_id for p in accounts.customer_payees(reader, customer_id)),
+        book=frozenset(p.payee_id for p in book),
         proceeds=proceeds,
+        own_accounts={
+            p.payee_id: own.account_id
+            for p in book
+            if (own := accounts.own_account(reader, p.payee_id)) is not None
+        },
     )
 
 

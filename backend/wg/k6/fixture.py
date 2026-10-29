@@ -24,6 +24,7 @@ from wg.contracts.fixture import Fixture, FixtureError, FixtureStatement, load_f
 from wg.contracts.ids import IdPrefix, new_id
 from wg.contracts.tools import READ_SCOPES
 from wg.k6 import audit, imports, sessions
+from wg.k6.accounts import OWN_PAYEE_MASK, own_payee_id
 from wg.k6.categories import seed_categories
 from wg.k6.clock import start_clock
 from wg.k6.db import Database, Reader, UnitOfWork, open_database
@@ -236,6 +237,7 @@ class _Loader:
             )
 
     def payees(self) -> None:
+        """The fixture's payees, then one payee per customer account for own transfers."""
         for p in self.fx.payees:
             self.uow.execute(
                 "INSERT INTO payees (payee_id, customer_id, alias, display_name, bank,"
@@ -250,6 +252,13 @@ class _Loader:
                     p.account_ref,
                     self.at,
                 ),
+            )
+        for a in self.fx.accounts:
+            alias = f"本人{a.name}"
+            self.uow.execute(
+                "INSERT INTO payees (payee_id, customer_id, alias, display_name, bank,"
+                " account_masked, account_ref, created_at) VALUES (?, ?, ?, ?, 'same', ?, ?, ?)",
+                (own_payee_id(a.id), a.customer, alias, alias, OWN_PAYEE_MASK, a.id, self.at),
             )
 
     def settings(self) -> None:

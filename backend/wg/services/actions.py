@@ -369,6 +369,9 @@ class ActionService:
         if not payee.active:
             raise not_found()
         account = self._debit_account(uow, customer_id, draft.account_id)
+        own = accounts.own_account(uow, payee.payee_id)
+        if own is not None and own.account_id == account.account_id:
+            raise WgError(ErrorCode.UNSUPPORTED_REQUEST, {"reason": "same_account"})
         kind = ActionKind.TRANSFER
         pack = pack_for(kind)
         params = pack.canonical(

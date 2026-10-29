@@ -463,3 +463,65 @@ def test_a_rejected_bill_payment_leaves_the_bill_unpaid_and_says_why(browser: Br
     assert (rent.status, rent.unpaid_fen) == (CommitmentStatus.CONFIRMED, 340_000)
     view = snapshot(browser)
     assert (view.details.c_fen, view.protected_fen) == (1_800_000, 1_600_000)
+
+
+def ledger_accounts(browser: Browser, operation_id: str) -> dict[str, int]:
+    with browser.db.read() as conn:
+        rows = conn.execute(
+            "SELECT account_id, amount_fen FROM ledger_entries WHERE operation_id = ?",
+            (operation_id,),
+        ).fetchall()
+    return {row[0]: row[1] for row in rows}
+
+
+def posted(browser: Browser, account_id: str) -> int:
+    response = browser.get(f"/v1/accounts/{account_id}/balance")
+    assert response.status_code == 200, response.text
+    return response.json()["posted_fen"]
+
+
+@pytest.mark.case("T25")
+def test_a_transfer_between_own_covered_accounts_keeps_c_and_needs_no_headroom(
+    browser: Browser,
+):
+    # ¥3,000 is more than the ¥2,000 headroom, but the money stays in covered accounts.
+    created = draft(browser, "transfer", {"payee_id": "pay_self_savings", "amount_fen": 300_000})
+    assert created.feasible and created.tier is Tier.RED
+    card = open_card(browser, created)
+    assert [(c.key, c.before, c.after) for c in card.changes] == [
+        ("account_posted", 1_800_000, 1_500_000),
+        ("to_account_posted", 0, 300_000),
+    ]
+
+    result = approve(browser, created)
+    assert result.action_status is ActionStatus.SETTLED and result.operation is not None
+    assert ledger_accounts(browser, result.operation.operation_id) == {
+        "acc_main": -300_000,
+        "acc_savings": 300_000,
+    }
+    assert (posted(browser, "acc_main"), posted(browser, "acc_savings")) == (1_500_000, 300_000)
+    view = snapshot(browser)
+    assert (view.details.c_fen, view.protected_fen, view.headroom_fen) == tuple(START.values())
+
+
+def test_a_transfer_to_the_account_it_comes_from_is_refused(browser: Browser):
+    response = post_draft(
+        browser, "transfer", {"payee_id": "pay_self_main", "amount_fen": 10_000}, 422
+    )
+    assert error(response).code is ErrorCode.UNSUPPORTED_REQUEST
+
+
+@pytest.mark.case("T25")
+def test_a_plan_pays_rent_from_savings_after_the_own_transfer_settles(browser: Browser):
+    rent = draft(browser, "pay-bill", {"commitment_id": RENT, "account_id": "acc_savings"})
+    assert not rent.feasible and ErrorCode.INSUFFICIENT_FUNDS in rent.reasons
+    alone = browser.post("/v1/plans/compose", {"draft_ids": [rent.logical_action_id]})
+    assert error(alone).code is ErrorCode.PLAN_UNFUNDED
+
+    move = draft(browser, "transfer", {"payee_id": "pay_self_savings", "amount_fen": 340_000})
+    body = {
+        "draft_ids": [move.logical_action_id, rent.logical_action_id],
+        "depends_on": {rent.logical_action_id: [move.logical_action_id]},
+    }
+    response = browser.post("/v1/plans/compose", body)
+    assert response.status_code == 201, response.text
