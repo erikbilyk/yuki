@@ -71,6 +71,8 @@ CSRF_HEADER = "X-CSRF-Token"
 MAIN_CUSTOMER = "cus_main"
 MAIN_ACCOUNT = "acc_main"
 REQUEST_TIMEOUT_S = 30.0
+# Confirm and verify answer 202 while the operation they submitted is SUBMITTED or UNKNOWN.
+EXECUTION_STATUS = (200, 201, 202)
 
 M = TypeVar("M", bound=BaseModel)
 
@@ -328,7 +330,7 @@ class WgClient:
         return self.post(f"/v1/cards/{card.card_id}/confirm", body)
 
     def confirm(self, card: Card) -> ConfirmResult:
-        return self.ok(self.confirm_response(card), ConfirmResult)
+        return self.ok(self.confirm_response(card), ConfirmResult, EXECUTION_STATUS)
 
     def sms(self) -> SmsView:
         return self.ok(self.get("/v1/sms"), SmsView, (200,))
@@ -344,7 +346,7 @@ class WgClient:
 
     def verify(self, challenge_id: str, code: str | None = None) -> VerifyResult:
         code = code or self.sms_code(challenge_id)
-        return self.ok(self.verify_response(challenge_id, code), VerifyResult)
+        return self.ok(self.verify_response(challenge_id, code), VerifyResult, EXECUTION_STATUS)
 
     def challenge_response(self, logical_action_id: str) -> httpx.Response:
         return self.post(f"/v1/actions/{logical_action_id}/challenge")
@@ -516,8 +518,22 @@ class WgClient:
         response = self.draft_plan_response(calc_result_id, with_bounds)
         return self.ok(response, PlanDraftResult, (201,))
 
+    def compose_response(
+        self, draft_ids: list[str], depends_on: dict[str, list[str]] | None = None
+    ) -> httpx.Response:
+        body = {"draft_ids": draft_ids, "depends_on": depends_on or {}}
+        return self.post("/v1/plans/compose", body)
+
+    def compose(
+        self, draft_ids: list[str], depends_on: dict[str, list[str]] | None = None
+    ) -> PlanDraftResult:
+        return self.ok(self.compose_response(draft_ids, depends_on), PlanDraftResult, (201,))
+
     def stop_plan_response(self, plan_id: str) -> httpx.Response:
         return self.post(f"/v1/plans/{plan_id}/stop")
+
+    def stop_plan(self, plan_id: str) -> PlanView:
+        return self.ok(self.stop_plan_response(plan_id), PlanView)
 
     def audit(self) -> AuditView:
         return self.ok(self.get("/v1/audit"), AuditView, (200,))
