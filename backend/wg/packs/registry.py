@@ -9,9 +9,10 @@ from wg.contracts.enums import ActionKind
 from wg.contracts.errors import ErrorCode, WgError
 from wg.packs.base import ActionPack, Pack, StatePack
 from wg.packs.bills import BillsPack
+from wg.packs.funds import CheckpointPack, FundsPack
 from wg.packs.transfer import TransferPack
 
-_PACKS: tuple[Pack, ...] = (TransferPack(), BillsPack())
+_PACKS: tuple[Pack, ...] = (TransferPack(), BillsPack(), FundsPack(), CheckpointPack())
 
 PACKS: Mapping[ActionKind, Pack] = MappingProxyType(
     {kind: pack for pack in _PACKS for kind in pack.kinds}

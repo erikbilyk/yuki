@@ -111,6 +111,8 @@ class TransferPack:
         kind: ActionKind,
         params: Mapping[str, Any],
         at: datetime,
+        *,
+        plan_id: str | None = None,
     ) -> tuple[Infeasible, ...]:
         """Bill checks, limits, posted money on the debit account, headroom if discretionary."""
         amount = int(params["amount_fen"])

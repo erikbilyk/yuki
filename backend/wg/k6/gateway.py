@@ -206,7 +206,9 @@ class Gateway:
         )
 
         self._authorize(uow, pack, action, at)
-        reasons = pack.precheck(uow, customer_id, action.kind, action.params, at)
+        reasons = pack.precheck(
+            uow, customer_id, action.kind, action.params, at, plan_id=action.plan_id
+        )
         if reasons:
             raise reasons[0].error()
         if isinstance(pack, StatePack):

@@ -216,7 +216,7 @@ def test_unknown_params_are_refused_by_the_pack():
 
 def test_no_pack_for_a_kind_not_built_yet():
     with pytest.raises(WgError) as refused:
-        pack_for("PURCHASE")
+        pack_for("ADD_PAYEE")
     assert refused.value.code is ErrorCode.UNKNOWN_ACTION_KIND
 
 
