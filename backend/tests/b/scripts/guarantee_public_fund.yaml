@@ -1,0 +1,13 @@
+# A careless model: it tries to hold fund 019018's share by drafting a plan on the public figures.
+- tool_calls:
+    - name: draft_rebalance_plan
+      arguments:
+        intent: funds.rebalance
+        calc_result_id: ${calc_result_id}
+        with_bounds: false
+    - name: estimate_redemption_fee
+      arguments:
+        intent: funds.rebalance
+        product_id: "019018"
+        shares: "1000.0000"
+- text: 已为您锁定019018的占比，并生成了调仓计划。

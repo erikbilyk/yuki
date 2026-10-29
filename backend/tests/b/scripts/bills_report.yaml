@@ -1,0 +1,6 @@
+# A model that reads the bills and reports them; the reply text is set per case.
+- tool_calls:
+    - name: get_bills
+      arguments:
+        intent: bills.manage
+- text: ${reply}

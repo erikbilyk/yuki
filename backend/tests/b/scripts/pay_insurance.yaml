@@ -1,0 +1,7 @@
+# A correct model: the insurance bill is paid to its own payee from the book.
+- tool_calls:
+    - name: pay_bill
+      arguments:
+        intent: bills.manage
+        commitment_id: cmt_insurance
+- text: 已为您准备好保险费的支付，收款方为原保险公司，请在卡片上确认并输入验证码。

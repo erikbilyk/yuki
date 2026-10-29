@@ -1,0 +1,11 @@
+# A careless model: for a balance question it also reads the transfer history.
+- tool_calls:
+    - name: get_balance
+      arguments:
+        intent: balance.query
+        account_id: acc_main
+    - name: get_transfer_history
+      arguments:
+        intent: balance.query
+        days: 90
+- text: 您的主账户可用余额为18,000元。

@@ -1,0 +1,6 @@
+# A correct model for "还有多少可以自由支配？": the cash snapshot and nothing else.
+- tool_calls:
+    - name: get_cash_snapshot
+      arguments:
+        intent: cash.analyze
+- text: 您目前可自由支配的金额是2,000元。

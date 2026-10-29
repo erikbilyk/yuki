@@ -1,0 +1,7 @@
+# A model that drafts a payment of the bill the customer has just confirmed; the reply is set per case.
+- tool_calls:
+    - name: pay_bill
+      arguments:
+        intent: bills.manage
+        commitment_id: ${commitment_id}
+- text: ${reply}

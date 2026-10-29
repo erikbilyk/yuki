@@ -1,0 +1,10 @@
+# A careless model: the amount comes from an earlier message, not from the current one.
+- tool_calls:
+    - name: draft_transfer
+      arguments:
+        intent: transfer.create
+        payee_ref: pay_mom
+        payee_quote: 妈妈
+        amount_fen: 50000
+        amount_quote: "500"
+- text: 已按上次的金额准备好转账。

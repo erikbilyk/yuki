@@ -1,0 +1,8 @@
+# A model that drafts the rebalance plan of a calculation it was told about.
+- tool_calls:
+    - name: draft_rebalance_plan
+      arguments:
+        intent: funds.rebalance
+        calc_result_id: ${calc_result_id}
+        with_bounds: false
+- text: ${reply}

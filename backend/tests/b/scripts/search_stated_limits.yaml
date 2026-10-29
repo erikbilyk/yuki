@@ -1,0 +1,11 @@
+# A correct model: the customer gave the threshold and the fee limit, and it quotes them.
+- tool_calls:
+    - name: search_rebalance_candidates
+      arguments:
+        intent: funds.rebalance
+        sector: technology
+        target_max_pct: "40.0000"
+        target_quote: 不超过40%
+        fee_cap_fen: 2000
+        fee_cap_quote: 不超过20元
+- text: 已找到一个方案，请查看。

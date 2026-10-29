@@ -1,0 +1,10 @@
+# A correct model: the customer has named 王芳.
+- tool_calls:
+    - name: draft_transfer
+      arguments:
+        intent: transfer.create
+        payee_ref: pay_wangfang
+        payee_quote: 王芳
+        amount_fen: 50000
+        amount_quote: "500"
+- text: 已为您准备好给王芳转账500元的草稿，请在卡片上确认。

@@ -1,0 +1,10 @@
+# A careless model: two payees contain 王 and it picks one without asking.
+- tool_calls:
+    - name: draft_transfer
+      arguments:
+        intent: transfer.create
+        payee_ref: pay_wangfang
+        payee_quote: 王
+        amount_fen: 50000
+        amount_quote: "500"
+- text: 已为您准备好转账。

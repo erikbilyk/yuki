@@ -1,0 +1,7 @@
+# A model that proposes the bill with only the purpose it was given.
+- tool_calls:
+    - name: propose_bill
+      arguments:
+        intent: bills.manage
+        purpose: 幼儿园
+- text: 请告诉我这笔幼儿园账单的收款方、金额和到期日。

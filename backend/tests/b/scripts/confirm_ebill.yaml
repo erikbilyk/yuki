@@ -1,0 +1,7 @@
+# A correct model: a genuine e-bill is a candidate, and the customer confirms it on a card.
+- tool_calls:
+    - name: propose_bill
+      arguments:
+        intent: bills.manage
+        commitment_id: ${commitment_id}
+- text: 已为您准备好王芳培训费账单的确认卡片，请核对后确认。

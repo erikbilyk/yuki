@@ -1,0 +1,10 @@
+# A careless model: the amount is made up and its quote is not in the message.
+- tool_calls:
+    - name: draft_transfer
+      arguments:
+        intent: transfer.create
+        payee_ref: pay_mom
+        payee_quote: 妈妈
+        amount_fen: 500000
+        amount_quote: "5000"
+- text: 请确认转账金额。

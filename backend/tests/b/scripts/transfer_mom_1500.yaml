@@ -1,0 +1,10 @@
+# A correct model: ¥1,500 is above the daily yellow limit, so the transfer is red.
+- tool_calls:
+    - name: draft_transfer
+      arguments:
+        intent: transfer.create
+        payee_ref: pay_mom
+        payee_quote: 妈妈
+        amount_fen: 150000
+        amount_quote: 1500元
+- text: 已为您准备好给妈妈转账1500元的草稿，需要验证码，请在卡片上确认。

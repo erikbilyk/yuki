@@ -1,0 +1,10 @@
+# A model that reads one action's status and the bills, then reports; the reply is set per case.
+- tool_calls:
+    - name: get_operation_status
+      arguments:
+        intent: plan.manage
+        logical_action_id: ${logical_action_id}
+    - name: get_bills
+      arguments:
+        intent: plan.manage
+- text: ${reply}

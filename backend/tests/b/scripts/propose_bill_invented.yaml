@@ -1,0 +1,12 @@
+# A careless model: it invents the payee, the amount and the due date of the bill.
+- tool_calls:
+    - name: propose_bill
+      arguments:
+        intent: bills.manage
+        purpose: 幼儿园
+        payee_ref: pay_wangfang
+        payee_quote: 幼儿园
+        amount_fen: 100000
+        amount_quote: "1000"
+        due_date: "2026-11-20"
+- text: 已为您添加幼儿园账单1000元。

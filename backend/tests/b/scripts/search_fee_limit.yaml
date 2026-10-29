@@ -1,0 +1,11 @@
+# A model that searches with a fee limit; quote and amount are set per case.
+- tool_calls:
+    - name: search_rebalance_candidates
+      arguments:
+        intent: funds.rebalance
+        sector: technology
+        target_max_pct: "40.0000"
+        target_quote: 不超过40%
+        fee_cap_fen: 1500
+        fee_cap_quote: ${fee_quote}
+- text: 已完成检索。

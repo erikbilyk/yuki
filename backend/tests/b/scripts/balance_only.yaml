@@ -1,0 +1,7 @@
+# A correct model for "我的余额是多少？": it reads the accounts and nothing else.
+- tool_calls:
+    - name: get_balance
+      arguments:
+        intent: balance.query
+        account_id: acc_main
+- text: 您的主账户可用余额为18,000元。
