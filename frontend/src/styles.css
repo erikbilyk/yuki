@@ -436,3 +436,122 @@ label > select {
   display: block;
   margin-bottom: 1rem;
 }
+
+.layout-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+.plan {
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+.plan:first-of-type {
+  border-top: 0;
+  margin-top: 0;
+  padding-top: 0;
+}
+.plan-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.plan-status {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.plan-status-paused {
+  color: var(--yellow);
+}
+.plan-status-completed {
+  color: var(--green);
+}
+.nodes {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.node {
+  border-left: 3px solid var(--line);
+  padding: 0.25rem 0.75rem;
+}
+.node-awaiting_code,
+.node-needs_decision {
+  border-left-color: var(--yellow);
+}
+.node-done {
+  border-left-color: var(--green);
+}
+.node-rejected,
+.node-cancelled,
+.node-superseded {
+  border-left-color: var(--muted);
+}
+.node-head {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.node-phrase {
+  margin: 0.15rem 0;
+}
+.node ul,
+.revisions ul,
+.audit-revisions ul {
+  margin: 0.25rem 0;
+  padding-left: 1.2rem;
+}
+.checkpoint,
+.revisions {
+  margin: 0.5rem 0;
+}
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+}
+.audit-table th,
+.audit-table td {
+  text-align: left;
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.audit-revisions {
+  margin-top: 0.75rem;
+}
+.demo-group {
+  margin: 0.75rem 0;
+}
+.demo-group.inline {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.sim-clock {
+  margin: 0.5rem 0;
+}
+button.danger {
+  background: var(--red);
+  color: #ffffff;
+  border-color: var(--red);
+}
+.banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 0.6rem 1.25rem;
+  text-align: center;
+  color: #ffffff;
+}
+.banner-down {
+  background: var(--red);
+}
+.banner-up {
+  background: var(--green);
+}

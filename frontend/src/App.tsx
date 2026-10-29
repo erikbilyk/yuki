@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, setCsrfToken, setSessionExpiredHandler } from "./api.ts";
 import { CardFlow } from "./CardFlow.tsx";
+import { AuditView } from "./AuditView.tsx";
 import { CashPanel } from "./CashPanel.tsx";
 import { ChatPanel } from "./ChatPanel.tsx";
+import { DemoPanel } from "./DemoPanel.tsx";
 import { GuidedForms } from "./GuidedForms.tsx";
 import { Login } from "./Login.tsx";
+import { PlanPanel } from "./PlanPanel.tsx";
 import { SmsPanel } from "./SmsPanel.tsx";
 import { S } from "./strings.ts";
 import type { SessionEntry } from "./types.ts";
@@ -27,9 +30,14 @@ function loadTracked(subject: string): string[] {
 
 export function App() {
   const [session, setSession] = useState<SessionEntry | null | undefined>(undefined);
+  const [demo, setDemo] = useState(false);
 
   useEffect(() => {
     setSessionExpiredHandler(() => setSession(null));
+    api
+      .health()
+      .then((health) => setDemo(health.demo))
+      .catch(() => setDemo(false));
     api
       .session()
       .then((view) => {
@@ -46,12 +54,13 @@ export function App() {
   if (session === null) {
     return <Login onLogin={setSession} />;
   }
-  return <Workspace key={session.subject_id} session={session} onLogout={() => setSession(null)} />;
+  return <Workspace key={session.subject_id} session={session} demo={demo} onLogout={() => setSession(null)} />;
 }
 
-function Workspace({ session, onLogout }: { session: SessionEntry; onLogout: () => void }) {
+function Workspace({ session, demo, onLogout }: { session: SessionEntry; demo: boolean; onLogout: () => void }) {
   const subject = session.subject_id;
   const [refreshKey, setRefreshKey] = useState(0);
+  const [auditMode, setAuditMode] = useState(false);
   const [cards, setCards] = useState<string[]>(() => {
     const opened = CARD_PATH.exec(window.location.pathname)?.[1];
     const stored = loadTracked(subject);
@@ -85,28 +94,39 @@ function Workspace({ session, onLogout }: { session: SessionEntry; onLogout: () 
       <header className="topbar">
         <strong>{S.appName}</strong>
         <span className="who">
+          <button type="button" className="link" onClick={() => setAuditMode((on) => !on)} data-testid="audit-toggle">
+            {auditMode ? S.audit.close : S.audit.open}
+          </button>
           {session.display_name}
           <button type="button" className="link" onClick={logout}>
             {S.logout}
           </button>
         </span>
       </header>
-      <main className="layout">
-        <ChatPanel onCards={addCards} onChange={bump} />
-        <aside className="side">
-          <CashPanel refreshKey={refreshKey} />
-          {cards.length > 0 && (
-            <div className="tray" aria-label={S.card.title}>
-              <h2>{S.card.title}</h2>
-              {cards.map((id) => (
-                <CardFlow key={id} cardId={id} onChange={bump} onClose={closeCard} />
-              ))}
-            </div>
-          )}
-          <SmsPanel refreshKey={refreshKey} />
-          <GuidedForms onCard={(id) => addCards([id])} />
-        </aside>
-      </main>
+      {auditMode ? (
+        <main className="layout layout-single">
+          <AuditView refreshKey={refreshKey} />
+        </main>
+      ) : (
+        <main className="layout">
+          <ChatPanel onCards={addCards} onChange={bump} />
+          <aside className="side">
+            <CashPanel refreshKey={refreshKey} />
+            {cards.length > 0 && (
+              <div className="tray" aria-label={S.card.title}>
+                <h2>{S.card.title}</h2>
+                {cards.map((id) => (
+                  <CardFlow key={id} cardId={id} onChange={bump} onClose={closeCard} />
+                ))}
+              </div>
+            )}
+            <PlanPanel refreshKey={refreshKey} onChange={bump} onCard={(id) => addCards([id])} />
+            <SmsPanel refreshKey={refreshKey} />
+            <GuidedForms onCard={(id) => addCards([id])} />
+            {demo && <DemoPanel refreshKey={refreshKey} onChange={bump} />}
+          </aside>
+        </main>
+      )}
     </div>
   );
 }

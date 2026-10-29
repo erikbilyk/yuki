@@ -14,10 +14,12 @@ interface Props {
   onChallenge: (challenge: ChallengeView) => void;
   onVerified: (result: VerifyResult) => void;
   onStop: () => void;
+  /** Plan steps are stopped with the plan, so their code entry has no stop of its own. */
+  hideStop?: boolean;
 }
 
 /** Code entry outside the chat. The code is typed here and goes only to the verify route. */
-export function CodeEntry({ actionId, challenge, onChallenge, onVerified, onStop }: Props) {
+export function CodeEntry({ actionId, challenge, onChallenge, onVerified, onStop, hideStop = false }: Props) {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,9 +105,11 @@ export function CodeEntry({ actionId, challenge, onChallenge, onVerified, onStop
           {error}
         </p>
       )}
-      <button type="button" className="link" onClick={onStop} disabled={busy}>
-        {S.code.stop}
-      </button>
+      {!hideStop && (
+        <button type="button" className="link" onClick={onStop} disabled={busy}>
+          {S.code.stop}
+        </button>
+      )}
     </section>
   );
 }
