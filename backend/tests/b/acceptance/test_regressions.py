@@ -1,8 +1,9 @@
-"""Regressions R1–R7 and R9 (ACCEPTANCE §4.7): the resolved contracts, pinned.
+"""Regressions R1–R10 (ACCEPTANCE §4.7): the resolved contracts, pinned.
 
 R1 C-09 cumulative bill bounds; R2 SPEC §15.3 clock jumps; R3 C-10 acknowledgement and
 receipt; R4 SPEC §12.6 UNKNOWN and reconciliation; R5 C-20 expiry boundaries; R6 C-21 daily
-sum; R7 C-11/C-12 failed dependency and the checkpoint under a lock; R9 SPEC §12.8 restart.
+sum; R7 C-11/C-12 failed dependency and the checkpoint under a lock; R8 SPEC §11, §16 unit of
+work failures; R9 SPEC §12.8 restart; R10 SPEC §11 write path and read-only connections.
 
 R4's integrity variant removes the bank's record of an order with the harness's own
 connection (`harness/inject.py`); the product never offers that write.
@@ -10,7 +11,12 @@ connection (`harness/inject.py`); the product never offers that write.
 
 from __future__ import annotations
 
+import ast
+import importlib.util
+import re
+import sqlite3
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -18,6 +24,7 @@ import pytest
 from wg.contracts.api import ChallengeView
 from wg.contracts.enums import (
     ActionStatus,
+    AuditActor,
     CheckpointResult,
     Fault,
     OperationStatus,
@@ -27,6 +34,8 @@ from wg.contracts.enums import (
     Tier,
 )
 from wg.contracts.errors import ErrorCode
+from wg.k6 import audit
+from wg.k6.db import NestedTransactionError, UnitOfWork, open_database
 
 from ..conftest import Live
 from ..harness.client import MAIN_CUSTOMER, WgClient, describe
@@ -635,3 +644,177 @@ def test_r9_ready_with_an_expired_grant_needs_a_new_code(live: Live) -> None:
 
     bought(wg, plan)
     assert_row(wg, BOUGHT)
+
+
+# R8
+
+
+class ProbeFailure(RuntimeError):
+    """An exception nothing in the product anticipates."""
+
+
+def plan_of(wg: WgClient, logical_action_id: str) -> str:
+    rows = wg.db.rows(
+        "SELECT plan_id FROM actions WHERE logical_action_id = ?", (logical_action_id,)
+    )
+    plan_id = rows[0]["plan_id"]
+    assert plan_id is not None
+    return plan_id
+
+
+def breaker_count(wg: WgClient, plan_id: str) -> int:
+    rows = wg.db.rows(
+        "SELECT consecutive_unexpected FROM breaker_state WHERE plan_id = ?", (plan_id,)
+    )
+    return rows[0]["consecutive_unexpected"] if rows else 0
+
+
+def money_state(wg: WgClient) -> dict[str, Any]:
+    return {
+        "operations": wg.db.rows("SELECT operation_id FROM operations ORDER BY operation_id"),
+        "ledger": wg.db.rows("SELECT COUNT(*) AS n FROM ledger_entries")[0]["n"],
+        "reservations": wg.db.rows("SELECT COUNT(*) AS n FROM reservations")[0]["n"],
+        "bank": wg.db.rows("SELECT COUNT(*) AS n FROM bank_requests")[0]["n"],
+        "balance": wg.balance().model_dump(),
+    }
+
+
+@pytest.mark.case("R8")
+@pytest.mark.layer("D")
+def test_r8_unexpected_failure_in_submission_rolls_back_and_keeps_evidence(
+    app_client: WgClient,
+) -> None:
+    wg = app_client
+    draft = wg.draft_transfer(MOM, 50_000)
+    card = wg.open_card(draft.logical_action_id)
+    plan_id = plan_of(wg, draft.logical_action_id)
+    before = money_state(wg)
+    failures_before = len(wg.db.failure_records())
+
+    wg.arm(Fault.UNEXPECTED)
+    wg.refused(wg.confirm_response(card), ErrorCode.UNEXPECTED_FAILURE)
+
+    assert money_state(wg) == before
+    assert wg.db.operations(draft.logical_action_id) == []
+    assert wg.db.events("operation_submitted") == []
+    new = wg.db.failure_records()[failures_before:]
+    assert [(f["error_class"], f["plan_id"]) for f in new] == [("unexpected", plan_id)]
+    assert breaker_count(wg, plan_id) == 1
+
+
+@pytest.mark.case("R8")
+@pytest.mark.layer("D")
+def test_r8_exception_inside_a_unit_rolls_back_its_writes(app_client: WgClient) -> None:
+    wg = app_client
+    draft = wg.draft_transfer(MOM, 50_000)
+    wg.open_card(draft.logical_action_id)
+    plan_id = plan_of(wg, draft.logical_action_id)
+    db = open_database(wg.db.path)
+    failures_before = len(wg.db.failure_records())
+
+    def write_then_fail(uow: UnitOfWork) -> None:
+        audit.record(uow, AuditActor.SYSTEM, "r8_probe", customer_id=MAIN_CUSTOMER)
+        raise ProbeFailure("r8 probe")
+
+    with pytest.raises(ProbeFailure):
+        db.run_in_uow(write_then_fail, "r8 probe", plan_id=plan_id)
+
+    assert wg.db.rows("SELECT audit_id FROM audit_log WHERE event = 'r8_probe'") == []
+    new = wg.db.failure_records()[failures_before:]
+    assert [(f["error_class"], f["plan_id"]) for f in new] == [("unexpected", plan_id)]
+    assert "ProbeFailure" in new[0]["detail"]
+    assert breaker_count(wg, plan_id) == 1
+
+
+@pytest.mark.case("R8")
+@pytest.mark.layer("D")
+def test_r8_nested_unit_of_work_is_refused(app_client: WgClient, tmp_path: Path) -> None:
+    db = open_database(app_client.db.path)
+    other = open_database(tmp_path / "other.db")
+    with db.unit_of_work("r8 outer") as uow:
+        audit.record(uow, AuditActor.SYSTEM, "r8_outer", customer_id=MAIN_CUSTOMER)
+        with pytest.raises(NestedTransactionError):
+            with db.unit_of_work("r8 inner"):
+                pass
+        with pytest.raises(NestedTransactionError):
+            db.run_in_uow(lambda _: None, "r8 inner")
+        with pytest.raises(NestedTransactionError):
+            with other.unit_of_work("r8 other file"):
+                pass
+    # The outer unit is unharmed by the refused inner ones and commits.
+    outer = app_client.db.rows("SELECT audit_id FROM audit_log WHERE event = 'r8_outer'")
+    assert len(outer) == 1
+
+
+@pytest.mark.case("R8")
+@pytest.mark.layer("D")
+def test_r8_model_adapter_refuses_to_run_inside_a_unit(app_client: WgClient) -> None:
+    if importlib.util.find_spec("wg.agent.llm") is None:
+        pytest.skip("the model adapter wg/agent/llm.py does not exist yet (SPEC §18.1)")
+    pytest.fail("wg/agent/llm.py exists: call its entry point inside a unit and expect a refusal")
+
+
+# R10
+
+PACKAGE = Path(__file__).resolve().parents[3] / "wg"
+WRITER = PACKAGE / "k6"
+# A write statement anywhere in a string, not only at its start: after a CTE, a semicolon or
+# a comment. Upper case only, as the product writes SQL, so prose never matches.
+SQL_WRITE = re.compile(
+    r"\b(INSERT\s+(OR\s+[A-Z]+\s+)?INTO|REPLACE\s+INTO|UPDATE\s+[a-z_]+\s+SET|DELETE\s+FROM"
+    r"|CREATE\s+(TEMP\s+|UNIQUE\s+)?(TABLE|INDEX|TRIGGER|VIEW)|DROP\s+(TABLE|INDEX|TRIGGER|VIEW)"
+    r"|ALTER\s+TABLE)\b"
+)
+# Statements that need a writable connection; each must fail on a read-only one.
+READ_ONLY_PROBES = (
+    "INSERT INTO audit_log (at, actor, event) VALUES ('2026-11-02', 'system', 'r10_probe')",
+    "UPDATE sim_clock SET now = now",
+    "DELETE FROM audit_log",
+    "CREATE TABLE r10_probe (x INTEGER)",
+)
+
+
+def sql_writes_in(path: Path) -> list[str]:
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    return [
+        f"{path.relative_to(PACKAGE.parent)}:{node.lineno}"
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Constant)
+        and isinstance(node.value, str)
+        and SQL_WRITE.search(node.value)
+    ]
+
+
+@pytest.mark.case("R10")
+@pytest.mark.layer("D")
+def test_r10_sql_writes_appear_only_under_k6() -> None:
+    sources = [p for p in sorted(PACKAGE.rglob("*.py")) if not p.is_relative_to(WRITER)]
+    assert len(sources) > 20, f"scan found too few modules under {PACKAGE}"
+    hits = [hit for path in sources for hit in sql_writes_in(path)]
+    assert hits == [], f"SQL write statements outside wg/k6: {hits}"
+    stray_sql = [p for p in PACKAGE.rglob("*.sql") if not p.is_relative_to(WRITER)]
+    assert stray_sql == []
+    # The scan itself finds the writes K6 does make.
+    assert any(sql_writes_in(path) for path in sorted(WRITER.rglob("*.py")))
+
+
+@pytest.mark.case("R10")
+@pytest.mark.layer("D")
+@pytest.mark.parametrize("statement", READ_ONLY_PROBES, ids=["insert", "update", "delete", "ddl"])
+def test_r10_read_only_connection_refuses_writes(app_client: WgClient, statement: str) -> None:
+    db = open_database(app_client.db.path)
+    before = app_client.db.rows(
+        "SELECT (SELECT COUNT(*) FROM audit_log) AS audit, (SELECT now FROM sim_clock) AS now"
+    )
+    with db.read() as conn:
+        with pytest.raises(sqlite3.OperationalError, match="readonly|read-only|query_only"):
+            conn.execute(statement)
+        # Lifting query_only does not help: the connection itself was opened read-only.
+        conn.execute("PRAGMA query_only=OFF")
+        with pytest.raises(sqlite3.OperationalError, match="readonly|read-only"):
+            conn.execute(statement)
+    after = app_client.db.rows(
+        "SELECT (SELECT COUNT(*) FROM audit_log) AS audit, (SELECT now FROM sim_clock) AS now"
+    )
+    assert after == before
+    assert app_client.db.rows("SELECT name FROM sqlite_master WHERE name = 'r10_probe'") == []
