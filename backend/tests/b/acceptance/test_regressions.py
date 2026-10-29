@@ -627,14 +627,14 @@ def test_r9_restarts_at_every_step_create_no_authority(live: Live) -> None:
 
 
 @pytest.mark.case("R9")
-def test_r9_ready_with_an_expired_grant_needs_a_new_code(live: Live) -> None:
+def test_r9_refused_submission_with_an_expired_grant_needs_a_new_code(live: Live) -> None:
     wg = live.client
     plan = settled_at_t3(wg)
     challenge = wg.challenge(plan.purchase_id)
     code = wg.sms_code(challenge.challenge_id)
     wg.arm(Fault.UNEXPECTED)
     wg.refused(wg.verify_response(challenge.challenge_id, code), ErrorCode.UNEXPECTED_FAILURE)
-    assert wg.db.action_status(plan.purchase_id) == ActionStatus.READY
+    assert wg.db.action_status(plan.purchase_id) == ActionStatus.AWAITING_STEPUP
 
     wg.advance(to=challenge.expires_at)
     authority = wg.db.authority_counts()
