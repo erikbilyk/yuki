@@ -2,7 +2,8 @@
 
 A same-bank (本行) transfer settles in the unit of work that submits it; an other-bank (他行)
 transfer settles at the next 09:00 CST. A transfer not tied to a bill is discretionary, so
-it must fit in the headroom recomputed from current rows (SPEC §12.3, §13.1).
+it must fit in the headroom recomputed from current rows (SPEC §12.3, §13.1), unless it goes
+to another covered account of the customer: then the money stays inside C.
 
 PAY_BILL is a transfer to the payee of a CONFIRMED or PARTIALLY_PAID bill for at most its
 unpaid amount. It is paid from the bill's own protection, so headroom is not checked; its
@@ -135,7 +136,7 @@ class TransferPack:
                     {"available_fen": available, "shortfall_fen": amount - available},
                 )
             )
-        if account.covered and not is_bill:
+        if account.covered and not is_bill and not _stays_covered(reader, params):
             snapshot = compute_snapshot(cash_inputs_from_db(reader, customer_id, at))
             if amount > snapshot.headroom_fen:
                 reasons.append(
@@ -191,14 +192,7 @@ class TransferPack:
         return CardContent(
             title=title,
             lines=tuple(lines),
-            changes=(
-                MoneyChange(
-                    key="account_posted",
-                    label=f"{account.name}余额",
-                    before=account.balance_fen,
-                    after=account.balance_fen - amount,
-                ),
-            ),
+            changes=tuple(_changes(reader, payee.payee_id, account, amount)),
             sources=tuple(_sources(action)),
             warnings=tuple(warnings),
         )
@@ -310,6 +304,36 @@ def bill_refusals(reader: Reader, customer_id: str, params: Mapping[str, Any]) -
             )
         )
     return reasons
+
+
+def _stays_covered(reader: Reader, params: Mapping[str, Any]) -> bool:
+    """A transfer to another covered account of the customer leaves C unchanged."""
+    own = accounts.own_account(reader, str(params["payee_id"]))
+    return own is not None and own.covered
+
+
+def _changes(
+    reader: Reader, payee_id: str, account: accounts.AccountRow, amount: int
+) -> list[MoneyChange]:
+    changes = [
+        MoneyChange(
+            key="account_posted",
+            label=f"{account.name}余额",
+            before=account.balance_fen,
+            after=account.balance_fen - amount,
+        )
+    ]
+    own = accounts.own_account(reader, payee_id)
+    if own is not None:
+        changes.append(
+            MoneyChange(
+                key="to_account_posted",
+                label=f"{own.name}余额",
+                before=own.balance_fen,
+                after=own.balance_fen + amount,
+            )
+        )
+    return changes
 
 
 def _bill_of(reader: Reader, action: ActionRow) -> commitments.CommitmentRow | None:

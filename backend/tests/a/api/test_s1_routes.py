@@ -175,8 +175,18 @@ def test_float_amount_is_refused(browser: Browser):
 
 def test_payees_are_masked_and_searchable(browser: Browser):
     payees = PayeesView.model_validate(browser.get("/v1/payees").json()).payees
-    assert [p.alias for p in payees] == ["妈妈", "爸爸", "王磊", "王芳", "保险公司", "李明"]
-    assert all(p.account_masked.startswith("··") for p in payees)
+    assert [p.alias for p in payees] == [
+        "妈妈",
+        "爸爸",
+        "王磊",
+        "王芳",
+        "保险公司",
+        "李明",
+        "本人主账户",
+        "本人储蓄账户",
+    ]
+    others = [p for p in payees if not p.payee_id.startswith("pay_self_")]
+    assert all(p.account_masked.startswith("··") for p in others)
     assert "account_ref" not in browser.get("/v1/payees").text
     found = PayeesView.model_validate(browser.get("/v1/payees", q="王").json()).payees
     assert [p.alias for p in found] == ["王磊", "王芳"]

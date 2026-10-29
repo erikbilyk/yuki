@@ -77,6 +77,8 @@ class MoneyFacts:
     bills: Mapping[str, Bill] = field(default_factory=dict)
     book: frozenset[str] = frozenset()
     proceeds: Mapping[str, Proceeds] = field(default_factory=dict)
+    # Payees that are the customer's own accounts: payee_id → account_id.
+    own_accounts: Mapping[str, str] = field(default_factory=dict)
 
 
 def validate_plan(nodes: Sequence[ProposedNode], facts: MoneyFacts) -> PlanValidationResult:
@@ -166,7 +168,9 @@ def _funded(order: Sequence[ProposedNode], facts: MoneyFacts) -> bool:
 
     A bill payment is funded by its own protection, so it needs posted money only; a
     transfer or a purchase needs money and headroom. A redemption adds its net proceeds
-    when it settles, never before. Raising the reserve takes headroom at once.
+    when it settles, never before. Raising the reserve takes headroom at once. A transfer
+    to the customer's own account credits that account when it runs and takes no headroom
+    when both accounts are covered.
     """
     cash = dict(facts.available_fen)
     headroom = facts.headroom_fen
@@ -199,6 +203,11 @@ def _funded(order: Sequence[ProposedNode], facts: MoneyFacts) -> bool:
             cash[account] = cash.get(account, 0) - amount
             if cash[account] < 0:
                 return False
+            to_account = facts.own_accounts.get(str(params.get("payee_id")))
+            if node.kind is ActionKind.TRANSFER and to_account is not None:
+                cash[to_account] = cash.get(to_account, 0) + amount
+                if to_account in facts.covered_accounts:
+                    continue
             if node.kind is not ActionKind.PAY_BILL and account in facts.covered_accounts:
                 headroom -= amount
                 if headroom < 0:

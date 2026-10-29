@@ -11,7 +11,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "backend" / "wg"
 ALLOWED = PACKAGE / "k6"
-WRITE = re.compile(r"\s*(INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER)\b", re.IGNORECASE)
+# Write statements anywhere in the string (after a CTE, another statement or a comment too).
+# Upper-case keywords in statement shape, so prose such as "update the plan" does not match.
+WRITE = re.compile(
+    r"\b(INSERT\s+(OR\s+[A-Z]+\s+)?INTO|REPLACE\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM"
+    r"|CREATE\s+(TEMP\s+|UNIQUE\s+)?(TABLE|INDEX|TRIGGER|VIEW)|DROP\s+(TABLE|INDEX|TRIGGER|VIEW)"
+    r"|ALTER\s+TABLE)\b"
+)
 
 
 def find_hits(path: Path) -> list[int]:
@@ -21,7 +27,7 @@ def find_hits(path: Path) -> list[int]:
         for node in ast.walk(tree)
         if isinstance(node, ast.Constant)
         and isinstance(node.value, str)
-        and WRITE.match(node.value)
+        and WRITE.search(node.value)
     ]
 
 

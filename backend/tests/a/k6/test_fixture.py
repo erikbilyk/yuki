@@ -73,7 +73,8 @@ def assert_ledger_balanced(db: Database) -> None:
 
 def test_base_profile_content(loaded: Database):
     assert count(loaded, "customers") == 2 and count(loaded, "operators") == 2
-    assert count(loaded, "payees") == len(BASE.payees)
+    # One own-account payee per customer account follows the fixture's payees.
+    assert count(loaded, "payees") == len(BASE.payees) + len(BASE.accounts)
     assert rows(loaded, "SELECT kind, status, idempotency_key FROM operations") == [
         ("OPENING", "SETTLED", "opening:fixture_v1")
     ]

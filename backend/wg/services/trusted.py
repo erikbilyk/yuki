@@ -2,6 +2,10 @@
 
 Each step runs in one unit of work. A refusal raised inside the unit rolls it back; its
 audit row is then written in a unit of its own, so every refusal leaves an audit line.
+
+Confirm and verify commit READY first and submit in a second unit. When that submission is
+refused or fails, a third unit moves the action out of READY, so no later tick or restart
+sends what the customer was told did not go through; only a new customer step does (SPEC §12.3).
 """
 
 from __future__ import annotations
@@ -19,16 +23,22 @@ from wg.contracts.api import (
     SmsView,
     VerifyResult,
 )
-from wg.contracts.errors import ErrorClass, WgError
+from wg.contracts.enums import ActionStatus, AuditActor, Tier
+from wg.contracts.errors import ErrorClass, ErrorCode, WgError
 from wg.core import k4_approval as k4
-from wg.core.k4_approval import Confirmation, Refusal, StepUp, Verified
-from wg.core.k5_coordinator import Coordinator
-from wg.k6 import actions, challenges
+from wg.core.k4_approval import Confirmation, InvalidationReason, Refusal, StepUp, Verified
+from wg.core.k5_coordinator import Coordinator, store_status
+from wg.k6 import actions, audit, challenges
 from wg.k6.actions import ActionRow
 from wg.k6.db import Database, UnitOfWork
 from wg.k6.simtime import now
 from wg.services.actions import ActionService
 from wg.services.refusals import record_refusal
+
+# A busy database retries under the same key, an integrity violation locks its scope and
+# TIER_CHANGED has already moved the action to AWAITING_STEPUP; every other refusal or
+# failure of the submission withdraws READY.
+_WITHDRAWN_BY = frozenset({ErrorClass.EXPECTED, ErrorClass.UNEXPECTED})
 
 
 class TrustedService:
@@ -176,11 +186,60 @@ class TrustedService:
         self, customer_id: str, action: ActionRow | None
     ) -> tuple[ActionRow | None, OperationView | None]:
         """Submit a READY action; return the action as it stands afterwards and its operation."""
-        operation = self.action_service.execute(customer_id, action)
+        try:
+            operation = self.action_service.execute(customer_id, action)
+        except WgError as error:
+            if action is not None and _withdraws(error):
+                self._withdraw_ready(action, error.code)
+            raise
         if action is None:
             return None, None
         with self.db.read() as conn:
             return actions.get_revision(conn, action.logical_action_id, action.revision), operation
+
+    def _withdraw_ready(self, action: ActionRow, code: ErrorCode) -> None:
+        """After a refused submission the action waits for a new customer step (SPEC §12.3).
+
+        An action with a grant, or a RED one, loses the grant and waits for a new code. Any
+        other goes back to AWAITING_APPROVAL; confirming its card again makes it READY.
+        """
+
+        def run(uow: UnitOfWork) -> None:
+            current = actions.get_revision(uow, action.logical_action_id, action.revision)
+            if current.status is not ActionStatus.READY:
+                return
+            if current.tier is Tier.RED or k4.find_grant(uow, current) is not None:
+                k4.invalidate_grants(
+                    uow,
+                    self.step_up,
+                    InvalidationReason.SUBMISSION_REFUSED,
+                    now(uow),
+                    logical_action_id=current.logical_action_id,
+                )
+                status = ActionStatus.AWAITING_STEPUP
+            else:
+                status = ActionStatus.AWAITING_APPROVAL
+            current = actions.get_revision(uow, current.logical_action_id, current.revision)
+            if current.status is ActionStatus.READY:
+                actions.set_status(uow, current, status)
+            audit.record(
+                uow,
+                AuditActor.SYSTEM,
+                "submission_withdrawn",
+                customer_id=current.customer_id,
+                ref=current.logical_action_id,
+                decision=status.value,
+                reason=code.value,
+            )
+            if current.plan_id is not None:
+                store_status(uow, current.plan_id)
+
+        self.db.run_in_uow(
+            run,
+            "withdraw ready",
+            plan_id=action.plan_id,
+            logical_action_id=action.logical_action_id,
+        )
 
     def _issue(
         self,
@@ -202,3 +261,7 @@ class TrustedService:
             if error.error_class is ErrorClass.EXPECTED:
                 record_refusal(self.db, customer_id, event, ref, error)
             raise
+
+
+def _withdraws(error: WgError) -> bool:
+    return error.error_class in _WITHDRAWN_BY and error.code is not ErrorCode.TIER_CHANGED

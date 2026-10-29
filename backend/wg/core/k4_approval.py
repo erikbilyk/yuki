@@ -60,6 +60,7 @@ class InvalidationReason(StrEnum):
     SCOPE_MISMATCH = "scope_mismatch"
     CANCELLED = "cancelled"
     PAUSED = "paused"
+    SUBMISSION_REFUSED = "submission_refused"
 
 
 # The refusal a later verify of an invalidated challenge gets.
@@ -72,6 +73,8 @@ _REFUSAL_AFTER: dict[str, ErrorCode] = {
     InvalidationReason.SCOPE_MISMATCH: ErrorCode.CODE_SCOPE_MISMATCH,
     # A paused action can no longer be approved, as its state refusal says.
     InvalidationReason.PAUSED: ErrorCode.APPROVAL_EXPIRED,
+    # The submission after this code was refused; the action waits for a new code.
+    InvalidationReason.SUBMISSION_REFUSED: ErrorCode.APPROVAL_REQUIRED,
 }
 
 # Invalidating a grant for these reasons returns a READY action to AWAITING_STEPUP, so it
@@ -82,6 +85,7 @@ _BACK_TO_STEPUP = frozenset(
         InvalidationReason.LOCK_CLEARED,
         InvalidationReason.APPROVAL_REVOKED,
         InvalidationReason.APPROVAL_EXPIRED,
+        InvalidationReason.SUBMISSION_REFUSED,
     }
 )
 
@@ -383,13 +387,14 @@ def confirm_card(
     """The customer confirms a card with the terms hash it displayed.
 
     YELLOW and GREEN actions become READY; a RED action moves to AWAITING_STEPUP and a code
-    is sent. Confirming a confirmed card again with the same hash changes nothing.
+    is sent. Confirming a confirmed card again with the same hash creates nothing; when the
+    submission after the first confirm was refused, it makes the action READY again.
     """
     card = find_owned_card(uow, customer_id, card_id)
     if not _same(presented_terms_hash, card.terms_hash):
         raise WgError(ErrorCode.TERMS_MISMATCH, {"card_id": card.card_id})
     if card.approval_id is not None:
-        return _repeat_confirmation(uow, card)
+        return _repeat_confirmation(uow, card, now)
     status = card_status(uow, card, now)
     if status is CardStatus.SUPERSEDED:
         raise WgError(ErrorCode.SUPERSEDED, {"card_id": card.card_id})
@@ -474,17 +479,43 @@ def _confirm_plan_card(uow: UnitOfWork, card: CardRow) -> Confirmation:
     return Confirmation(confirmed, approval, None, None, repeated=False)
 
 
-def _repeat_confirmation(reader: Reader, card: CardRow) -> Confirmation:
+def _repeat_confirmation(uow: UnitOfWork, card: CardRow, now: datetime) -> Confirmation:
     assert card.approval_id is not None
-    approval = approvals.find_approval(reader, card.approval_id)
+    approval = approvals.find_approval(uow, card.approval_id)
     assert approval is not None
     action = challenge = None
     if card.logical_action_id is not None and card.revision is not None:
-        action = actions.get_revision(reader, card.logical_action_id, card.revision)
-        issued = challenges.challenges_of_action(reader, action.logical_action_id, action.revision)
+        action = actions.get_revision(uow, card.logical_action_id, card.revision)
+        if action.status is ActionStatus.AWAITING_APPROVAL:
+            action = _confirm_again(uow, approval, action, now)
+        issued = challenges.challenges_of_action(uow, action.logical_action_id, action.revision)
         open_ones = [c for c in issued if c.is_open]
         challenge = open_ones[-1] if open_ones else None
     return Confirmation(card, approval, action, challenge, repeated=True)
+
+
+def _confirm_again(
+    uow: UnitOfWork, approval: ApprovalRow, action: ActionRow, now: datetime
+) -> ActionRow:
+    """READY again under the same approval: the customer retries after a refused submission."""
+    refusal = approval_refusal(approval, now)
+    if refusal is not None:
+        raise WgError(refusal, {"logical_action_id": action.logical_action_id})
+    check_not_locked(
+        uow,
+        action.customer_id,
+        action.plan_id,
+        risk_reducing=is_risk_reducing(uow, action.customer_id, action.kind, action.params),
+    )
+    audit.record(
+        uow,
+        AuditActor.CUSTOMER,
+        "approval_confirmed_again",
+        customer_id=action.customer_id,
+        ref=approval.approval_id,
+        decision=action.tier.value,
+    )
+    return actions.set_status(uow, action, ActionStatus.READY)
 
 
 def approval_for(reader: Reader, action: ActionRow) -> ApprovalRow | None:

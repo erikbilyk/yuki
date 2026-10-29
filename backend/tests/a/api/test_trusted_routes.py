@@ -239,3 +239,72 @@ def test_trusted_routes_refuse_staff_sessions(tmp_path: Path):
         assert response.status_code == 401 and response.json()["code"] == "SESSION_EXPIRED"
         assert staff.post("/v1/actions/act_x/challenge", role=Role.OPERATOR).status_code == 401
         assert staff.get("/v1/sms").status_code == 401
+
+
+def drain_main(browser: Browser) -> None:
+    """Leave ¥100 on acc_main (¥18,000 at the start)."""
+    body = {"account_id": "acc_main", "amount_fen": 1_790_000, "merchant_raw": "模拟商户"}
+    assert browser.sim("/sim/external-debit", body).status_code == 200
+
+
+def top_up_main(browser: Browser) -> None:
+    body = {"account_id": "acc_main", "amount_fen": 3_000_000, "payer_name": "张三"}
+    assert browser.sim("/sim/incoming-payment", body).status_code == 200
+
+
+def operations_of(browser: Browser, logical_action_id: str) -> list[str]:
+    with browser.db.read() as conn:
+        rows = conn.execute(
+            "SELECT status FROM operations WHERE logical_action_id = ?", (logical_action_id,)
+        ).fetchall()
+    return [row[0] for row in rows]
+
+
+def test_a_refused_submission_after_confirm_waits_for_the_customer(browser: Browser):
+    card = card_of(browser, YELLOW_FEN)
+    assert card.logical_action_id is not None
+    drain_main(browser)
+    refused = confirm(browser, card)
+    assert refused.status_code == 409
+    assert ErrorBody.model_validate(refused.json()).code is ErrorCode.INSUFFICIENT_FUNDS
+    assert current(browser.db, card.logical_action_id).status is ActionStatus.AWAITING_APPROVAL
+
+    top_up_main(browser)
+    assert browser.sim("/sim/clock/advance", {"minutes": 1}).status_code == 200
+    assert operations_of(browser, card.logical_action_id) == []
+
+    again = confirm(browser, card)
+    assert again.status_code == 200, again.text
+    result = ConfirmResult.model_validate(again.json())
+    assert result.action_status is ActionStatus.SETTLED
+    assert operations_of(browser, card.logical_action_id) == ["SETTLED"]
+
+
+def test_a_refused_submission_after_verify_needs_a_new_code(browser: Browser):
+    card = card_of(browser, RED_FEN)
+    assert card.logical_action_id is not None
+    challenge = ConfirmResult.model_validate(confirm(browser, card).json()).challenge
+    assert challenge is not None
+    code = sms_code(browser, challenge.challenge_id)
+    drain_main(browser)
+    path = f"/v1/challenges/{challenge.challenge_id}/verify"
+    refused = browser.post(path, {"code": code})
+    assert refused.status_code == 409
+    assert ErrorBody.model_validate(refused.json()).code is ErrorCode.INSUFFICIENT_FUNDS
+    assert current(browser.db, card.logical_action_id).status is ActionStatus.AWAITING_STEPUP
+
+    top_up_main(browser)
+    repeated = browser.post(path, {"code": code})
+    assert ErrorBody.model_validate(repeated.json()).code is ErrorCode.APPROVAL_REQUIRED
+    assert browser.sim("/sim/clock/advance", {"minutes": 1}).status_code == 200
+    assert operations_of(browser, card.logical_action_id) == []
+
+    issued = browser.post(f"/v1/actions/{card.logical_action_id}/challenge")
+    assert issued.status_code == 201, issued.text
+    fresh = ChallengeView.model_validate(issued.json())
+    verified = browser.post(
+        f"/v1/challenges/{fresh.challenge_id}/verify",
+        {"code": sms_code(browser, fresh.challenge_id)},
+    )
+    assert verified.status_code == 200, verified.text
+    assert operations_of(browser, card.logical_action_id) == ["SETTLED"]

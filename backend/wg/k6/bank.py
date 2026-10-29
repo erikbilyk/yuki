@@ -32,7 +32,7 @@ from wg.contracts.enums import (
 )
 from wg.contracts.errors import ErrorCode, WgError
 from wg.core.hashes import sha256_hex
-from wg.k6 import audit, faults, operations
+from wg.k6 import accounts, audit, faults, operations
 from wg.k6.db import Reader, UnitOfWork
 from wg.k6.operations import OperationRow
 from wg.k6.simtime import from_db, now_db, to_db
@@ -191,6 +191,7 @@ def submit_payment(
             "account_id": order.account_id,
             "amount_fen": order.amount_fen,
             "payee_id": order.payee_id,
+            "to_account_id": _credit_account(uow, order.payee_id),
             "accepted_at": to_db(at),
             "settle_due_at": to_db(order.settle_due_at),
             "settled_at": None,
@@ -212,9 +213,16 @@ def settle_payment(uow: UnitOfWork, key: str, at: datetime) -> BankRequest:
 
     def postings(effect: Mapping[str, Any]) -> tuple[Posting, ...]:
         amount = int(effect["amount_fen"])
-        return (Posting(str(effect["account_id"]), -amount), Posting(CLEARING_ACCOUNT, amount))
+        credit = effect.get("to_account_id") or CLEARING_ACCOUNT
+        return (Posting(str(effect["account_id"]), -amount), Posting(str(credit), amount))
 
     return _settle(uow, key, at, postings)
+
+
+def _credit_account(reader: Reader, payee_id: str) -> str | None:
+    """The customer's own account behind a payee; other payees are paid through clearing."""
+    account = accounts.own_account(reader, payee_id)
+    return None if account is None else account.account_id
 
 
 def _settle(
