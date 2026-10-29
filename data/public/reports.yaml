@@ -1,0 +1,35 @@
+# Cached public reports for the dated diagnostics. Raw PDFs stay in data/public/raw/ (untracked).
+# source_url is null where the original download address was not recorded at retrieval.
+period_end: "2026-06-30"
+retrieved_on: "2026-10-29"
+funds:
+  - code: "019018"
+    share_class: C
+    name: 易方达信息产业混合C
+    parent_code: "001513"
+    parent_name: 易方达信息产业混合型证券投资基金
+    interim_report:
+      title: 易方达信息产业混合型证券投资基金2026年中期报告
+      file: 易方达信息产业混合型证券投资基金2026年中期报告.pdf
+      sha256: e590d3398d013ce751c766277c12b3cacaa43d3f6e670efef4a2cbf2242c3d99
+      source_url: null
+    product_summary:
+      title: 易方达信息产业混合型证券投资基金（易方达信息产业混合C）基金产品资料概要更新
+      file: 易方达信息产业混合型证券投资基金（易方达信息产业混合C）基金产品资料概要更新.pdf
+      sha256: 29c62deb394e8f5e1bd6807bb89fb5d73fdb80fc3ca18a5ba7a7e82e4106bc77
+      source_url: null
+  - code: "010737"
+    share_class: C
+    name: 易方达沪深300精选增强C
+    parent_code: "010736"
+    parent_name: 易方达沪深300指数精选增强型证券投资基金
+    interim_report:
+      title: 易方达沪深300指数精选增强型证券投资基金2026年中期报告
+      file: 易方达沪深300指数精选增强型证券投资基金2026年中期报告.pdf
+      sha256: 547fb0592afd67e961000dfa9fb2f96ca489f006c647bcc6b3af8ee6375de196
+      source_url: null
+    product_summary:
+      title: 易方达沪深300指数精选增强型证券投资基金（易方达沪深300精选增强C）基金产品资料概要更新
+      file: 易方达沪深300指数精选增强型证券投资基金（易方达沪深300精选增强C）基金产品资料概要更新.pdf
+      sha256: 9cce14d3d41a70bb0d1aada37cc7ccaeae9e915db2c731ad1ea6cd5997a80422
+      source_url: null
