@@ -7,6 +7,7 @@ and `partial` are final.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -188,3 +189,133 @@ def next_due_instant(reader: Reader, after: datetime, before: datetime) -> datet
         bounds * 3,
     ).fetchone()
     return None if row is None or row[0] is None else from_db(row[0])
+
+
+# Revisions and checkpoint results (SPEC §7; both append-only)
+
+
+@dataclass(frozen=True)
+class RevisionRow:
+    plan_id: str
+    revision: int
+    reason: str
+    trigger_event_id: str | None
+    cash_snapshot_id: str | None
+    calc_result_id: str | None
+    approval_id: str | None
+    within_bounds: bool
+    created_at: datetime
+
+
+def insert_revision(
+    uow: UnitOfWork,
+    *,
+    plan_id: str,
+    revision: int,
+    reason: str,
+    cash_snapshot_id: str | None,
+    calc_result_id: str | None,
+    approval_id: str | None,
+    within_bounds: bool,
+    trigger_event_id: str | None = None,
+) -> None:
+    uow.execute(
+        "INSERT INTO plan_revisions (plan_id, revision, reason, trigger_event_id,"
+        " cash_snapshot_id, calc_result_id, approval_id, within_bounds, created_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            plan_id,
+            revision,
+            reason,
+            trigger_event_id,
+            cash_snapshot_id,
+            calc_result_id,
+            approval_id,
+            int(within_bounds),
+            now_db(uow),
+        ),
+    )
+
+
+def revisions(reader: Reader, plan_id: str) -> list[RevisionRow]:
+    rows = reader.execute(
+        "SELECT * FROM plan_revisions WHERE plan_id = ? ORDER BY revision", (plan_id,)
+    ).fetchall()
+    return [
+        RevisionRow(
+            plan_id=row["plan_id"],
+            revision=row["revision"],
+            reason=row["reason"],
+            trigger_event_id=row["trigger_event_id"],
+            cash_snapshot_id=row["cash_snapshot_id"],
+            calc_result_id=row["calc_result_id"],
+            approval_id=row["approval_id"],
+            within_bounds=bool(row["within_bounds"]),
+            created_at=from_db(row["created_at"]),
+        )
+        for row in rows
+    ]
+
+
+@dataclass(frozen=True)
+class CheckpointRow:
+    plan_id: str
+    logical_action_id: str
+    result: str
+    measured_pct: str
+    lower_pct: str
+    upper_pct: str
+    basis: dict
+    evaluated_at: datetime
+
+
+def insert_checkpoint(
+    uow: UnitOfWork,
+    *,
+    plan_id: str,
+    logical_action_id: str,
+    result: str,
+    measured_pct: str,
+    lower_pct: str,
+    upper_pct: str,
+    basis: dict,
+    evaluated_at: datetime,
+) -> bool:
+    """Write the node's one result; False when it was already written (never rewritten)."""
+    cursor = uow.execute(
+        "INSERT INTO checkpoint_results (plan_id, logical_action_id, result, measured_pct,"
+        " lower_pct, upper_pct, basis_json, evaluated_at, created_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        " ON CONFLICT (plan_id, logical_action_id) DO NOTHING",
+        (
+            plan_id,
+            logical_action_id,
+            result,
+            measured_pct,
+            lower_pct,
+            upper_pct,
+            json.dumps(basis, sort_keys=True, separators=(",", ":"), ensure_ascii=False),
+            to_db(evaluated_at),
+            now_db(uow),
+        ),
+    )
+    return cursor.rowcount == 1
+
+
+def find_checkpoint(reader: Reader, plan_id: str, logical_action_id: str) -> CheckpointRow | None:
+    row = reader.execute(
+        "SELECT * FROM checkpoint_results WHERE plan_id = ? AND logical_action_id = ?",
+        (plan_id, logical_action_id),
+    ).fetchone()
+    if row is None:
+        return None
+    return CheckpointRow(
+        plan_id=row["plan_id"],
+        logical_action_id=row["logical_action_id"],
+        result=row["result"],
+        measured_pct=row["measured_pct"],
+        lower_pct=row["lower_pct"],
+        upper_pct=row["upper_pct"],
+        basis=json.loads(row["basis_json"]),
+        evaluated_at=from_db(row["evaluated_at"]),
+    )

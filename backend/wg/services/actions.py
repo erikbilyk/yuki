@@ -22,7 +22,14 @@ from wg.contracts.api import (
     DraftResult,
     OperationView,
 )
-from wg.contracts.enums import ActionKind, ActionStatus, AuditActor, CommitmentStatus, Provenance
+from wg.contracts.enums import (
+    ActionKind,
+    ActionStatus,
+    AuditActor,
+    CommitmentStatus,
+    PlanKind,
+    Provenance,
+)
 from wg.contracts.errors import ErrorClass, ErrorCode, WgError
 from wg.contracts.ids import IdPrefix, new_id
 from wg.core import k4_approval as k4
@@ -30,7 +37,7 @@ from wg.core.k1_session import not_found, owned
 from wg.core.k3_policy import check_not_locked, is_risk_reducing
 from wg.core.k4_approval import InvalidationReason, StepUp
 from wg.core.k5_coordinator import store_status
-from wg.k6 import accounts, actions, audit, commitments, imports, operations
+from wg.k6 import accounts, actions, audit, commitments, imports, operations, plans
 from wg.k6.actions import ActionRow
 from wg.k6.categories import CATEGORIES
 from wg.k6.db import Database, UnitOfWork
@@ -435,6 +442,10 @@ class ActionService:
             action = owned(actions.find_current(uow, logical_action_id), customer_id, _owner)
             if action.status not in (ActionStatus.DRAFT, ActionStatus.AWAITING_APPROVAL):
                 raise k4.state_refusal(action).error()
+            if action.plan_id is not None:
+                if plans.get_plan(uow, action.plan_id).kind is not PlanKind.SINGLE:
+                    # A plan's node is approved with its plan card, never on a card of its own.
+                    raise WgError(ErrorCode.UNSUPPORTED_REQUEST, {"reason": "plan_node"})
             pack = pack_for(action.kind)
             if action.status is ActionStatus.DRAFT:
                 check_not_locked(
@@ -443,7 +454,9 @@ class ActionService:
                     action.plan_id,
                     risk_reducing=is_risk_reducing(uow, customer_id, action.kind, action.params),
                 )
-                reasons = pack.precheck(uow, customer_id, action.kind, action.params, at)
+                reasons = pack.precheck(
+                    uow, customer_id, action.kind, action.params, at, plan_id=action.plan_id
+                )
                 if reasons:
                     detail = {**reasons[0].detail, "reasons": [r.code.value for r in reasons]}
                     raise WgError(reasons[0].code, detail)

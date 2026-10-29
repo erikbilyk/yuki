@@ -115,6 +115,8 @@ class BillsPack:
         kind: ActionKind,
         params: Mapping[str, Any],
         at: datetime,
+        *,
+        plan_id: str | None = None,
     ) -> tuple[Infeasible, ...]:
         kind = ActionKind(kind)
         if kind is ActionKind.DESIGNATE_RESERVE:

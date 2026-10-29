@@ -53,6 +53,8 @@ def receipt_view(reader: Reader, operation: OperationRow, receipt: ReceiptRow) -
         kind=operation.action_kind,
         account_id=operation.account_id,
         amount_fen=operation.amount_fen,
+        fee_fen=receipt.effect.get("fee_fen"),
+        net_fen=receipt.effect.get("net_fen"),
         shares=operation.shares,
         product_id=operation.product_id,
         payee_id=operation.payee_id,

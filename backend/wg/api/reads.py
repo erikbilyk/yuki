@@ -13,7 +13,6 @@ from wg.contracts.api import (
     OperationView,
     PayeesQuery,
     PayeesView,
-    PlansView,
     ReceiptView,
     TransferHistoryQuery,
     TransferHistoryView,
@@ -29,7 +28,6 @@ PayeesReader = Annotated[Principal, Depends(route_guard("GET", "/v1/payees"))]
 HistoryReader = Annotated[Principal, Depends(route_guard("GET", "/v1/transfers/history"))]
 OperationReader = Annotated[Principal, Depends(route_guard("GET", "/v1/operations/{id}"))]
 ReceiptReader = Annotated[Principal, Depends(route_guard("GET", "/v1/receipts/{operation_id}"))]
-PlansReader = Annotated[Principal, Depends(route_guard("GET", "/v1/plans"))]
 
 
 def _service(request: Request) -> ReadService:
@@ -68,8 +66,3 @@ def operation(id: str, request: Request, principal: OperationReader) -> Operatio
 @router.get("/receipts/{operation_id}")
 def receipt(operation_id: str, request: Request, principal: ReceiptReader) -> ReceiptView:
     return _service(request).receipt(principal.customer_id, operation_id)
-
-
-@router.get("/plans")
-def plans(request: Request, principal: PlansReader) -> PlansView:
-    return _service(request).plans(principal.customer_id)

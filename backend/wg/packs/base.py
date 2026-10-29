@@ -80,8 +80,13 @@ class Pack(Protocol):
         kind: ActionKind,
         params: Mapping[str, Any],
         at: datetime,
+        *,
+        plan_id: str | None = None,
     ) -> tuple[Infeasible, ...]:
-        """Every reason the action cannot execute at `at`, from current rows; empty if it can."""
+        """Every reason the action cannot execute at `at`, from current rows; empty if it can.
+
+        `plan_id` is the plan the action runs in, for checks that span the plan's actions.
+        """
         ...
 
     def card(self, reader: Reader, action: ActionRow, at: datetime) -> CardContent: ...
@@ -96,7 +101,9 @@ class ActionPack(Pack, Protocol):
 
     def reserve(
         self, uow: UnitOfWork, operation: OperationRow, terms: OperationTerms
-    ) -> ReservationRow: ...
+    ) -> ReservationRow | None:
+        """Hold the money the operation will debit; an order that debits nothing holds none."""
+        ...
 
     def apply(
         self, uow: UnitOfWork, operation: OperationRow, terms: OperationTerms, at: datetime

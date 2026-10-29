@@ -4,7 +4,9 @@ The simulator shares the gateway's database, so a bank call is a set of writes i
 gateway's unit of work. `bank_requests` is the bank's own record of each payment order by
 idempotency key; reconciliation reads only that record. Ledger entries are posted when a
 payment settles: a same-bank payment settles in the call that submits it, an other-bank
-payment at the next 09:00. Until then the gateway's reservation holds the money.
+payment at the next 09:00. Until then the gateway's reservation holds the money. A fund
+order settles on its product's calendar (SPEC §15.3) against the simulator's fund
+settlement and fee income accounts.
 
 Two fault points live here (SPEC §12.7): `bank_ack_lost` fires after the order and its
 effect are recorded, and `settlement_reject` makes the bank refuse a payment at settlement.
@@ -14,9 +16,11 @@ from __future__ import annotations
 
 import json
 import secrets
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
+from enum import StrEnum
 from typing import Any
 
 from wg.contracts.enums import (
@@ -34,6 +38,8 @@ from wg.k6.operations import OperationRow
 from wg.k6.simtime import from_db, now_db, to_db
 
 CLEARING_ACCOUNT = "acc_sys_clearing"
+FUND_SETTLEMENT_ACCOUNT = "acc_sys_fund_settlement"
+FEE_INCOME_ACCOUNT = "acc_sys_fee_income"
 INCOMING_PAYMENT = "INCOMING_PAYMENT"
 EXTERNAL_DEBIT = "EXTERNAL_DEBIT"
 SETTLEMENT_REJECTED = "settlement_rejected"
@@ -203,6 +209,20 @@ def settle_payment(uow: UnitOfWork, key: str, at: datetime) -> BankRequest:
 
     A settled or rejected order is returned unchanged, so settling twice changes nothing.
     """
+
+    def postings(effect: Mapping[str, Any]) -> tuple[Posting, ...]:
+        amount = int(effect["amount_fen"])
+        return (Posting(str(effect["account_id"]), -amount), Posting(CLEARING_ACCOUNT, amount))
+
+    return _settle(uow, key, at, postings)
+
+
+def _settle(
+    uow: UnitOfWork,
+    key: str,
+    at: datetime,
+    postings: Callable[[Mapping[str, Any]], Sequence[Posting]],
+) -> BankRequest:
     request = find_request(uow, key)
     if request is None:
         raise LookupError(f"no bank request {key}")
@@ -212,15 +232,94 @@ def settle_payment(uow: UnitOfWork, key: str, at: datetime) -> BankRequest:
     if faults.consume(uow, Fault.SETTLEMENT_REJECT):
         effect.update(reason=SETTLEMENT_REJECTED, rejected_at=to_db(at))
         return _update_request(uow, request, BankRequestStatus.REJECTED, effect)
-    amount = int(effect["amount_fen"])
-    post_entries(
-        uow,
-        str(effect["operation_id"]),
-        (Posting(str(effect["account_id"]), -amount), Posting(CLEARING_ACCOUNT, amount)),
-        at,
-    )
+    post_entries(uow, str(effect["operation_id"]), postings(effect), at)
     effect["settled_at"] = to_db(at)
     return _update_request(uow, request, BankRequestStatus.EXECUTED, effect)
+
+
+# Fund orders
+
+
+class FundSide(StrEnum):
+    REDEEM = "redeem"
+    PURCHASE = "purchase"
+
+
+@dataclass(frozen=True)
+class FundOrder:
+    """A redemption or purchase at a NAV known before the order (the simulator's terms).
+
+    `cash_fen` is the effect on the customer's account at settlement: the net proceeds of a
+    redemption (positive) or the amount of a purchase (negative).
+    """
+
+    key: str
+    operation_id: str
+    account_id: str
+    product_id: str
+    side: FundSide
+    shares: Decimal
+    nav: Decimal
+    gross_fen: int
+    fee_fen: int
+    cash_fen: int
+    settle_due_at: datetime
+
+
+def submit_fund_order(
+    uow: UnitOfWork, order: FundOrder, at: datetime, *, settle_now: bool
+) -> BankRequest:
+    """Accept a fund order once per key; an order due at once settles in the same call.
+
+    Raises AckLost, after the order and its effect are written, when `bank_ack_lost` fires.
+    """
+    request = find_request(uow, order.key)
+    if request is not None:
+        return request
+    request = _insert_request(
+        uow,
+        order.key,
+        BankRequestStatus.EXECUTED,
+        {
+            "operation_id": order.operation_id,
+            "account_id": order.account_id,
+            "product_id": order.product_id,
+            "side": order.side.value,
+            "shares": str(order.shares),
+            "nav": str(order.nav),
+            "gross_fen": order.gross_fen,
+            "fee_fen": order.fee_fen,
+            "cash_fen": order.cash_fen,
+            "accepted_at": to_db(at),
+            "settle_due_at": to_db(order.settle_due_at),
+            "settled_at": None,
+            "reason": None,
+        },
+    )
+    if settle_now:
+        request = settle_fund_order(uow, order.key, at)
+    if faults.consume(uow, Fault.BANK_ACK_LOST):
+        raise AckLost(request)
+    return request
+
+
+def settle_fund_order(uow: UnitOfWork, key: str, at: datetime) -> BankRequest:
+    """Settle a fund order: cash to or from the customer, the fund side and the fee income.
+
+    A settled or rejected order is returned unchanged, so settling twice changes nothing.
+    """
+
+    def postings(effect: Mapping[str, Any]) -> tuple[Posting, ...]:
+        cash, fee = int(effect["cash_fen"]), int(effect["fee_fen"])
+        entries = (
+            Posting(str(effect["account_id"]), cash),
+            Posting(FUND_SETTLEMENT_ACCOUNT, -cash - fee),
+            Posting(FEE_INCOME_ACCOUNT, fee),
+        )
+        # A purchase without a fee posts nothing to fee income.
+        return tuple(entry for entry in entries if entry.amount_fen != 0)
+
+    return _settle(uow, key, at, postings)
 
 
 def post_incoming_payment(
