@@ -9,8 +9,8 @@ from concurrent.futures import ThreadPoolExecutor
 import httpx
 import pytest
 
-from wg.contracts.api import LockView
-from wg.contracts.enums import Fault
+from wg.contracts.api import CashMode, CashSnapshotView, LockView
+from wg.contracts.enums import Fault, Role
 from wg.contracts.errors import ErrorBody, ErrorCode
 
 from ..conftest import Live
@@ -69,3 +69,27 @@ def lose_response(live: Live, fault: Fault, send: Callable[[], httpx.Response]) 
             assert live.server.wait_exit() == CRASH_EXIT_STATUS
         with pytest.raises(httpx.TransportError):
             pending.result(timeout=30)
+
+
+def assert_cash(
+    wg: WgClient, *, c: int, protected: int, headroom: int, shortfall: int = 0
+) -> CashSnapshotView:
+    """The four fields and C, with the SPEC §13.1 formulas checked on the same snapshot."""
+    view = wg.snapshot()
+    d = view.details
+    assert (d.c_fen, view.protected_fen, view.headroom_fen, view.shortfall_fen) == (
+        c,
+        protected,
+        headroom,
+        shortfall,
+    )
+    assert view.protected_fen == d.e_fen + d.l_fen + d.b_fen + d.m_fen
+    assert view.headroom_fen == max(0, d.c_fen - view.protected_fen - d.u_fen)
+    assert view.shortfall_fen == max(0, view.protected_fen + d.u_fen - d.c_fen)
+    assert view.mode is (CashMode.SHORTFALL if shortfall else CashMode.HEADROOM)
+    return view
+
+
+def load_variant(wg: WgClient, variant: str) -> None:
+    wg.reset(variant)
+    wg.login(Role.CUSTOMER)

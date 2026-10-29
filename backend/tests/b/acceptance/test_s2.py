@@ -18,8 +18,6 @@ import pytest
 from wg.contracts.api import (
     ApprovalRequestResult,
     CandidatesView,
-    CashMode,
-    CashSnapshotView,
     DraftResult,
     MoneyChange,
     PlanDraftResult,
@@ -50,8 +48,10 @@ from .common import (
     LOST_RESPONSE_FAULTS,
     active_locks,
     assert_audited,
+    assert_cash,
     assert_refused_without_session,
     audit_snapshot,
+    load_variant,
     lose_response,
 )
 
@@ -74,30 +74,6 @@ RESERVE_START_FEN = 400_000
 YELLOW_LIMIT_FEN = 100_000
 
 # Helpers
-
-
-def assert_cash(
-    wg: WgClient, *, c: int, protected: int, headroom: int, shortfall: int = 0
-) -> CashSnapshotView:
-    """The four fields and C, with the SPEC §13.1 formulas checked on the same snapshot."""
-    view = wg.snapshot()
-    d = view.details
-    assert (d.c_fen, view.protected_fen, view.headroom_fen, view.shortfall_fen) == (
-        c,
-        protected,
-        headroom,
-        shortfall,
-    )
-    assert view.protected_fen == d.e_fen + d.l_fen + d.b_fen + d.m_fen
-    assert view.headroom_fen == max(0, d.c_fen - view.protected_fen - d.u_fen)
-    assert view.shortfall_fen == max(0, view.protected_fen + d.u_fen - d.c_fen)
-    assert view.mode is (CashMode.SHORTFALL if shortfall else CashMode.HEADROOM)
-    return view
-
-
-def load_variant(wg: WgClient, variant: str) -> None:
-    wg.reset(variant)
-    wg.login(Role.CUSTOMER)
 
 
 def bill(wg: WgClient, commitment_id: str):

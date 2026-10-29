@@ -15,17 +15,23 @@ TABLES = frozenset(
         "actions",
         "approvals",
         "audit_log",
+        "bank_requests",
         "cash_snapshots",
         "challenges",
+        "checkpoint_results",
         "commitment_events",
         "commitments",
         "domain_events",
+        "event_cursors",
+        "failure_records",
         "import_batches",
         "ledger_entries",
         "locks",
         "operation_events",
         "operations",
+        "plan_revisions",
         "plans",
+        "positions",
         "receipts",
         "reservations",
         "reserves",
@@ -133,5 +139,51 @@ class DbView:
         )
         return rows[0]["inputs_hash"]
 
+    def position_shares(self, product_id: str) -> str:
+        """Shares of a product in the customer's single position, as stored text."""
+        rows = self.rows("SELECT shares FROM positions WHERE product_id = ?", (product_id,))
+        assert len(rows) == 1, f"{len(rows)} positions for {product_id}"
+        return rows[0]["shares"]
+
+    def fund_operations(self, kind: str) -> list[dict[str, Any]]:
+        return self.rows("SELECT * FROM operations WHERE kind = ? ORDER BY submitted_at", (kind,))
+
+    def checkpoints(self, plan_id: str) -> list[dict[str, Any]]:
+        return self.rows("SELECT * FROM checkpoint_results WHERE plan_id = ?", (plan_id,))
+
     def events(self, event_type: str) -> list[dict[str, Any]]:
         return self.rows("SELECT * FROM domain_events WHERE type = ? ORDER BY seq", (event_type,))
+
+    def operation_events(self, operation_id: str) -> list[dict[str, Any]]:
+        return self.rows(
+            "SELECT * FROM operation_events WHERE operation_id = ? ORDER BY operation_event_id",
+            (operation_id,),
+        )
+
+    def bank_requests(self, idempotency_key: str) -> list[dict[str, Any]]:
+        return self.rows(
+            "SELECT * FROM bank_requests WHERE idempotency_key = ?", (idempotency_key,)
+        )
+
+    def failure_records(self) -> list[dict[str, Any]]:
+        return self.rows("SELECT * FROM failure_records ORDER BY failure_id")
+
+    def audit_rows(self, actor: str | None = None) -> list[dict[str, Any]]:
+        if actor is None:
+            return self.rows("SELECT * FROM audit_log ORDER BY audit_id")
+        return self.rows("SELECT * FROM audit_log WHERE actor = ? ORDER BY audit_id", (actor,))
+
+    def plan_actions(self, plan_id: str) -> list[dict[str, Any]]:
+        return self.rows(
+            "SELECT * FROM actions WHERE plan_id = ? ORDER BY logical_action_id, revision",
+            (plan_id,),
+        )
+
+    def authority_counts(self) -> dict[str, int]:
+        """Approvals, challenges and grants (verified challenges) of every customer."""
+        row = self.rows(
+            "SELECT (SELECT COUNT(*) FROM approvals) AS approvals,"
+            " (SELECT COUNT(*) FROM challenges) AS challenges,"
+            " (SELECT COUNT(*) FROM challenges WHERE verified_at IS NOT NULL) AS grants"
+        )[0]
+        return dict(row)
