@@ -103,6 +103,7 @@ class ActionService:
         self, uow: UnitOfWork, customer_id: str, draft: TransferDraft, actor: AuditActor
     ) -> tuple[ActionRow, tuple[Infeasible, ...]]:
         at = now(uow)
+        check_not_locked(uow, customer_id, None)
         payee = owned(accounts.find_payee(uow, draft.payee.value), customer_id, _owner)
         if not payee.active:
             raise not_found()

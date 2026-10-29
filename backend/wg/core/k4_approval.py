@@ -739,7 +739,11 @@ def consume_grant(uow: UnitOfWork, action: ActionRow, now: datetime) -> Challeng
         raise WgError(ErrorCode.CODE_EXPIRED, ref)
     if not _same(scope_hash(action, approval.terms_hash), grant.scope_hash):
         raise WgError(ErrorCode.INTEGRITY_VIOLATION, {**ref, "reason": "scope_hash"})
-    consumed = challenges.mark_consumed(uow, grant, now)
+    try:
+        consumed = challenges.mark_consumed(uow, grant, now)
+    except challenges.ChallengeChanged:
+        # The row says the grant was already used: an authority incident (SPEC §16).
+        raise WgError(ErrorCode.INTEGRITY_VIOLATION, {**ref, "reason": "grant_reuse"}) from None
     audit.record(
         uow,
         AuditActor.SYSTEM,

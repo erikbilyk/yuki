@@ -17,6 +17,7 @@ import pytest
 
 from wg.contracts.enums import ActionKind, ApprovalScopeKind, PlanKind, Tier
 from wg.contracts.ids import IdPrefix, new_id
+from wg.core import k8_audit as k8
 from wg.core.hashes import sha256_hex
 from wg.core.k5_coordinator import Coordinator
 from wg.k6 import actions, approvals, fixture, plans
@@ -136,6 +137,7 @@ class Composed:
 def desk(tmp_path: Path) -> Iterator[Desk]:
     db = Database(tmp_path / "wg.db")
     migrate(db)
+    db.failure_policy = k8.on_failure
     fixture.load_into_empty(db, fixture.read_profile(fixture.DEFAULT_PROFILE))
     hooks: list[str] = []
 

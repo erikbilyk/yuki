@@ -57,6 +57,8 @@ EVENT_TEXT: dict[str, str] = {
     "node_cancelled": "计划步骤已取消",
     "plan_status": "计划状态已更新",
     "plan_stopped": "计划已停止",
+    "unlock_refused": "解除暂停未被接受",
+    "operator_reconcile": "运营人员核实了执行结果",
     "sim_crash": "模拟服务中断",
 }
 

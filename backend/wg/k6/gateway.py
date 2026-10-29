@@ -55,7 +55,7 @@ from wg.contracts.events import (
 from wg.core import k4_approval as k4
 from wg.core.k1_session import owned
 from wg.core.k3_policy import check_not_locked
-from wg.k6 import actions, audit, events, faults, operations
+from wg.k6 import actions, audit, events, failures, faults, operations
 from wg.k6.actions import ActionRow
 from wg.k6.bank import AckLost, BankRequest, find_request
 from wg.k6.db import Database, Reader, UnitOfWork
@@ -208,9 +208,12 @@ class Gateway:
         try:
             bank_request = pack.apply(uow, operation, terms, at)
         except AckLost:
+            # An unknown outcome neither counts toward the breaker nor resets it (SPEC §16).
             operation = _mark_unknown(uow, operation)
         else:
             operation = _record_outcome(uow, pack, operation, bank_request)
+            if action.plan_id is not None:
+                failures.record_success(uow, action.plan_id)
         return Submission(operation, created=True)
 
     def _authorize(
@@ -361,8 +364,17 @@ class Gateway:
         return settled
 
     def reconcile(self, operation_id: str) -> OperationRow:
+        """Reconcile one operation in its own unit; a failure is recorded against its plan."""
+        with self.db.read() as conn:
+            operation = operations.get_operation(conn, operation_id)
+            plan_id = None
+            if operation.logical_action_id is not None and operation.revision is not None:
+                plan_id = _action_of(conn, operation).plan_id
         return self.db.run_in_uow(
-            lambda uow: reconcile_operation(uow, operation_id), "reconcile operation"
+            lambda uow: reconcile_operation(uow, operation_id),
+            "reconcile operation",
+            plan_id=plan_id,
+            logical_action_id=operation.logical_action_id,
         )
 
 
@@ -432,6 +444,8 @@ def _finish(
         terms_hash=approval.terms_hash if approval else None,
     )
     actions.set_status(uow, action, ActionStatus.SETTLED if settled else ActionStatus.REJECTED)
+    if settled and action.plan_id is not None:
+        failures.record_success(uow, action.plan_id)
     if settled:
         payload = OperationSettled(
             **_ref(operation),

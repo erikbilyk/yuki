@@ -26,6 +26,7 @@ from wg.contracts.enums import (
     OperationEventKind,
     OperationStatus,
 )
+from wg.contracts.errors import ErrorCode, WgError
 from wg.core.hashes import sha256_hex
 from wg.k6 import audit, faults, operations
 from wg.k6.db import Reader, UnitOfWork
@@ -136,7 +137,10 @@ def post_entries(
 ) -> None:
     """Post balanced entries for one operation and move the account balances with them."""
     if sum(p.amount_fen for p in postings) != 0:
-        raise ValueError(f"entries of {operation_id} do not sum to zero")
+        # A data invariant: K8 locks the customer (SPEC §16).
+        raise WgError(
+            ErrorCode.INTEGRITY_VIOLATION, {"operation_id": operation_id, "reason": "ledger_sum"}
+        )
     for posting in postings:
         uow.execute(
             "INSERT INTO ledger_entries (operation_id, account_id, amount_fen, posted_at)"

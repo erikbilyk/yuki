@@ -111,6 +111,24 @@ def test_restart_applies_due_settlements_without_moving_the_clock(desk: Desk):
     )
 
 
+@pytest.mark.case("R4")
+def test_restart_without_a_bank_record_locks_and_finishes(desk: Desk):
+    desk.arm(Fault.BANK_ACK_LOST)
+    unknown = desk.submit(desk.ready(30_000)).operation
+    desk.tamper("DELETE FROM bank_requests WHERE idempotency_key = ?", unknown.idempotency_key)
+    other = desk.confirmed(10_000)
+
+    desk.coordinator.recover()
+
+    (lock,) = desk.rows("SELECT * FROM locks WHERE cleared_at IS NULL")
+    assert (lock["scope"], lock["scope_ref"]) == ("customer", "cus_main")
+    assert lock["reason"] == "INTEGRITY_VIOLATION: no_bank_record"
+    (row,) = desk.rows("SELECT status FROM operations WHERE operation_id = ?", unknown.operation_id)
+    assert row["status"] == OperationStatus.UNKNOWN.value
+    # Under the customer lock the READY action is held, not submitted.
+    assert desk.status(other.logical_action_id) is ActionStatus.READY
+
+
 def test_recovery_on_a_database_without_a_profile_does_nothing(tmp_path: Path):
     db = Database(tmp_path / "empty.db")
     migrate(db)
