@@ -1,0 +1,2 @@
+# A model that answers from the text alone; the reply is set per case.
+- text: ${reply}

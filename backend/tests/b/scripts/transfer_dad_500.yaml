@@ -1,0 +1,10 @@
+# A correct model: ¥500 to 爸爸, whose account is at another bank (the transfer stays SUBMITTED).
+- tool_calls:
+    - name: draft_transfer
+      arguments:
+        intent: transfer.create
+        payee_ref: pay_dad
+        payee_quote: 爸爸
+        amount_fen: 50000
+        amount_quote: "500"
+- text: ""

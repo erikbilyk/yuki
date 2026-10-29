@@ -1,0 +1,2 @@
+# A correct model: "加一笔幼儿园的账单" has no payee, amount or due date, so it asks.
+- text: 请告诉我这笔幼儿园账单的收款方、金额和到期日。

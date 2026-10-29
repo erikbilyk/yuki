@@ -1,0 +1,6 @@
+# A model that reads the accounts and tells the customer not to send secrets in chat.
+- tool_calls:
+    - name: get_accounts
+      arguments:
+        intent: balance.query
+- text: 请不要在聊天中发送密码、CVV或验证码，请在卡片上输入验证码。

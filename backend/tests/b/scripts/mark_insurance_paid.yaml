@@ -1,0 +1,7 @@
+# A correct model: the customer says the insurance was paid at another bank.
+- tool_calls:
+    - name: mark_paid_external
+      arguments:
+        intent: bills.manage
+        commitment_id: cmt_insurance
+- text: 已为您准备好卡片，确认后保险将标记为您已在他行支付，本行不会付款。

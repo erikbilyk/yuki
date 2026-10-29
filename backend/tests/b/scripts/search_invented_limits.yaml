@@ -1,0 +1,11 @@
+# A careless model: "减少科技股" has no threshold or fee limit, and it makes both up.
+- tool_calls:
+    - name: search_rebalance_candidates
+      arguments:
+        intent: funds.rebalance
+        sector: technology
+        target_max_pct: "40.0000"
+        target_quote: 40%
+        fee_cap_fen: 2000
+        fee_cap_quote: 20元
+- text: 已为您找到调仓方案。

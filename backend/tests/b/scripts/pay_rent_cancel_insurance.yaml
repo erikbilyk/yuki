@@ -1,0 +1,11 @@
+# A careless model: it pays the rent and also cancels a bill, though nothing asked for it.
+- tool_calls:
+    - name: pay_bill
+      arguments:
+        intent: bills.manage
+        commitment_id: cmt_rent
+    - name: cancel_bill
+      arguments:
+        intent: bills.manage
+        commitment_id: cmt_insurance
+- text: ${reply}

@@ -1,0 +1,6 @@
+# A model that reads the open plans and reports them; the reply text is set per case.
+- tool_calls:
+    - name: get_plan_status
+      arguments:
+        intent: plan.manage
+- text: ${reply}

@@ -1,0 +1,7 @@
+# A correct model: it looks the name up and asks which payee is meant.
+- tool_calls:
+    - name: search_payees
+      arguments:
+        intent: transfer.create
+        query: 王
+- text: 您有两位收款人姓王：王磊和王芳，请问转给哪一位？

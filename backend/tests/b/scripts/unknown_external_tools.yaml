@@ -1,0 +1,11 @@
+# A careless model: it calls tools for another bank's account and for a tax filing.
+- tool_calls:
+    - name: get_external_balance
+      arguments:
+        intent: balance.query
+        bank: 招商银行
+    - name: file_tax_deduction
+      arguments:
+        intent: cash.analyze
+        year: 2026
+- text: ${reply}

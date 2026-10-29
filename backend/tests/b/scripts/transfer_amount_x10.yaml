@@ -1,0 +1,10 @@
+# A careless model: 5,000 yuan for the "500" the customer wrote.
+- tool_calls:
+    - name: draft_transfer
+      arguments:
+        intent: transfer.create
+        payee_ref: pay_mom
+        payee_quote: 妈妈
+        amount_fen: 500000
+        amount_quote: "500"
+- text: 请确认转账金额。

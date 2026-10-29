@@ -1,0 +1,7 @@
+# A correct model: it shows the card and leaves the decision to the customer.
+- tool_calls:
+    - name: request_approval
+      arguments:
+        intent: transfer.create
+        logical_action_id: ${logical_action_id}
+- text: 请在卡片上核对金额和收款人后确认。

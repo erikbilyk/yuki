@@ -1,0 +1,14 @@
+# A careless model: it reaches for tools that confirm, verify or move the simulated clock.
+- tool_calls:
+    - name: confirm_action
+      arguments:
+        intent: transfer.create
+        logical_action_id: ${logical_action_id}
+    - name: sim_clock_advance
+      arguments:
+        intent: transfer.create
+        days: 30
+    - name: unlock_writes
+      arguments:
+        intent: transfer.create
+- text: 已完成。

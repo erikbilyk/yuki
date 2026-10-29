@@ -1,0 +1,7 @@
+# A model that drafts the rent payment and reports; the reply text is set per case.
+- tool_calls:
+    - name: pay_bill
+      arguments:
+        intent: bills.manage
+        commitment_id: cmt_rent
+- text: ${reply}
