@@ -5,9 +5,10 @@ discretionary debit (SPEC §12.3 step 4); snapshots are built from the same inpu
 
 Monthly figures come from imported statement lines of the current Asia/Shanghai month on
 covered accounts. A line's category is its resolved category, else the statement's hint.
-Spending is outgoing lines except transfers between the customer's own accounts and
-payments of purposes excluded from the allowance (matched through the commitment kind);
-income is incoming lines except own transfers. Lines with no category are unresolved.
+Spending is outgoing lines except transfers between the customer's own accounts, refunds
+and payments of purposes excluded from the allowance (matched through the commitment kind);
+income is incoming lines except own transfers and refunds. Lines with no category are
+unresolved.
 """
 
 from __future__ import annotations
@@ -23,14 +24,14 @@ from wg.contracts.engines import (
     UnresolvedInput,
 )
 from wg.contracts.enums import CommitmentStatus
-from wg.k6 import accounts, operations
+from wg.k6 import accounts, imports, operations
+from wg.k6.categories import NOT_INCOME, NOT_SPENDING
 from wg.k6.db import Reader
-from wg.k6.fixture import RESERVE_KIND
+from wg.k6.reserves import reserve_target
 from wg.k6.simtime import SHANGHAI, now
 
 RULES_VERSION = "rules_v1"
 HORIZON_DAYS = 30
-OWN_TRANSFER = "own_transfer"
 
 
 def cash_inputs_from_db(reader: Reader, customer_id: str, at: datetime | None = None) -> CashInputs:
@@ -43,12 +44,12 @@ def cash_inputs_from_db(reader: Reader, customer_id: str, at: datetime | None = 
     spent = sum(
         -amount for amount, category in lines if amount < 0 and _spending(category, excluded)
     )
-    income = sum(amount for amount, category in lines if amount > 0 and category != OWN_TRANSFER)
+    income = sum(amount for amount, category in lines if amount > 0 and category not in NOT_INCOME)
     return CashInputs(
         as_of=at,
         rules_version=RULES_VERSION,
         accounts=tuple(_account_inputs(reader, customer_id)),
-        reserve_fen=_reserve(reader, customer_id),
+        reserve_fen=reserve_target(reader, customer_id),
         allowance_remaining_fen=max(0, _allowance_budget(reader, customer_id, at) - spent),
         margin_fen=_margin(reader, customer_id),
         commitments=commitments,
@@ -64,30 +65,22 @@ def cash_inputs_from_db(reader: Reader, customer_id: str, at: datetime | None = 
 
 
 def _spending(category: str | None, excluded: frozenset[str]) -> bool:
-    return category is not None and category != OWN_TRANSFER and category not in excluded
+    return category is not None and category not in NOT_SPENDING and category not in excluded
 
 
 def _account_inputs(reader: Reader, customer_id: str) -> list[CashAccountInput]:
-    """Each account reconciles over its statement chain: first opening plus lines = last closing."""
+    """Each account carries its reconciliation figures (see `imports.reconciliation`)."""
     result = []
     for account in accounts.customer_accounts(reader, customer_id):
-        chain = reader.execute(
-            "SELECT opening_fen, closing_fen FROM import_batches WHERE account_id = ?"
-            " ORDER BY period, batch_id",
-            (account.account_id,),
-        ).fetchall()
-        imported = reader.execute(
-            "SELECT COALESCE(SUM(amount_fen), 0) FROM transactions WHERE account_id = ?",
-            (account.account_id,),
-        ).fetchone()[0]
+        rec = imports.reconciliation(reader, account.account_id)
         result.append(
             CashAccountInput(
                 account_id=account.account_id,
                 posted_fen=account.balance_fen,
                 covered=account.covered,
-                opening_fen=chain[0]["opening_fen"] if chain else 0,
-                imported_sum_fen=int(imported),
-                closing_fen=chain[-1]["closing_fen"] if chain else 0,
+                opening_fen=rec.opening_fen,
+                imported_sum_fen=rec.imported_sum_fen,
+                closing_fen=rec.closing_fen,
             )
         )
     return result
@@ -154,14 +147,6 @@ def _allowance(reader: Reader, customer_id: str, at: datetime):
 def _allowance_budget(reader: Reader, customer_id: str, at: datetime) -> int:
     row = _allowance(reader, customer_id, at)
     return 0 if row is None else int(row["budget_fen"])
-
-
-def _reserve(reader: Reader, customer_id: str) -> int:
-    row = reader.execute(
-        "SELECT target_fen FROM reserves WHERE customer_id = ? AND kind = ?",
-        (customer_id, RESERVE_KIND),
-    ).fetchone()
-    return 0 if row is None else int(row["target_fen"])
 
 
 def _margin(reader: Reader, customer_id: str) -> int:
