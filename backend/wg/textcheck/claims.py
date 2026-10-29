@@ -43,6 +43,7 @@ _MONEY_KEYWORDS: tuple[tuple[re.Pattern[str], FactConcept], ...] = (
 _PERCENT_RE = re.compile(
     r"(?<![\d.])(\d+(?:\.\d+)?)\s*[%％]|百分之([零〇一二两三四五六七八九十百]+|\d+(?:\.\d+)?)"
 )
+_NEW_BILL_RE = re.compile(r"新账单|新增账单|新的账单")
 _COUNT_RE = re.compile(r"(?<![\d.])(\d+|[零〇一二两三四五六七八九十]{1,3})\s*(?:笔|单)")
 
 
@@ -114,6 +115,11 @@ class _Checker:
         self.violations: list[ClaimViolation] = []
         self._facts = block.facts
         self._labels = self._labels_by_subject(block.facts)
+        self._bill_subjects = {
+            f.subject
+            for f in block.facts
+            if f.concept == FactConcept.BILL_STATUS and f.subject is not None
+        }
         self._keyword_spans_used: set[tuple[int, int]] = set()
 
     def check_money(self) -> None:
@@ -239,19 +245,34 @@ class _Checker:
         candidates = [
             f for f in self._facts if isinstance(f, StatusFact) and f.concept == rule.concept
         ]
-        named = [f for f in candidates if self._mentions(clause, f.subject)]
-        if named:
-            wrong = next((f for f in named if f.value != rule.value), None)
-            return wrong is None, None if wrong is None else wrong.fact_id
+        mentioned = self._subjects_named(clause)
+        wrong = next(
+            (f for f in candidates if f.subject in mentioned and f.value != rule.value), None
+        )
+        if wrong is not None:
+            return False, wrong.fact_id
+        backed = {f.subject for f in candidates}
+        unbacked = sorted(s for s in mentioned if s not in backed)
+        if unbacked:
+            fact = next(f for f in self._facts if f.subject == unbacked[0])
+            return False, fact.fact_id
+        if mentioned:
+            return True, None
         if any(f.value == rule.value for f in candidates):
             return True, None
         return False, candidates[0].fact_id if candidates else None
 
-    def _mentions(self, clause: tuple[int, int], subject: str | None) -> bool:
-        if subject is None:
-            return False
+    def _subjects_named(self, clause: tuple[int, int]) -> set[str]:
+        """Subjects the clause refers to by a label of one of their facts or as the new bill."""
         clause_text = self.text[clause[0] : clause[1]]
-        return any(label in clause_text for label in self._labels.get(subject, ()))
+        named = {
+            subject
+            for subject, labels in self._labels.items()
+            if any(label in clause_text for label in labels)
+        }
+        if _NEW_BILL_RE.search(clause_text):
+            named |= self._bill_subjects
+        return named
 
     @staticmethod
     def _labels_by_subject(facts: Sequence[Fact]) -> dict[str, set[str]]:

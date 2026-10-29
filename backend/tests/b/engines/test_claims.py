@@ -293,6 +293,37 @@ def test_t75_summary_claims() -> None:
     assert reasons("新账单已支付。", facts) == [Reason.STATUS_UNSUPPORTED]
 
 
+def paid_insurance_and_open_bill(*extra: Fact) -> FactBlock:
+    return block(
+        status("f_ins_rcpt", FactConcept.RECEIPT_STATUS, "SETTLED", "cmt_ins", "保险账单付款"),
+        status("f_ins_st", FactConcept.BILL_STATUS, "paid", "cmt_ins", "保险"),
+        status("f_new_st", FactConcept.BILL_STATUS, "unpaid", "cmt_new", "培训费"),
+        *extra,
+    )
+
+
+def test_t75_a_paid_receipt_of_one_bill_does_not_pay_another_named_bill() -> None:
+    facts = paid_insurance_and_open_bill()
+    assert reasons("保险已支付，培训费尚未支付。", facts) == []
+    assert reasons("保险已支付，培训费也已支付。", facts) == [Reason.STATUS_UNSUPPORTED]
+
+
+def test_t75_the_new_bill_alias_names_the_bills() -> None:
+    facts = paid_insurance_and_open_bill()
+    assert reasons("保险和新账单都已支付。", facts) == [Reason.STATUS_UNSUPPORTED]
+    assert reasons("新账单已支付。", facts) == [Reason.STATUS_UNSUPPORTED]
+    assert reasons("保险已支付，新账单尚未支付。", facts) == []
+
+
+def test_t75_the_new_bill_is_paid_once_every_bill_has_a_settled_receipt() -> None:
+    new_receipt = status(
+        "f_new_rcpt", FactConcept.RECEIPT_STATUS, "SETTLED", "cmt_new", "培训费付款"
+    )
+    facts = paid_insurance_and_open_bill(new_receipt)
+    assert reasons("保险和新账单都已支付。", facts) == []
+    assert reasons("培训费已支付。", facts) == []
+
+
 def test_claims_checked_and_spans() -> None:
     text = "可自由支配¥5,485，占比39.5%"
     result = check_claims(text, block(HEADROOM, percent("f_pct", "39.5089")))

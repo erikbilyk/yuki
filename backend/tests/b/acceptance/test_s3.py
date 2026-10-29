@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
+import sys
 import threading
 from collections import Counter, defaultdict
 from collections.abc import Callable, Sequence
@@ -69,6 +71,7 @@ from wg.contracts.errors import ErrorBody, ErrorCode
 
 from ..conftest import Live
 from ..harness.client import MAIN_ACCOUNT, MAIN_CUSTOMER, WgClient, describe, route_for
+from ..harness.env import BACKEND_DIR
 from ..harness.inject import drop_imported_transaction, rewind_event_cursors, set_settle_days
 from ..harness.server import BackendServer
 from .common import (
@@ -1249,11 +1252,25 @@ def field_problems(path: str, value: Any) -> list[str]:
     return problems
 
 
+def import_public_figures(server: BackendServer) -> None:
+    """Load the public diagnostics so the route answers 200 and its body is scanned."""
+    result = subprocess.run(
+        [sys.executable, "-m", "wg.services.public_import", "--db", str(server.db_path)],
+        cwd=BACKEND_DIR,
+        env=server.env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 def sweep(wg: WgClient, secret: str, plan: Plan, ids: dict[str, str]) -> None:
     """Call every route at least once; failures are as welcome as successes."""
     ghost = "nothingthere0001"
     wg.get("/healthz")
     wg.get("/v1/session")
+    wg.get("/v1/funds/public-diagnostics")
     wg.get("/v1/accounts")
     for account in (MAIN_ACCOUNT, "acc_savings", f"acc_{ghost}"):
         wg.get(f"/v1/accounts/{account}/balance")
@@ -1335,7 +1352,8 @@ def sweep(wg: WgClient, secret: str, plan: Plan, ids: dict[str, str]) -> None:
         json={"message_id": "msg_t59b", "open_id": "ou_unbound", "text": "余额"},
         headers={"X-Channel-Secret": secret},
     )
-    assert channel.status_code in (200, 404), describe(channel)
+    # 405 while the route is absent and a built frontend answers every GET path.
+    assert channel.status_code in (200, 404, 405), describe(channel)
 
     wg.login(Role.OPERATOR)
     wg.get("/v1/operator/locks", active_only="false")
@@ -1410,6 +1428,7 @@ def test_t59_no_float_in_any_schema_or_response(
         "card": plan.card_id,
         "challenge": pending.challenge_id,
     }
+    import_public_figures(server)
     sweep(wg, server.env["WG_CHANNEL_SECRET"], plan, ids)
 
     problems: list[str] = []
