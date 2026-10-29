@@ -76,6 +76,7 @@ class TrustedService:
                 # Nodes that are due now move at once: a RED one waits for its code.
                 self.coordinator.tick_plan(done.card.plan_id)
             action, operation = self._execute(customer_id, done.action)
+        self.coordinator.continue_plans(customer_id)
         result = ConfirmResult(
             card_id=done.card.card_id,
             approval_id=done.approval.approval_id,
@@ -131,6 +132,7 @@ class TrustedService:
             raise outcome.error()
         with self._audited(customer_id, "verify_refused", challenge_id):
             action, operation = self._execute(customer_id, outcome.action)
+        self.coordinator.continue_plans(customer_id)
         return VerifyResult(
             challenge_id=outcome.challenge.challenge_id,
             logical_action_id=action.logical_action_id,

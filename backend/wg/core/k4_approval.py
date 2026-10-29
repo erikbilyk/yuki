@@ -59,6 +59,7 @@ class InvalidationReason(StrEnum):
     APPROVAL_EXPIRED = "approval_expired"
     SCOPE_MISMATCH = "scope_mismatch"
     CANCELLED = "cancelled"
+    PAUSED = "paused"
 
 
 # The refusal a later verify of an invalidated challenge gets.
@@ -69,6 +70,8 @@ _REFUSAL_AFTER: dict[str, ErrorCode] = {
     InvalidationReason.APPROVAL_REVOKED: ErrorCode.APPROVAL_REVOKED,
     InvalidationReason.APPROVAL_EXPIRED: ErrorCode.APPROVAL_EXPIRED,
     InvalidationReason.SCOPE_MISMATCH: ErrorCode.CODE_SCOPE_MISMATCH,
+    # A paused action can no longer be approved, as its state refusal says.
+    InvalidationReason.PAUSED: ErrorCode.APPROVAL_EXPIRED,
 }
 
 # Invalidating a grant for these reasons returns a READY action to AWAITING_STEPUP, so it
@@ -503,8 +506,15 @@ def approval_refusal(approval: ApprovalRow | None, now: datetime) -> ErrorCode |
     if approval.revoked_at is not None:
         return ErrorCode.APPROVAL_REVOKED
     if now >= approval.expires_at:
-        return ErrorCode.APPROVAL_EXPIRED
+        return _expired(approval)
     return None
+
+
+def _expired(approval: ApprovalRow) -> ErrorCode:
+    """A plan approval that ran out is PLAN_APPROVAL_EXPIRED (T74, R5)."""
+    if approval.scope_kind is ApprovalScopeKind.PLAN:
+        return ErrorCode.PLAN_APPROVAL_EXPIRED
+    return ErrorCode.APPROVAL_EXPIRED
 
 
 def valid_approval(reader: Reader, action: ActionRow, now: datetime) -> ApprovalRow:
@@ -642,8 +652,7 @@ def verify_code(
             return Verified(challenge, action, repeated=True)
         return _refuse(uow, challenge, ErrorCode.CODE_INVALID)
     if challenge.invalidated_at is not None:
-        reason = challenge.invalidation_reason or ""
-        return _refuse(uow, challenge, _REFUSAL_AFTER.get(reason, ErrorCode.CODE_INVALID))
+        return _refuse(uow, challenge, _refusal_after(uow, challenge))
 
     closing = _closing_reason(uow, challenge, action, now)
     if closing is not None:
@@ -681,6 +690,16 @@ def verify_code(
     return Verified(challenge, action, repeated=False)
 
 
+def _refusal_after(reader: Reader, challenge: ChallengeRow) -> ErrorCode:
+    """The refusal a verify of a closed challenge gets, from the reason it was closed."""
+    reason = challenge.invalidation_reason or ""
+    if reason == InvalidationReason.APPROVAL_EXPIRED:
+        approval = approvals.find_approval(reader, challenge.approval_id)
+        if approval is not None:
+            return _expired(approval)
+    return _REFUSAL_AFTER.get(reason, ErrorCode.CODE_INVALID)
+
+
 def _closing_reason(
     reader: Reader, challenge: ChallengeRow, action: ActionRow, now: datetime
 ) -> tuple[InvalidationReason, ErrorCode] | None:
@@ -694,7 +713,7 @@ def _closing_reason(
     if code is ErrorCode.APPROVAL_REVOKED:
         return InvalidationReason.APPROVAL_REVOKED, code
     if code is not None:
-        return InvalidationReason.APPROVAL_EXPIRED, ErrorCode.APPROVAL_EXPIRED
+        return InvalidationReason.APPROVAL_EXPIRED, code
     assert approval is not None
     if not _same(scope_hash(action, approval.terms_hash), challenge.scope_hash):
         return InvalidationReason.SCOPE_MISMATCH, ErrorCode.CODE_SCOPE_MISMATCH

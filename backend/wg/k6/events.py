@@ -65,6 +65,15 @@ def append_event(
     return event_id
 
 
+def latest_event_id(reader: Reader, event_type: DomainEventType, customer_id: str) -> str | None:
+    """The newest event of a type for a customer, or None."""
+    row = reader.execute(
+        "SELECT MAX(event_id) FROM domain_events WHERE type = ? AND customer_id = ?",
+        (event_type.value, customer_id),
+    ).fetchone()
+    return None if row is None else row[0]
+
+
 def _event(row) -> DomainEvent:
     event_type = DomainEventType(row["type"])
     payload = EVENT_PAYLOADS[event_type].model_validate(json.loads(row["payload_json"]))

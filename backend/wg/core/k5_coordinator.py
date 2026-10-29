@@ -36,6 +36,7 @@ from wg.contracts.enums import (
 from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.events import CheckpointRecorded, DomainEventType
 from wg.core import k4_approval as k4
+from wg.core import k5_continuation
 from wg.core.k1_session import owned
 from wg.core.k4_approval import InvalidationReason, StepUp
 from wg.k6 import actions, approvals, audit, events, faults, funds, locks, operations, plans
@@ -134,6 +135,41 @@ class Coordinator:
             lambda uow: store_status(uow, plan_id), "coordinator plan status", plan_id=plan_id
         )
 
+    def continue_plans(self, customer_id: str) -> None:
+        """After a customer step: decide each approved plan's purchase again if bills changed.
+
+        A bill the customer confirmed revises or pauses the purchase before the response
+        (SPEC §15.4). Only continuation runs here; submissions, reconciliation and the rest of
+        the tick wait for the next clock step, restart or operator action, so an unknown
+        outcome stays UNKNOWN until it is reconciled.
+        """
+        with self.db.read() as conn:
+            ids = plans.plans_to_tick(conn, customer_id)
+        for plan_id in ids:
+            try:
+                self.db.run_in_uow(
+                    lambda uow, p=plan_id: self._continue(uow, p),
+                    "plan continuation",
+                    plan_id=plan_id,
+                )
+            except WgError as error:
+                log.warning("continuation refused plan=%s code=%s", plan_id, error.code)
+
+    def _continue(self, uow: UnitOfWork, plan_id: str) -> None:
+        plan = plans.get_plan(uow, plan_id)
+        if plan.final or plan.root_approval_id is None:
+            return
+        if locks.locks_in_scope(uow, plan.customer_id, plan_id):
+            return
+        at = now(uow)
+        root = approvals.find_approval(uow, plan.root_approval_id)
+        if k4.approval_refusal(root, at) is not None:
+            return
+        for node in plans.nodes(uow, plan_id):
+            if node.status in (ActionStatus.AWAITING_STEPUP, ActionStatus.READY):
+                k5_continuation.reconsider(uow, self.step_up, plan, node, at)
+        store_status(uow, plan_id)
+
     def _decide(self, uow: UnitOfWork, plan_id: str) -> _Decision:
         at = now(uow)
         for operation in operations.open_operations(uow, plan_id=plan_id):
@@ -155,10 +191,16 @@ class Coordinator:
             return _Decision()
 
         decision = _Decision(customer_id=plan.customer_id)
+        holds = root is not None and k4.approval_refusal(root, at) is None
+        if holds:
+            # Bills changed since the purchase was decided: decide it before it can be sent.
+            for node in plans.nodes(uow, plan_id):
+                if node.status in (ActionStatus.AWAITING_STEPUP, ActionStatus.READY):
+                    k5_continuation.reconsider(uow, self.step_up, plan, node, at)
         for node in plans.nodes(uow, plan_id):
             if node.status is ActionStatus.READY and self._ready_to_submit(uow, node, at):
                 decision.submit.append(node.logical_action_id)
-        if root is not None and k4.approval_refusal(root, at) is None:
+        if holds:
             # The checkpoint reads positions as settled now, before this tick submits anything.
             record_due_checkpoints(uow, plan, at)
             decision.submit.extend(self._activate_drafts(uow, plan, at))
@@ -216,6 +258,9 @@ class Coordinator:
             if any(d.status is not ActionStatus.SETTLED for d in dependencies):
                 continue
             if node.not_before is not None and node.not_before > at:
+                continue
+            node = k5_continuation.reconsider(uow, self.step_up, plan, node, at)
+            if node.status is not ActionStatus.DRAFT:
                 continue
             if node.tier is Tier.RED:
                 actions.set_status(uow, node, ActionStatus.AWAITING_STEPUP)

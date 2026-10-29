@@ -1,5 +1,6 @@
 """S6 over HTTP in process: composition, plan approval with the reserve, continuation, expiry."""
 
+import json
 from datetime import date, datetime, timedelta
 
 import pytest
@@ -17,7 +18,7 @@ from wg.contracts.api import (
     SmsView,
     VerifyResult,
 )
-from wg.contracts.enums import ActionKind, ActionStatus, PlanKind, PlanStatus
+from wg.contracts.enums import ActionKind, ActionStatus, CheckpointResult, PlanKind, PlanStatus
 from wg.contracts.errors import ErrorBody, ErrorCode
 from wg.k6.simtime import SHANGHAI
 
@@ -229,3 +230,130 @@ def test_plan_approval_raises_the_reserve_in_the_same_confirmation(browser: Brow
     assert node(view, ActionKind.REDEEM).status is ActionStatus.AWAITING_STEPUP
     assert rows(browser, "SELECT target_fen FROM reserves") == [{"target_fen": 500_000}]
     assert rows(browser, "SELECT COUNT(*) AS n FROM challenges") == [{"n": 0}]
+
+
+def test_a_bill_within_bounds_revises_the_purchase_in_one_unit(browser: Browser):
+    view = settled_at_t3(browser)
+    purchase_id = node(view, ActionKind.PURCHASE).logical_action_id
+    old_challenge, old_code = challenge(browser, purchase_id)
+
+    new_bill(browser, 120_000)
+
+    view = plan_view(browser, view.plan_id)
+    revised = node(view, ActionKind.PURCHASE)
+    assert (revised.revision, revised.amount_fen) == (2, 478_500)
+    assert revised.status is ActionStatus.AWAITING_STEPUP
+    stored = rows(
+        browser,
+        "SELECT revision, status, superseded_by, params_json FROM actions"
+        " WHERE logical_action_id = ? ORDER BY revision",
+        purchase_id,
+    )
+    assert [(r["revision"], r["status"], r["superseded_by"]) for r in stored] == [
+        (1, "SUPERSEDED", 2),
+        (2, "AWAITING_STEPUP", None),
+    ]
+    first, second = (json.loads(r["params_json"]) for r in stored)
+    assert {k: v for k, v in first.items() if k != "amount_fen"} == {
+        k: v for k, v in second.items() if k != "amount_fen"
+    }
+    closed = rows(
+        browser,
+        "SELECT invalidation_reason FROM challenges WHERE challenge_id = ?",
+        old_challenge,
+    )
+    assert closed == [{"invalidation_reason": "new_revision"}]
+    revision = rows(browser, "SELECT * FROM plan_revisions WHERE revision = 2")
+    assert len(revision) == 1 and revision[0]["reason"] == "bill_change"
+    assert revision[0]["within_bounds"] == 1
+    assert revision[0]["approval_id"] == view.root_approval_id
+    assert view.active_revision == 2
+    assert rows(
+        browser, "SELECT COUNT(*) AS n FROM domain_events WHERE type = ?", "plan_revision_created"
+    ) == [{"n": 1}]
+    assert rows(browser, "SELECT COUNT(*) AS n FROM approvals") == [{"n": 2}]
+
+    refused(verify(browser, old_challenge, old_code), ErrorCode.SUPERSEDED)
+    bought = pay(browser, purchase_id).operation
+    assert bought is not None and bought.amount_fen == 478_500 and bought.revision == 2
+
+
+def test_bills_count_from_the_original_approval_and_once_each(browser: Browser):
+    view = settled_at_t3(browser)
+    purchase_id = node(view, ActionKind.PURCHASE).logical_action_id
+
+    new_bill(browser, 80_000, date(2026, 11, 11))
+    assert node(plan_view(browser, view.plan_id), ActionKind.PURCHASE).revision == 1
+    new_bill(browser, 40_000, date(2026, 11, 11))
+    assert node(plan_view(browser, view.plan_id), ActionKind.PURCHASE).amount_fen == 478_500
+    new_bill(browser, 40_000, date(2026, 11, 12))
+    paused = node(plan_view(browser, view.plan_id), ActionKind.PURCHASE)
+    assert paused.status is ActionStatus.PAUSED and paused.revision == 2
+    assert set(paused.pause_reasons) == {
+        ErrorCode.BILL_INCREASE_OVER_LIMIT,
+        ErrorCode.RETENTION_OVER_LIMIT,
+        ErrorCode.PURCHASE_BELOW_MIN,
+    }
+
+    before = rows(browser, "SELECT * FROM actions WHERE logical_action_id = ?", purchase_id)
+    with browser.db.unit_of_work("rewind") as uow:
+        uow.execute("DELETE FROM event_cursors")
+    advance(browser, at(3, 10))
+    assert rows(browser, "SELECT * FROM actions WHERE logical_action_id = ?", purchase_id) == before
+    assert [r["revision"] for r in rows(browser, "SELECT revision FROM plan_revisions")] == [1, 2]
+
+
+def test_a_bill_beyond_the_bounds_pauses_only_the_purchase(browser: Browser):
+    view = settled_at_t3(browser)
+    new_bill(browser, 160_000)
+    view = plan_view(browser, view.plan_id)
+    assert node(view, ActionKind.PURCHASE).status is ActionStatus.PAUSED
+    assert view.status is PlanStatus.ACTIVE
+    assert rows(browser, "SELECT target_fen FROM reserves") == [{"target_fen": 500_000}]
+
+    advance(browser, at(5))
+    view = plan_view(browser, view.plan_id)
+    assert view.checkpoint is not None
+    assert view.checkpoint.result is CheckpointResult.CHECKPOINT_MISSED
+    advance(browser, at(7))
+    pay(browser, node(view, ActionKind.PAY_BILL, "cmt_insurance").logical_action_id)
+    assert plan_view(browser, view.plan_id).status is PlanStatus.PAUSED
+
+
+def test_a_purchase_decided_before_a_new_bill_is_stale(browser: Browser, monkeypatch):
+    view = settled_at_t3(browser)
+    purchase_id = node(view, ActionKind.PURCHASE).logical_action_id
+    challenge_id, code = challenge(browser, purchase_id)
+    coordinator = browser.client.app.state.coordinator
+    # The bill commits before the plan has decided again, as in a race with the code.
+    monkeypatch.setattr(coordinator, "continue_plans", lambda customer_id: None)
+    new_bill(browser, 120_000)
+
+    refused(verify(browser, challenge_id, code), ErrorCode.STALE_SNAPSHOT)
+    assert rows(browser, "SELECT COUNT(*) AS n FROM operations WHERE kind = 'PURCHASE'") == [
+        {"n": 0}
+    ]
+    monkeypatch.undo()
+    advance(browser, at(3, 10))
+    revised = node(plan_view(browser, view.plan_id), ActionKind.PURCHASE)
+    assert (revised.revision, revised.amount_fen) == (2, 478_500)
+    assert revised.status is ActionStatus.AWAITING_STEPUP
+
+
+def test_after_the_plan_expiry_codes_and_challenges_are_plan_approval_expired(
+    browser: Browser,
+):
+    view = approved(browser)
+    insurance = node(view, ActionKind.PAY_BILL, "cmt_insurance").logical_action_id
+    advance(browser, at(8, 23, 59))
+    challenge_id, code = challenge(browser, insurance)
+    advance(browser, at(9, 0))
+
+    refused(verify(browser, challenge_id, code), ErrorCode.PLAN_APPROVAL_EXPIRED)
+    refused(browser.post(f"/v1/actions/{insurance}/challenge"), ErrorCode.PLAN_APPROVAL_EXPIRED)
+    view = plan_view(browser, view.plan_id)
+    assert view.status is PlanStatus.PARTIAL
+    assert node(view, ActionKind.PAY_BILL, "cmt_insurance").status is ActionStatus.CANCELLED
+    assert rows(
+        browser, "SELECT COUNT(*) AS n FROM operations WHERE commitment_id = ?", "cmt_insurance"
+    ) == [{"n": 0}]

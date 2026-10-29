@@ -114,6 +114,18 @@ def set_root_approval(uow: UnitOfWork, plan: PlanRow, approval_id: str) -> PlanR
     return get_plan(uow, plan.plan_id)
 
 
+def set_active_revision(uow: UnitOfWork, plan: PlanRow, revision: int) -> PlanRow:
+    """Record the plan revision now in force; it only grows."""
+    cursor = uow.execute(
+        "UPDATE plans SET active_revision = ?, version = version + 1"
+        " WHERE plan_id = ? AND version = ? AND active_revision < ?",
+        (revision, plan.plan_id, plan.version, revision),
+    )
+    if cursor.rowcount != 1:
+        raise IllegalTransition(f"plan {plan.plan_id} changed since version {plan.version}")
+    return get_plan(uow, plan.plan_id)
+
+
 def attach_single(uow: UnitOfWork, action: ActionRow) -> ActionRow:
     """Give a standalone DRAFT action its own plan of kind `single`."""
     if action.plan_id is not None:
