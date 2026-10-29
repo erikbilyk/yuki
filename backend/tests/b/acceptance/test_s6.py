@@ -11,6 +11,7 @@ Not here by design: T75 and the S parts of T71 and T72 are scripted-model cases.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -35,6 +36,7 @@ from wg.contracts.errors import ErrorBody, ErrorCode
 
 from ..conftest import Live
 from ..harness.client import MAIN_ACCOUNT, MAIN_CUSTOMER, WgClient, describe
+from ..harness.inject import set_settle_days
 from .common import (
     AFTER_COMMIT,
     LOST_RESPONSE_FAULTS,
@@ -65,6 +67,7 @@ from .plan_flow import (
     PLAN_EXPIRY,
     PURCHASE_FEN,
     REDEMPTION_SETTLED,
+    REDEMPTION_SUBMITTED,
     RENT,
     RENT_FEN,
     RENT_PAID,
@@ -315,8 +318,12 @@ def test_t64_redemption_settling_at_t4_moves_the_purchase(app_client: WgClient) 
 @pytest.mark.layer("D")
 def test_t65_redemption_settling_at_t6_misses_the_checkpoint(app_client: WgClient) -> None:
     wg = app_client
-    load_variant(wg, "t65")
-    plan = redeemed(wg)
+    plan = approved(wg)
+    # The redemption slows down after the plan was approved on the base calendar.
+    set_settle_days(wg.db.path, "redeem_settle_days", 6)
+    plan.redeem()
+    assert_row(wg, REDEMPTION_SUBMITTED)
+    plan.assert_statuses(redeem=ActionStatus.SUBMITTED, purchase=ActionStatus.DRAFT)
     rent_paid(wg, plan)
 
     before = audit_snapshot(wg)
@@ -326,6 +333,7 @@ def test_t65_redemption_settling_at_t6_misses_the_checkpoint(app_client: WgClien
         redeem=ActionStatus.SUBMITTED, purchase=ActionStatus.DRAFT, rent=ActionStatus.SETTLED
     )
     assert plan.view().status is not PlanStatus.COMPLETED
+    assert not any("已完成" in line for line in new_audit_lines(wg, before))
 
     # The late settlement gives the customer a decision; nothing is bought by itself.
     at_day(wg, 6)
@@ -337,7 +345,12 @@ def test_t65_redemption_settling_at_t6_misses_the_checkpoint(app_client: WgClien
     insurance_paid(wg, plan, Row(1_458_500, 860_000, 598_500, 0, 0))
     assert wg.db.fund_operations("PURCHASE") == []
     assert plan.view().status is not PlanStatus.COMPLETED
-    assert not any("已完成" in line for line in new_audit_lines(wg, before))
+    # "已完成" is the audit text of a settled operation; here it may name only the redemption
+    # and the insurance payment, never the plan or the purchase.
+    completed = [json.loads(line) for line in new_audit_lines(wg, before) if "已完成" in line]
+    settled = {row["operation_id"] for row in wg.db.operations() if row["status"] == "SETTLED"}
+    assert {row["ref"] for row in completed} <= settled
+    assert len(completed) == 2
 
 
 # T66
