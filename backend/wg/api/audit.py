@@ -36,6 +36,7 @@ EVENT_TEXT: dict[str, str] = {
     "csrf_refused": "请求校验未通过",
     "request_refused": "请求格式不符，未被接受",
     "extra_read": "超出范围的数据读取被拒绝",
+    "explanation_replaced": "回答中的数字或状态未通过核对，已改为系统说明",
     "clock_advanced": "模拟时间前进",
     "lock_set": "操作已暂停",
     "lock_cleared": "操作暂停已解除",
