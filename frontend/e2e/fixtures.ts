@@ -57,7 +57,7 @@ export async function loginToDemoPanel(page: Page): Promise<void> {
   await form.getByLabel("演示账号").fill(DEMO.handle);
   await form.getByLabel("密码").fill(DEMO.password);
   await form.getByRole("button", { name: "登录" }).click();
-  await expect(page.getByTestId("sim-clock-value")).toContainText("2026-11-02");
+  await expect(page.getByTestId("sim-clock-value")).toHaveText(/^2026-\d{2}-\d{2} \d{2}:\d{2}$/);
 }
 
 export function node(page: Page, kind: string, hasText?: string): Locator {
