@@ -1181,8 +1181,8 @@ def test_t58_incomplete_snapshot_pauses_the_purchase(
 
 # T59
 
-MONEY_KEY = re.compile(r".*_fen$")
-DECIMAL_KEY = re.compile(r"^(nav|rate|weight|shares.*|.*_(pct|weight|shares))$")
+MONEY_FIELD = re.compile(r".*_fen$")
+DECIMAL_FIELD = re.compile(r"^(nav|rate|weight|shares.*|.*_(pct|weight|shares))$")
 DECIMAL_TEXT = re.compile(r"^-?[0-9]+\.[0-9]{4}$")
 NOT_A_SUCCESS = {("POST", "/v1/chat/messages"), ("POST", "/v1/operator/locks/{id}/unlock")}
 
@@ -1202,9 +1202,9 @@ def schema_problems(name: str, schema: Any) -> list[str]:
             problems.append(f"{name}: number type")
         for key, sub in (schema.get("properties") or {}).items():
             types = schema_types(sub) - {"null"}
-            if MONEY_KEY.match(key) and types and types != {"integer"}:
+            if MONEY_FIELD.match(key) and types and types != {"integer"}:
                 problems.append(f"{name}.{key}: money field is {sorted(types)}")
-            if DECIMAL_KEY.match(key) and types and types not in ({"string"}, {"object"}):
+            if DECIMAL_FIELD.match(key) and types and types not in ({"string"}, {"object"}):
                 problems.append(f"{name}.{key}: decimal field is {sorted(types)}")
         for sub in schema.values():
             problems += schema_problems(name, sub)
@@ -1224,10 +1224,10 @@ def field_problems(path: str, value: Any) -> list[str]:
     if isinstance(value, dict):
         for key, item in value.items():
             where = f"{path}.{key}"
-            if item is not None and MONEY_KEY.match(key):
+            if item is not None and MONEY_FIELD.match(key):
                 if isinstance(item, bool) or not isinstance(item, int):
                     problems.append(f"{where} = {item!r} is not an integer")
-            elif item is not None and DECIMAL_KEY.match(key):
+            elif item is not None and DECIMAL_FIELD.match(key):
                 for leaf in item.values() if isinstance(item, dict) else [item]:
                     if not (isinstance(leaf, str) and DECIMAL_TEXT.match(leaf)):
                         problems.append(f"{where} = {leaf!r} is not a 4-place decimal string")
