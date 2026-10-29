@@ -23,6 +23,7 @@ from wg.k6.gateway import Gateway, ResponseDropped
 from wg.k6.migrate import migrate
 from wg.services.actions import ActionService
 from wg.services.cash import CashService
+from wg.services.compose import PlanComposer
 from wg.services.funds import FundsService
 from wg.services.operator import OperatorService
 from wg.services.plans import PlanService
@@ -132,6 +133,7 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
     app.state.cash = cash_service = CashService(db)
     app.state.funds = FundsService(db)
     app.state.plans = PlanService(db, step_up, cash_service)
+    app.state.composer = PlanComposer(db)
     app.state.trusted = TrustedService(db, step_up, action_service, coordinator)
     app.state.operator = OperatorService(db, step_up, gateway)
     app.state.sim = SimService(db, coordinator)

@@ -8,8 +8,9 @@ and lots change only at settlement.
 
 A purchase is a discretionary debit, so it must fit in the headroom recomputed from current
 rows; it is paid from settled cash only, so it is refused while a redemption of its plan has
-not settled (UNSETTLED_FUNDS). The plan's fee cap and turnover cap count every fund order
-of the plan, cumulatively.
+not settled (UNSETTLED_FUNDS). Inside a plan it is refused with STALE_SNAPSHOT while bills
+added since its amount was decided would change that amount (SPEC §12.3, §15.4). The
+plan's fee cap and turnover cap count every fund order of the plan, cumulatively.
 """
 
 from __future__ import annotations
@@ -23,7 +24,7 @@ from wg.contracts.api import CardLine
 from wg.contracts.enums import ActionKind, ActionStatus, Tier
 from wg.contracts.errors import ErrorCode
 from wg.contracts.money import quantize_fen
-from wg.core import k3_policy
+from wg.core import k3_policy, k5_continuation
 from wg.core.hashes import sha256_hex
 from wg.core.k4_approval import CardContent
 from wg.k6 import accounts, approvals, bank, funds, operations, plans
@@ -141,6 +142,9 @@ class FundsPack:
             )
             if plan_id is not None:
                 reasons.extend(_unsettled_redemptions(reader, plan_id))
+                if k5_continuation.stale_purchase(reader, plan_id, params, at):
+                    # The bills behind this amount changed: the plan decides it again first.
+                    reasons.insert(0, Infeasible(ErrorCode.STALE_SNAPSHOT, {"plan_id": plan_id}))
         if plan_id is not None and fee is not None:
             reasons.extend(_plan_limits(reader, plan_id, gross, fee))
         return tuple(reasons)

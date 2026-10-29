@@ -70,12 +70,14 @@ class PlanService:
         self.cash = cash
 
     def plans(self, customer_id: str) -> PlansView:
-        """The customer's plans; a standalone action's own plan (kind `single`) is not listed."""
+        """The customer's plans; a standalone action's own plan (kind `single`) and a drafted
+        plan whose nodes moved into a composed one are not listed."""
         with self.db.read() as conn:
             rows = [
                 plans.get_plan(conn, row["plan_id"])
                 for row in conn.execute(
-                    "SELECT plan_id FROM plans WHERE customer_id = ? AND kind <> ?"
+                    "SELECT plan_id FROM plans p WHERE customer_id = ? AND kind <> ?"
+                    " AND EXISTS (SELECT 1 FROM actions a WHERE a.plan_id = p.plan_id)"
                     " ORDER BY created_at, plan_id",
                     (customer_id, PlanKind.SINGLE.value),
                 ).fetchall()

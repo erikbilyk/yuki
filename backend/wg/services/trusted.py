@@ -21,7 +21,6 @@ from wg.contracts.api import (
 )
 from wg.contracts.errors import ErrorClass, WgError
 from wg.core import k4_approval as k4
-from wg.core import k5_coordinator as k5
 from wg.core.k4_approval import Confirmation, Refusal, StepUp, Verified
 from wg.core.k5_coordinator import Coordinator
 from wg.k6 import actions, challenges
@@ -68,7 +67,7 @@ class TrustedService:
                 now=now(uow),
             )
             if done.card.kind is CardKind.PLAN and not done.repeated:
-                k5.activate_plan(uow, done.card, done.approval)
+                self.coordinator.activate_plan(uow, done.card, done.approval)
             return done
 
         with self._audited(customer_id, "confirm_refused", card_id):
@@ -77,6 +76,7 @@ class TrustedService:
                 # Nodes that are due now move at once: a RED one waits for its code.
                 self.coordinator.tick_plan(done.card.plan_id)
             action, operation = self._execute(customer_id, done.action)
+        self.coordinator.continue_plans(customer_id)
         result = ConfirmResult(
             card_id=done.card.card_id,
             approval_id=done.approval.approval_id,
@@ -132,6 +132,7 @@ class TrustedService:
             raise outcome.error()
         with self._audited(customer_id, "verify_refused", challenge_id):
             action, operation = self._execute(customer_id, outcome.action)
+        self.coordinator.continue_plans(customer_id)
         return VerifyResult(
             challenge_id=outcome.challenge.challenge_id,
             logical_action_id=action.logical_action_id,

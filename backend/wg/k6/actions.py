@@ -179,6 +179,35 @@ def set_status(
     return get_revision(uow, action.logical_action_id, action.revision)
 
 
+def assign_to_plan(
+    uow: UnitOfWork,
+    action: ActionRow,
+    plan_id: str,
+    *,
+    depends_on: Sequence[str],
+    not_before: datetime | None,
+) -> ActionRow:
+    """Put a DRAFT into a composed plan with the plan's dependencies and due time."""
+    cursor = uow.execute(
+        "UPDATE actions SET plan_id = ?, depends_on = ?, not_before = ?, version = version + 1"
+        " WHERE logical_action_id = ? AND revision = ? AND version = ? AND status = ?",
+        (
+            plan_id,
+            json.dumps(list(depends_on)),
+            to_db(not_before) if not_before else None,
+            action.logical_action_id,
+            action.revision,
+            action.version,
+            ActionStatus.DRAFT.value,
+        ),
+    )
+    if cursor.rowcount != 1:
+        raise IllegalTransition(
+            f"{action.logical_action_id} r{action.revision} changed since version {action.version}"
+        )
+    return get_revision(uow, action.logical_action_id, action.revision)
+
+
 def next_open_action(
     reader: Reader, customer_id: str, statuses: Collection[str]
 ) -> ActionRow | None:

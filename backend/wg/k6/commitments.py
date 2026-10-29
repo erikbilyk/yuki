@@ -243,6 +243,22 @@ def commitments_version(reader: Reader, customer_id: str) -> int:
     return int(row[0])
 
 
+def additions_after(reader: Reader, customer_id: str, version: int) -> int:
+    """Bill amounts confirmed or increased after the customer's first `version` changes.
+
+    Each `commitment_events` row counts once, so a repeated delivery of the same change adds
+    nothing (SPEC §14.6, R1).
+    """
+    rows = reader.execute(
+        "SELECT e.change, e.delta_fen FROM commitment_events e JOIN commitments c"
+        " ON c.commitment_id = e.commitment_id WHERE c.customer_id = ? AND e.change <> ?"
+        " ORDER BY e.commitment_event_id LIMIT -1 OFFSET ?",
+        (customer_id, CANDIDATE_EVENT, version),
+    ).fetchall()
+    added = (CommitmentChange.CONFIRMED.value, CommitmentChange.INCREASED.value)
+    return sum(max(0, row["delta_fen"]) for row in rows if row["change"] in added)
+
+
 def settled_payments_fen(reader: Reader, commitment_id: str) -> int:
     row = reader.execute(
         "SELECT COALESCE(SUM(amount_fen), 0) FROM operations"
