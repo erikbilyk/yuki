@@ -257,6 +257,8 @@ export const S = {
     // Plan events the server writes without a line of its own.
     events: {
       node_revised: "计划步骤已按新账单修订",
+      plan_drafted: "已生成基金调整计划",
+      action_executed: "已执行",
       plan_composed: "已生成计划确认卡片",
       plan_merged: "草稿已合并为一个计划",
       plan_compose_refused: "计划未通过校验，未被接受",
