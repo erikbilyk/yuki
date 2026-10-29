@@ -10,25 +10,35 @@ from datetime import timedelta
 from wg.contracts.api import (
     ClockAdvanceRequest,
     ClockView,
+    EbillRequest,
+    ExternalDebitRequest,
     FaultRequest,
     FaultsView,
     FaultView,
+    ImportRequest,
+    ImportResult,
     IncomingPaymentRequest,
+    SimCommitmentResult,
     SimPostingResult,
     SimResetRequest,
     SimResetResult,
+    SimSmsRequest,
+    SimSmsResult,
 )
 from wg.contracts.enums import AuditActor
 from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.fixture import FixtureError
+from wg.core.hashes import sha256_hex
 from wg.core.k1_session import not_found
 from wg.core.k5_coordinator import Coordinator
-from wg.k6 import accounts, audit, bank, faults, fixture
+from wg.k6 import accounts, audit, bank, commitments, faults, fixture, imports, snapshots
 from wg.k6.db import Database, UnitOfWork
 from wg.k6.gateway import CRASH_EXIT_STATUS
 from wg.k6.simtime import ClockState, now, read_clock
 
 log = logging.getLogger("wg.sim")
+
+EBILL_SOURCE = "trusted_ebill"
 
 
 def clock_view(state: ClockState) -> ClockView:
@@ -122,3 +132,127 @@ class SimService:
             )
 
         return self.db.run_in_uow(post, "sim incoming payment")
+
+    def external_debit(self, request: ExternalDebitRequest) -> SimPostingResult:
+        """A debit the bank did not take through WealthGuard; the merchant text is untrusted."""
+
+        def post(uow: UnitOfWork) -> SimPostingResult:
+            account = accounts.find_account(uow, request.account_id)
+            if account is None or account.customer_id is None:
+                raise not_found()
+            operation = bank.post_external_debit(
+                uow,
+                customer_id=account.customer_id,
+                account_id=account.account_id,
+                amount_fen=request.amount_fen,
+                merchant=request.merchant_raw,
+                at=now(uow),
+            )
+            after = accounts.find_account(uow, account.account_id)
+            assert after is not None
+            return SimPostingResult(
+                operation_id=operation.operation_id,
+                account_id=account.account_id,
+                amount_fen=-request.amount_fen,
+                posted_fen_after=after.balance_fen,
+            )
+
+        return self.db.run_in_uow(post, "sim external debit")
+
+    def import_statement(self, request: ImportRequest) -> ImportResult:
+        """Import a statement of the loaded profile again; lines already stored change nothing."""
+        with self.db.read() as conn:
+            row = conn.execute("SELECT profile, variant FROM sim_profile").fetchone()
+        if row is None:
+            raise not_found()
+        profile = fixture.read_profile(row["profile"], row["variant"])
+        source = next((s for s in profile.statements if s.id == request.statement_id), None)
+        if source is None:
+            raise not_found()
+
+        def run(uow: UnitOfWork) -> ImportResult:
+            account = accounts.find_account(uow, source.account)
+            assert account is not None and account.customer_id is not None
+            statement = fixture.statement_of(source, read_clock(uow).epoch_date)
+            outcome = imports.import_statement(uow, statement)
+            snapshot = snapshots.ensure_snapshot(uow, account.customer_id)
+            audit.record(
+                uow,
+                AuditActor.SYSTEM,
+                "statement_imported",
+                customer_id=account.customer_id,
+                ref=statement.statement_id,
+                reason=f"new={outcome.new_count} duplicate={outcome.duplicate_count}",
+            )
+            return ImportResult(
+                statement_id=statement.statement_id,
+                new_transactions=outcome.new_count,
+                duplicate_transactions=outcome.duplicate_count,
+                new_commitments=0,
+                snapshot_id=snapshot.snapshot_id,
+                inputs_hash=snapshot.inputs_hash,
+            )
+
+        return self.db.run_in_uow(run, "sim import")
+
+    def ebill(self, request: EbillRequest) -> SimCommitmentResult:
+        """A bill from the bank's own e-bill service: a candidate the customer confirms."""
+
+        def post(uow: UnitOfWork) -> SimCommitmentResult:
+            payee = accounts.find_payee(uow, request.payee_id)
+            if payee is None or payee.customer_id != request.customer_id or not payee.active:
+                raise not_found()
+            bill = commitments.find_duplicate_candidate(
+                uow,
+                request.customer_id,
+                payee.payee_id,
+                request.kind,
+                request.amount_fen,
+                request.due_date,
+            )
+            if bill is None:
+                bill = commitments.insert_candidate(
+                    uow,
+                    customer_id=request.customer_id,
+                    payee_id=payee.payee_id,
+                    kind=request.kind,
+                    amount_fen=request.amount_fen,
+                    due_date=request.due_date,
+                    source=EBILL_SOURCE,
+                )
+                audit.record(
+                    uow,
+                    AuditActor.SYSTEM,
+                    "ebill_received",
+                    customer_id=request.customer_id,
+                    ref=bill.commitment_id,
+                )
+            return SimCommitmentResult(commitment_id=bill.commitment_id, status=bill.status)
+
+        return self.db.run_in_uow(post, "sim ebill")
+
+    def sms(self, request: SimSmsRequest) -> SimSmsResult:
+        """Untrusted SMS text. It creates no bill and sets no payee, amount or status.
+
+        The text is not stored; the audit row keeps a short digest so the event can be matched
+        with the message later.
+        """
+
+        def record(uow: UnitOfWork) -> SimSmsResult:
+            audit.record(
+                uow,
+                AuditActor.SYSTEM,
+                "untrusted_sms",
+                customer_id=request.customer_id,
+                ref=sha256_hex({"text": request.text})[:12],
+                decision="no_action",
+            )
+            return SimSmsResult(commitment_id=None)
+
+        with self.db.read() as conn:
+            known = conn.execute(
+                "SELECT 1 FROM customers WHERE customer_id = ?", (request.customer_id,)
+            ).fetchone()
+        if known is None:
+            raise not_found()
+        return self.db.run_in_uow(record, "sim sms")

@@ -8,13 +8,20 @@ from wg.api.guards import require_role
 from wg.contracts.api import (
     ClockAdvanceRequest,
     ClockView,
+    EbillRequest,
+    ExternalDebitRequest,
     FaultRequest,
     FaultsView,
+    ImportRequest,
+    ImportResult,
     IncomingPaymentRequest,
     RouteRole,
+    SimCommitmentResult,
     SimPostingResult,
     SimResetRequest,
     SimResetResult,
+    SimSmsRequest,
+    SimSmsResult,
 )
 from wg.services.sim import SimService
 
@@ -44,6 +51,26 @@ def arm_fault(body: FaultRequest, request: Request) -> FaultsView:
 @router.post("/incoming-payment")
 def incoming_payment(body: IncomingPaymentRequest, request: Request) -> SimPostingResult:
     return _service(request).incoming_payment(body)
+
+
+@router.post("/import")
+def import_statement(body: ImportRequest, request: Request) -> ImportResult:
+    return _service(request).import_statement(body)
+
+
+@router.post("/bills/ebill")
+def ebill(body: EbillRequest, request: Request) -> SimCommitmentResult:
+    return _service(request).ebill(body)
+
+
+@router.post("/sms")
+def sms(body: SimSmsRequest, request: Request) -> SimSmsResult:
+    return _service(request).sms(body)
+
+
+@router.post("/external-debit")
+def external_debit(body: ExternalDebitRequest, request: Request) -> SimPostingResult:
+    return _service(request).external_debit(body)
 
 
 @router.post("/crash")

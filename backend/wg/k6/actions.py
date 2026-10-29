@@ -7,7 +7,7 @@ ACTION_TRANSITIONS and bumps the row version.
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -177,3 +177,16 @@ def set_status(
             f"{action.logical_action_id} r{action.revision} changed since version {action.version}"
         )
     return get_revision(uow, action.logical_action_id, action.revision)
+
+
+def next_open_action(
+    reader: Reader, customer_id: str, statuses: Collection[str]
+) -> ActionRow | None:
+    """The customer's action in one of `statuses` that is due soonest (`not_before`, else age)."""
+    marks = ", ".join("?" for _ in statuses)
+    row = reader.execute(
+        f"SELECT * FROM actions WHERE customer_id = ? AND status IN ({marks})"
+        " ORDER BY COALESCE(not_before, created_at), logical_action_id LIMIT 1",
+        (customer_id, *sorted(statuses)),
+    ).fetchone()
+    return None if row is None else _action(row)

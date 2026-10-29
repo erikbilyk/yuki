@@ -12,7 +12,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 from pydantic import JsonValue
 
@@ -51,7 +51,9 @@ class OperationTerms:
     purpose_id: str | None = None
 
 
-class ActionPack(Protocol):
+class Pack(Protocol):
+    """What every action kind contributes before execution: params, hash, tier, checks, card."""
+
     kinds: frozenset[ActionKind]
 
     def canonical(self, kind: ActionKind, params: Mapping[str, Any]) -> dict[str, Any]:
@@ -84,6 +86,10 @@ class ActionPack(Protocol):
 
     def card(self, reader: Reader, action: ActionRow, at: datetime) -> CardContent: ...
 
+
+class ActionPack(Pack, Protocol):
+    """A pack whose actions move money through the bank simulator and leave an operation."""
+
     def operation_terms(
         self, reader: Reader, action: ActionRow, at: datetime
     ) -> OperationTerms: ...
@@ -100,7 +106,22 @@ class ActionPack(Protocol):
 
     def settle(self, uow: UnitOfWork, operation: OperationRow, at: datetime) -> BankRequest: ...
 
+    def on_settled(self, uow: UnitOfWork, operation: OperationRow) -> dict[str, Any]:
+        """Effects of a settlement beyond the ledger; the result is merged into the receipt."""
+        ...
+
     def receipt_effect(self, operation: OperationRow, bank: BankRequest) -> dict[str, Any]: ...
+
+
+@runtime_checkable
+class StatePack(Pack, Protocol):
+    """A pack whose actions change the customer's own records and move no money.
+
+    The gateway runs `execute` in the submitting unit of work; there is no operation, bank
+    call or receipt.
+    """
+
+    def execute(self, uow: UnitOfWork, action: ActionRow, at: datetime) -> None: ...
 
 
 def fen_text(fen: int) -> str:
