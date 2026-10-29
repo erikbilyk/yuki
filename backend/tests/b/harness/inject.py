@@ -2,8 +2,10 @@
 
 T21 needs a commitment whose unpaid amount disagrees with its payments, which only a
 defect or outside tampering can produce. T58 needs an imported transaction to disappear
-after a plan started, and T56 needs a domain event to be delivered a second time. Each
-write uses its own connection and one statement; the product must cope with the result.
+after a plan started, and T56 needs a domain event to be delivered a second time. R4
+needs the bank's record of an order to vanish, which reconciliation must treat as an
+integrity violation. Each write uses its own connection and one statement; the product
+must cope with the result.
 """
 
 from __future__ import annotations
@@ -45,4 +47,17 @@ def rewind_event_cursors(db_path: Path) -> None:
     with closing(sqlite3.connect(db_path, timeout=10.0, isolation_level=None)) as conn:
         conn.execute("BEGIN IMMEDIATE")
         conn.execute("UPDATE event_cursors SET last_event_id = ''")
+        conn.execute("COMMIT")
+
+
+def delete_bank_request(db_path: Path, idempotency_key: str) -> None:
+    """Remove the simulated bank's record of one order, leaving the operation in place."""
+    with closing(sqlite3.connect(db_path, timeout=10.0, isolation_level=None)) as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        deleted = conn.execute(
+            "DELETE FROM bank_requests WHERE idempotency_key = ?", (idempotency_key,)
+        ).rowcount
+        if deleted != 1:
+            conn.execute("ROLLBACK")
+            raise AssertionError(f"{deleted} bank requests with key {idempotency_key}")
         conn.execute("COMMIT")
