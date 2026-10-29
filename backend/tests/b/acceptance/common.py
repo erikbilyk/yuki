@@ -58,6 +58,17 @@ def active_locks(wg: WgClient) -> list[LockView]:
     return list(wg.locks().locks)
 
 
+def fail_verifying_three_times(wg: WgClient, logical_action_id: str) -> None:
+    """Three unexpected failures on one action; each attempt verifies a newly issued code."""
+    wg.arm(Fault.UNEXPECTED, count=3)
+    for _ in range(3):
+        challenge_id = wg.challenge(logical_action_id).challenge_id
+        wg.refused(
+            wg.verify_response(challenge_id, wg.sms_code(challenge_id)),
+            ErrorCode.UNEXPECTED_FAILURE,
+        )
+
+
 def lose_response(live: Live, fault: Fault, send: Callable[[], httpx.Response]) -> None:
     """Send while the fault ends the process: by itself (crash) or by SIGKILL (pause)."""
     with ThreadPoolExecutor(1) as pool:

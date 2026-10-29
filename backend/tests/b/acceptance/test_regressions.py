@@ -40,7 +40,7 @@ from wg.k6.db import NestedTransactionError, UnitOfWork, open_database
 from ..conftest import Live
 from ..harness.client import MAIN_CUSTOMER, WgClient, describe
 from ..harness.inject import delete_bank_request, rewind_event_cursors, set_settle_days
-from .common import active_locks
+from .common import active_locks, fail_verifying_three_times
 from .plan_flow import (
     BOUGHT,
     DAD,
@@ -576,13 +576,9 @@ def test_r7_rejected_redemption_pauses_the_purchase(app_client: WgClient) -> Non
 def test_r7_checkpoint_is_recorded_under_a_lock(app_client: WgClient) -> None:
     wg = app_client
     plan = settled_at_t3(wg)
-    challenge = wg.challenge(plan.purchase_id)
-    code = wg.sms_code(challenge.challenge_id)
     wg.login(Role.OPERATOR)
 
-    wg.arm(Fault.UNEXPECTED, count=3)
-    for _ in range(3):
-        wg.refused(wg.verify_response(challenge.challenge_id, code), ErrorCode.UNEXPECTED_FAILURE)
+    fail_verifying_three_times(wg, plan.purchase_id)
     assert active_locks(wg), "no lock after three unexpected failures"
     assert wg.db.fund_operations("PURCHASE") == []
 
