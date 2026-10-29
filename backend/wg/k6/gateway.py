@@ -177,6 +177,10 @@ class Gateway:
         self._after_commit(armed, submission)
         return submission
 
+    def submit_in(self, uow: UnitOfWork, customer_id: str, logical_action_id: str) -> Submission:
+        """Submit inside the caller's unit of work, with no fault points (plan confirmation)."""
+        return self._submit_in(uow, customer_id, logical_action_id, _Armed())
+
     def _submit_in(
         self, uow: UnitOfWork, customer_id: str, logical_action_id: str, armed: _Armed
     ) -> Submission:

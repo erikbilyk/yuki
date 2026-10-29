@@ -226,6 +226,23 @@ class Coordinator:
                 ready.append(node.logical_action_id)
         return ready
 
+    def activate_plan(self, uow: UnitOfWork, card: CardRow, approval: ApprovalRow) -> PlanRow:
+        """Record the plan approval and execute what it covers at once, in the confirming unit.
+
+        The reserve increase is part of the plan's confirmation (SPEC §9.2, §9.4): a YELLOW
+        DESIGNATE_RESERVE node that waits for nothing goes READY and through the gateway here,
+        so the approval and the higher reserve commit together or not at all.
+        """
+        plan = activate_plan(uow, card, approval)
+        at = now(uow)
+        for node in plans.nodes(uow, plan.plan_id):
+            if not _executes_on_approval(node, at):
+                continue
+            actions.set_status(uow, node, ActionStatus.READY)
+            _audit_node(uow, node, "node_ready", node.tier.value)
+            self.gateway.submit_in(uow, plan.customer_id, node.logical_action_id)
+        return store_status(uow, plan.plan_id)
+
     def _expire(self, uow: UnitOfWork, plan: PlanRow, at: datetime) -> None:
         """The plan approval expired: unsubmitted nodes are cancelled and the plan is partial."""
         cancel_unsubmitted(
@@ -399,6 +416,16 @@ def activate_plan(uow: UnitOfWork, card: CardRow, approval: ApprovalRow) -> Plan
         within_bounds=True,
     )
     return store_status(uow, plan.plan_id)
+
+
+def _executes_on_approval(node: ActionRow, at: datetime) -> bool:
+    return (
+        node.kind is ActionKind.DESIGNATE_RESERVE
+        and node.status is ActionStatus.DRAFT
+        and node.tier is Tier.YELLOW
+        and not node.depends_on
+        and (node.not_before is None or node.not_before <= at)
+    )
 
 
 # Checkpoint (SPEC §15.6)

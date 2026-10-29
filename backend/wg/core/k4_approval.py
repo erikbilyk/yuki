@@ -218,6 +218,10 @@ def card_status(reader: Reader, card: CardRow, now: datetime) -> CardStatus:
             return CardStatus.SUPERSEDED
         if card.kind is CardKind.ACTION and action.status is not ActionStatus.AWAITING_APPROVAL:
             return CardStatus.EXPIRED
+    if card.kind is CardKind.PLAN and card.plan_id is not None:
+        # A drafted plan that ended unapproved (its nodes moved into a composed plan).
+        if plans.get_plan(reader, card.plan_id).final:
+            return CardStatus.EXPIRED
     if now >= card.expires_at:
         return CardStatus.EXPIRED
     return CardStatus.OPEN

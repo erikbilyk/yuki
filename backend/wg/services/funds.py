@@ -308,7 +308,7 @@ class FundsService:
             plan_id=plan_id,
             kind=PlanKind.REBALANCE,
             validation=PlanValidationResult(ok=True),
-            actions=tuple(_draft_result(node) for node in nodes),
+            actions=tuple(node_result(node) for node in nodes),
         )
 
     def _draft_plan(
@@ -628,7 +628,8 @@ def _insert_node(
     return node
 
 
-def _draft_result(node: ActionRow) -> DraftResult:
+def node_result(node: ActionRow) -> DraftResult:
+    """A plan node as the draft routes report it; a node exists only when it is feasible."""
     return DraftResult(
         logical_action_id=node.logical_action_id,
         revision=node.revision,

@@ -21,7 +21,6 @@ from wg.contracts.api import (
 )
 from wg.contracts.errors import ErrorClass, WgError
 from wg.core import k4_approval as k4
-from wg.core import k5_coordinator as k5
 from wg.core.k4_approval import Confirmation, Refusal, StepUp, Verified
 from wg.core.k5_coordinator import Coordinator
 from wg.k6 import actions, challenges
@@ -68,7 +67,7 @@ class TrustedService:
                 now=now(uow),
             )
             if done.card.kind is CardKind.PLAN and not done.repeated:
-                k5.activate_plan(uow, done.card, done.approval)
+                self.coordinator.activate_plan(uow, done.card, done.approval)
             return done
 
         with self._audited(customer_id, "confirm_refused", card_id):
