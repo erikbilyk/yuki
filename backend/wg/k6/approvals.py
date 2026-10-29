@@ -249,3 +249,11 @@ def revoke_approval(uow: UnitOfWork, approval_id: str, at: datetime) -> bool:
         (to_db(at), approval_id),
     )
     return cursor.rowcount == 1
+
+
+def cards_of_plan(reader: Reader, plan_id: str) -> list[CardRow]:
+    """Plan and plan-revision cards of a plan, oldest first."""
+    rows = reader.execute(
+        "SELECT * FROM cards WHERE plan_id = ? AND kind <> 'action' ORDER BY rowid", (plan_id,)
+    ).fetchall()
+    return [_card(row) for row in rows]

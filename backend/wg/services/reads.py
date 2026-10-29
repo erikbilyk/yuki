@@ -13,17 +13,14 @@ from wg.contracts.api import (
     BalanceView,
     OperationView,
     PayeesView,
-    PlanSummary,
-    PlansView,
     ReceiptView,
     TransferHistoryView,
 )
-from wg.contracts.enums import PlanKind, PlanMode, PlanStatus
 from wg.core.k1_session import not_found, owned
 from wg.core.k3_policy import DAILY_SUM_KINDS
 from wg.k6 import accounts, operations
 from wg.k6.db import Database
-from wg.k6.simtime import from_db, now
+from wg.k6.simtime import now
 from wg.services.views import account_view, operation_view, payee_view, receipt_view, transfer_view
 
 MAX_HISTORY_DAYS = 90
@@ -94,27 +91,3 @@ class ReadService:
             if receipt is None or operation.logical_action_id is None:
                 raise not_found()
             return receipt_view(conn, operation, receipt)
-
-    def plans(self, customer_id: str) -> PlansView:
-        """The customer's plans as stored; their nodes and expiry are read per plan.
-
-        A standalone action's own plan (kind `single`) is not listed; the action is.
-        """
-        with self.db.read() as conn:
-            rows = conn.execute(
-                "SELECT plan_id, kind, status, mode, created_at FROM plans"
-                " WHERE customer_id = ? AND kind <> ? ORDER BY created_at, plan_id",
-                (customer_id, PlanKind.SINGLE.value),
-            ).fetchall()
-        return PlansView(
-            plans=tuple(
-                PlanSummary(
-                    plan_id=row["plan_id"],
-                    kind=PlanKind(row["kind"]),
-                    status=PlanStatus(row["status"]),
-                    mode=PlanMode(row["mode"]),
-                    created_at=from_db(row["created_at"]),
-                )
-                for row in rows
-            )
-        )

@@ -18,7 +18,11 @@ import os
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from datetime import datetime
+from decimal import Decimal
+from typing import Any
 
+from wg.contracts.api import RevisionReason
+from wg.contracts.engines import ExposureGroup, TargetStatus
 from wg.contracts.enums import (
     ActionKind,
     ActionStatus,
@@ -30,16 +34,19 @@ from wg.contracts.enums import (
     Tier,
 )
 from wg.contracts.errors import ErrorCode, WgError
+from wg.contracts.events import CheckpointRecorded, DomainEventType
 from wg.core import k4_approval as k4
 from wg.core.k1_session import owned
 from wg.core.k4_approval import InvalidationReason, StepUp
-from wg.k6 import actions, approvals, audit, events, faults, locks, operations, plans
+from wg.k6 import actions, approvals, audit, events, faults, funds, locks, operations, plans
 from wg.k6.actions import ActionRow
+from wg.k6.approvals import ApprovalRow, CardRow
 from wg.k6.clock import advance_clock
-from wg.k6.db import Database, UnitOfWork
+from wg.k6.db import Database, Reader, UnitOfWork
 from wg.k6.gateway import CRASH_EXIT_STATUS, Gateway, ResponseDropped, reconcile_operation
 from wg.k6.plans import PlanRow
-from wg.k6.simtime import ClockError, ClockState, now, read_clock
+from wg.k6.simtime import ClockError, ClockState, now, read_clock, to_db
+from wg.numeric import exposure
 
 log = logging.getLogger("wg.k5")
 
@@ -134,12 +141,15 @@ class Coordinator:
         plan = plans.find_plan(uow, plan_id)
         if plan is None or plan.final:
             return _Decision()
-        if locks.locks_in_scope(uow, plan.customer_id, plan_id):
-            # Under a lock only observations run; CHECK_OUTCOME nodes come with S6 (A10).
-            return _Decision()
         root = None
         if plan.root_approval_id is not None:
             root = approvals.find_approval(uow, plan.root_approval_id)
+        if locks.locks_in_scope(uow, plan.customer_id, plan_id):
+            # Under a lock only observations run: a due checkpoint is still recorded (§15.6).
+            if root is not None and at < root.expires_at:
+                record_due_checkpoints(uow, plan, at)
+                store_status(uow, plan_id)
+            return _Decision()
         if root is not None and at >= root.expires_at:
             self._expire(uow, plan, at)
             return _Decision()
@@ -149,6 +159,8 @@ class Coordinator:
             if node.status is ActionStatus.READY and self._ready_to_submit(uow, node, at):
                 decision.submit.append(node.logical_action_id)
         if root is not None and k4.approval_refusal(root, at) is None:
+            # The checkpoint reads positions as settled now, before this tick submits anything.
+            record_due_checkpoints(uow, plan, at)
             decision.submit.extend(self._activate_drafts(uow, plan, at))
         store_status(uow, plan_id)
         return decision
@@ -307,10 +319,12 @@ class Coordinator:
     def recover(self) -> None:
         """Bring the database to a consistent state at process start, without new authority.
 
-        In order: replay unprocessed events; reconcile every SUBMITTED and UNKNOWN operation;
+        In order: reconcile every SUBMITTED and UNKNOWN operation; replay unprocessed events;
         apply settlements due by the current simulated time (the clock does not move); then
         tick every plan, which resubmits READY nodes whose grant is valid, moves the others to
-        AWAITING_STEPUP and moves RED nodes that are due to AWAITING_STEPUP.
+        AWAITING_STEPUP and moves RED nodes that are due to AWAITING_STEPUP. Reconciliation
+        comes first so that a lock it sets (a missing bank record) holds every submission the
+        replayed events would otherwise make.
 
         A step that fails is logged and recovery goes on, so the process still starts; the
         failure itself is in `failure_records` and K8 may have locked its scope.
@@ -321,12 +335,15 @@ class Coordinator:
             except ClockError:
                 return
             open_ids = [op.operation_id for op in operations.open_operations(conn)]
-        steps: list[tuple[str, Callable[[], object]]] = [("events", self.process_events)]
-        steps += [
+        steps: list[tuple[str, Callable[[], object]]] = [
             (f"reconcile {operation_id}", lambda i=operation_id: self.gateway.reconcile(i))
             for operation_id in open_ids
         ]
-        steps += [("settlements", self.gateway.settle_due), ("tick", self.tick)]
+        steps += [
+            ("events", self.process_events),
+            ("settlements", self.gateway.settle_due),
+            ("tick", self.tick),
+        ]
         for name, step in steps:
             try:
                 step()
@@ -335,6 +352,132 @@ class Coordinator:
             except Exception:
                 log.exception("recovery step=%s failed", name)
         log.info("recovery done operations=%d", len(open_ids))
+
+
+# Plan approval (SPEC §9.2)
+
+
+def plan_node_terms(reader: Reader, plan_id: str) -> list[dict[str, Any]]:
+    """The plan's nodes as the plan card shows them; part of the plan's approval terms."""
+    return [
+        {
+            "logical_action_id": node.logical_action_id,
+            "revision": node.revision,
+            "kind": node.kind.value,
+            "tier": node.tier.value,
+            "params": dict(node.params),
+            "request_hash": node.request_hash,
+            "depends_on": list(node.depends_on),
+            "not_before": to_db(node.not_before) if node.not_before else None,
+        }
+        for node in plans.nodes(reader, plan_id)
+    ]
+
+
+def activate_plan(uow: UnitOfWork, card: CardRow, approval: ApprovalRow) -> PlanRow:
+    """Record a confirmed plan card as the plan's root approval, in the confirming unit.
+
+    The card's nodes must still be the plan's nodes, at the same revisions and params;
+    otherwise the confirmation is TERMS_MISMATCH and rolls back. The approval executes
+    nothing itself: the coordinator moves each node when it becomes due (SPEC §15.2).
+    """
+    assert card.plan_id is not None
+    plan = plans.get_plan(uow, card.plan_id)
+    if plan.status is not PlanStatus.DRAFT or plan.root_approval_id is not None:
+        raise WgError(ErrorCode.APPROVAL_EXPIRED, {"plan_id": plan.plan_id})
+    if card.terms.get("nodes") != plan_node_terms(uow, plan.plan_id):
+        raise WgError(ErrorCode.TERMS_MISMATCH, {"card_id": card.card_id})
+    plan = plans.set_root_approval(uow, plan, approval.approval_id)
+    plans.insert_revision(
+        uow,
+        plan_id=plan.plan_id,
+        revision=plan.active_revision,
+        reason=RevisionReason.INITIAL.value,
+        cash_snapshot_id=approval.cash_snapshot_id,
+        calc_result_id=approval.calc_result_id,
+        approval_id=approval.approval_id,
+        within_bounds=True,
+    )
+    return store_status(uow, plan.plan_id)
+
+
+# Checkpoint (SPEC §15.6)
+
+
+def record_due_checkpoints(uow: UnitOfWork, plan: PlanRow, at: datetime) -> None:
+    """Evaluate every CHECK_OUTCOME node whose instant has come; each is written once."""
+    nodes = plans.nodes(uow, plan.plan_id)
+    for node in nodes:
+        if node.kind is not ActionKind.CHECK_OUTCOME or node.status is not ActionStatus.DRAFT:
+            continue
+        if node.not_before is not None and node.not_before > at:
+            continue
+        _record_checkpoint(uow, plan, node, nodes)
+
+
+def _record_checkpoint(
+    uow: UnitOfWork, plan: PlanRow, node: ActionRow, nodes: list[ActionRow]
+) -> None:
+    """The sector share on positions settled at the node's instant, and its verdict.
+
+    `checkpoint_missed` when a fund trade of the plan has not settled (paused, failed or
+    pending); `passed` when all settled and the upper bound meets the target; else `failed`,
+    which includes a target between the lower and upper bound (unverified).
+    """
+    evaluated_at = node.not_before or now(uow)
+    sector = str(node.params["sector"])
+    target = Decimal(str(node.params["target_max_pct"]))
+    inclusive = bool(node.params["target_inclusive"])
+    positions = funds.position_values(uow, plan.customer_id)
+    snapshots = funds.holdings_snapshots(uow, executable=True)
+    measured = exposure(positions, snapshots, ExposureGroup.SECTOR, sector, target)
+    trades = [n for n in nodes if n.kind in (ActionKind.REDEEM, ActionKind.PURCHASE)]
+    if any(t.status is not ActionStatus.SETTLED for t in trades):
+        result = CheckpointResult.CHECKPOINT_MISSED
+    elif measured.status is TargetStatus.MET and (inclusive or measured.upper_pct < target):
+        result = CheckpointResult.PASSED
+    else:
+        result = CheckpointResult.FAILED
+    basis = {
+        "positions": [p.model_dump(mode="json") for p in positions],
+        "holdings": [
+            {"product_id": s.product_id, "source_id": s.source_id, "as_of": s.as_of.isoformat()}
+            for s in snapshots
+        ],
+        "taxonomy_version": measured.taxonomy_version,
+        "target_status": measured.status.value if measured.status else None,
+        "trades": {t.logical_action_id: t.status.value for t in trades},
+    }
+    written = plans.insert_checkpoint(
+        uow,
+        plan_id=plan.plan_id,
+        logical_action_id=node.logical_action_id,
+        result=result.value,
+        measured_pct=str(measured.upper_pct),
+        lower_pct=str(measured.lower_pct),
+        upper_pct=str(measured.upper_pct),
+        basis=basis,
+        evaluated_at=evaluated_at,
+    )
+    actions.set_status(uow, node, ActionStatus.SETTLED)
+    if not written:
+        return
+    events.append_event(
+        uow,
+        DomainEventType.CHECKPOINT_RECORDED,
+        CheckpointRecorded(
+            plan_id=plan.plan_id,
+            logical_action_id=node.logical_action_id,
+            result=result,
+            measured_pct=measured.upper_pct,
+            lower_pct=measured.lower_pct,
+            upper_pct=measured.upper_pct,
+            evaluated_at=evaluated_at,
+        ),
+        customer_id=plan.customer_id,
+        plan_id=plan.plan_id,
+    )
+    _audit_node(uow, node, "checkpoint_recorded", result.value)
 
 
 # Shared by the coordinator, cancel and stop

@@ -11,6 +11,7 @@ from contextlib import contextmanager
 
 from wg.contracts.api import (
     Card,
+    CardKind,
     ChallengeView,
     ConfirmResult,
     OperationView,
@@ -20,7 +21,9 @@ from wg.contracts.api import (
 )
 from wg.contracts.errors import ErrorClass, WgError
 from wg.core import k4_approval as k4
+from wg.core import k5_coordinator as k5
 from wg.core.k4_approval import Confirmation, Refusal, StepUp, Verified
+from wg.core.k5_coordinator import Coordinator
 from wg.k6 import actions, challenges
 from wg.k6.actions import ActionRow
 from wg.k6.db import Database, UnitOfWork
@@ -32,10 +35,17 @@ from wg.services.refusals import record_refusal
 class TrustedService:
     """The customer's own steps; a step that leaves the action READY submits it at once."""
 
-    def __init__(self, db: Database, step_up: StepUp, action_service: ActionService) -> None:
+    def __init__(
+        self,
+        db: Database,
+        step_up: StepUp,
+        action_service: ActionService,
+        coordinator: Coordinator,
+    ) -> None:
         self.db = db
         self.step_up = step_up
         self.action_service = action_service
+        self.coordinator = coordinator
 
     def card(self, customer_id: str, card_id: str) -> Card:
         with self._audited(customer_id, "card_read_refused", card_id):
@@ -49,7 +59,7 @@ class TrustedService:
         """The confirmation result and whether this request created the approval."""
 
         def run(uow: UnitOfWork) -> Confirmation:
-            return k4.confirm_card(
+            done = k4.confirm_card(
                 uow,
                 self.step_up,
                 customer_id=customer_id,
@@ -57,9 +67,15 @@ class TrustedService:
                 presented_terms_hash=presented_terms_hash,
                 now=now(uow),
             )
+            if done.card.kind is CardKind.PLAN and not done.repeated:
+                k5.activate_plan(uow, done.card, done.approval)
+            return done
 
         with self._audited(customer_id, "confirm_refused", card_id):
             done = self.db.run_in_uow(run, "confirm card")
+            if done.card.kind is CardKind.PLAN and done.card.plan_id is not None:
+                # Nodes that are due now move at once: a RED one waits for its code.
+                self.coordinator.tick_plan(done.card.plan_id)
             action, operation = self._execute(customer_id, done.action)
         result = ConfirmResult(
             card_id=done.card.card_id,

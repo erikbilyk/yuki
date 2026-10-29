@@ -11,7 +11,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from wg.api import actions, audit, auth, cash, operator, reads, sim, trusted
+from wg.api import actions, audit, auth, cash, funds, operator, plans, reads, sim, trusted
 from wg.api.errors import install_error_handlers
 from wg.core import k8_audit as k8
 from wg.core.k1_session import SessionService
@@ -23,7 +23,9 @@ from wg.k6.gateway import Gateway, ResponseDropped
 from wg.k6.migrate import migrate
 from wg.services.actions import ActionService
 from wg.services.cash import CashService
+from wg.services.funds import FundsService
 from wg.services.operator import OperatorService
+from wg.services.plans import PlanService
 from wg.services.reads import ReadService
 from wg.services.sim import SimService
 from wg.services.trusted import TrustedService
@@ -127,8 +129,10 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
     app.state.coordinator = coordinator
     app.state.actions = action_service = ActionService(db, step_up, gateway)
     app.state.reads = ReadService(db)
-    app.state.cash = CashService(db)
-    app.state.trusted = TrustedService(db, step_up, action_service)
+    app.state.cash = cash_service = CashService(db)
+    app.state.funds = FundsService(db)
+    app.state.plans = PlanService(db, step_up, cash_service)
+    app.state.trusted = TrustedService(db, step_up, action_service, coordinator)
     app.state.operator = OperatorService(db, step_up, gateway)
     app.state.sim = SimService(db, coordinator)
     install_error_handlers(app)
@@ -153,6 +157,8 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
     app.include_router(auth.router)
     app.include_router(reads.router)
     app.include_router(cash.router)
+    app.include_router(funds.router)
+    app.include_router(plans.router)
     app.include_router(actions.router)
     app.include_router(trusted.router)
     app.include_router(audit.router)
