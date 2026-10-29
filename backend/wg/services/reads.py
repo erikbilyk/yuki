@@ -96,12 +96,15 @@ class ReadService:
             return receipt_view(conn, operation, receipt)
 
     def plans(self, customer_id: str) -> PlansView:
-        """The customer's plans as stored; their nodes and expiry are read per plan."""
+        """The customer's plans as stored; their nodes and expiry are read per plan.
+
+        A standalone action's own plan (kind `single`) is not listed; the action is.
+        """
         with self.db.read() as conn:
             rows = conn.execute(
                 "SELECT plan_id, kind, status, mode, created_at FROM plans"
-                " WHERE customer_id = ? ORDER BY created_at, plan_id",
-                (customer_id,),
+                " WHERE customer_id = ? AND kind <> ? ORDER BY created_at, plan_id",
+                (customer_id, PlanKind.SINGLE.value),
             ).fetchall()
         return PlansView(
             plans=tuple(

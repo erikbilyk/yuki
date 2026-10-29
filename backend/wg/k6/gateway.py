@@ -58,7 +58,7 @@ from wg.core.k3_policy import check_not_locked
 from wg.k6 import actions, audit, events, faults, operations
 from wg.k6.actions import ActionRow
 from wg.k6.bank import AckLost, BankRequest, find_request
-from wg.k6.db import Database, UnitOfWork
+from wg.k6.db import Database, Reader, UnitOfWork
 from wg.k6.operations import OperationRow
 from wg.k6.simtime import now
 from wg.packs.base import ActionPack, OperationTerms
@@ -333,17 +333,32 @@ class Gateway:
     # Settlement and reconciliation
 
     def settle_due(self) -> list[OperationRow]:
-        """Apply every settlement due at the simulated now, each in its own unit of work."""
+        """Apply every settlement due at the simulated now, each in its own unit of work.
+
+        An operation that fails is recorded by `run_in_uow` (K8 may lock its scope) and the
+        others still settle; the result lists the operations that were processed.
+        """
         with self.db.read() as conn:
-            due = operations.due_operations(conn, now(conn))
-        return [
-            self.db.run_in_uow(
-                lambda uow, op=op: settle_operation(uow, op.operation_id, now(uow)),
-                "settle operation",
-                logical_action_id=op.logical_action_id,
-            )
-            for op in due
-        ]
+            due = [
+                (op, _action_of(conn, op).plan_id)
+                for op in operations.due_operations(conn, now(conn))
+            ]
+        settled = []
+        for operation, plan_id in due:
+            try:
+                settled.append(
+                    self.db.run_in_uow(
+                        lambda uow, op=operation: settle_operation(uow, op.operation_id, now(uow)),
+                        "settle operation",
+                        plan_id=plan_id,
+                        logical_action_id=operation.logical_action_id,
+                    )
+                )
+            except WgError as error:
+                log.warning(
+                    "settlement refused operation=%s code=%s", operation.operation_id, error.code
+                )
+        return settled
 
     def reconcile(self, operation_id: str) -> OperationRow:
         return self.db.run_in_uow(
@@ -365,9 +380,9 @@ def _ref(operation: OperationRow) -> dict[str, object]:
     }
 
 
-def _action_of(uow: UnitOfWork, operation: OperationRow) -> ActionRow:
+def _action_of(reader: Reader, operation: OperationRow) -> ActionRow:
     assert operation.logical_action_id is not None and operation.revision is not None
-    return actions.get_revision(uow, operation.logical_action_id, operation.revision)
+    return actions.get_revision(reader, operation.logical_action_id, operation.revision)
 
 
 def _record_outcome(

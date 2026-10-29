@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import subprocess
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, Response
@@ -14,6 +15,7 @@ from wg.api import actions, audit, auth, reads, sim, trusted
 from wg.api.errors import install_error_handlers
 from wg.core.k1_session import SessionService
 from wg.core.k4_approval import SimulatedSms, StepUp
+from wg.core.k5_coordinator import Coordinator
 from wg.k6 import faults, fixture
 from wg.k6.db import Database, open_database
 from wg.k6.gateway import Gateway, ResponseDropped
@@ -90,15 +92,7 @@ class DropResponse:
 
 def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastAPI:
     settings.require_secrets()
-    docs = settings.demo_mode
-    app = FastAPI(
-        title="WealthGuard",
-        docs_url="/docs" if docs else None,
-        redoc_url="/redoc" if docs else None,
-        openapi_url="/openapi.json" if docs else None,
-    )
-    app.state.settings = settings
-    app.state.db = db = open_database(settings.db_path)
+    db = open_database(settings.db_path)
     migrate(db)
     with db.unit_of_work("startup") as uow:
         faults.clear_transient(uow)
@@ -106,12 +100,31 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
         _load_demo_profile(db)
     step_up = StepUp(code_key=settings.code_hmac_key, provider=SimulatedSms())
     gateway = Gateway(db, fault_wait_file=settings.fault_wait_file)
+    coordinator = Coordinator(db, gateway, step_up)
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        # Restart recovery runs before the first request is served (SPEC §12.8).
+        coordinator.recover()
+        yield
+
+    docs = settings.demo_mode
+    app = FastAPI(
+        title="WealthGuard",
+        docs_url="/docs" if docs else None,
+        redoc_url="/redoc" if docs else None,
+        openapi_url="/openapi.json" if docs else None,
+        lifespan=lifespan,
+    )
+    app.state.settings = settings
+    app.state.db = db
     app.state.sessions = SessionService(db, settings.session_secret)
     app.state.gateway = gateway
+    app.state.coordinator = coordinator
     app.state.actions = action_service = ActionService(db, step_up, gateway)
     app.state.reads = ReadService(db)
     app.state.trusted = TrustedService(db, step_up, action_service)
-    app.state.sim = SimService(db, step_up, gateway)
+    app.state.sim = SimService(db, coordinator)
     install_error_handlers(app)
     build_id = resolve_build_id()
 

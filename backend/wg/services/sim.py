@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import logging
+import os
+from collections.abc import Callable
 from datetime import timedelta
 
 from wg.contracts.api import (
@@ -15,15 +18,17 @@ from wg.contracts.api import (
     SimResetRequest,
     SimResetResult,
 )
+from wg.contracts.enums import AuditActor
 from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.fixture import FixtureError
 from wg.core.k1_session import not_found
-from wg.core.k4_approval import StepUp, expire_open_challenges
-from wg.k6 import accounts, bank, faults, fixture
-from wg.k6.clock import advance_clock
+from wg.core.k5_coordinator import Coordinator
+from wg.k6 import accounts, audit, bank, faults, fixture
 from wg.k6.db import Database, UnitOfWork
-from wg.k6.gateway import Gateway
-from wg.k6.simtime import ClockError, ClockState, now, read_clock
+from wg.k6.gateway import CRASH_EXIT_STATUS
+from wg.k6.simtime import ClockState, now, read_clock
+
+log = logging.getLogger("wg.sim")
 
 
 def clock_view(state: ClockState) -> ClockView:
@@ -31,10 +36,16 @@ def clock_view(state: ClockState) -> ClockView:
 
 
 class SimService:
-    def __init__(self, db: Database, step_up: StepUp, gateway: Gateway) -> None:
+    def __init__(
+        self,
+        db: Database,
+        coordinator: Coordinator,
+        *,
+        exit_process: Callable[[int], object] = os._exit,
+    ) -> None:
         self.db = db
-        self.step_up = step_up
-        self.gateway = gateway
+        self.coordinator = coordinator
+        self._exit = exit_process
 
     def reset(self, request: SimResetRequest) -> SimResetResult:
         """Load the profile and variant in place of the current content; the clock returns to T0."""
@@ -51,30 +62,22 @@ class SimService:
         )
 
     def advance_clock(self, request: ClockAdvanceRequest) -> ClockView:
-        """Move the clock to `to`, or forward by days and minutes; never backwards."""
+        """Walk the clock to `to`, or forward by days and minutes, through every due instant."""
+        with self.db.read() as conn:
+            current = read_clock(conn).now
+        if request.to is not None:
+            target = request.to
+        else:
+            target = current + timedelta(days=request.days or 0, minutes=request.minutes or 0)
+        return clock_view(self.coordinator.advance_clock(target))
 
-        def advance(uow: UnitOfWork) -> ClockState:
-            current = read_clock(uow)
-            if request.to is not None:
-                target = request.to
-            else:
-                target = current.now + timedelta(
-                    days=request.days or 0, minutes=request.minutes or 0
-                )
-            try:
-                state = advance_clock(uow, target)
-            except ClockError:
-                raise WgError(
-                    ErrorCode.UNSUPPORTED_REQUEST, {"reason": "clock_backwards"}
-                ) from None
-            # Codes whose five simulated minutes are over close now, so none stays stored.
-            expire_open_challenges(uow, self.step_up, state.now)
-            return state
-
-        state = self.db.run_in_uow(advance, "sim clock advance")
-        # Settlements that fell due by the new time, each in its own unit of work.
-        self.gateway.settle_due()
-        return clock_view(state)
+    def crash(self) -> None:
+        """End the process at once, as a power cut would; the next start recovers (SPEC §12.8)."""
+        self.db.run_in_uow(
+            lambda uow: audit.record(uow, AuditActor.SYSTEM, "sim_crash"), "sim crash"
+        )
+        log.warning("simulated crash")
+        self._exit(CRASH_EXIT_STATUS)
 
     def arm_fault(self, request: FaultRequest) -> FaultsView:
         def arm(uow: UnitOfWork) -> FaultsView:

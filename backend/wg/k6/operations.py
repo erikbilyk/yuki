@@ -221,14 +221,23 @@ def due_operations(reader: Reader, at: datetime) -> list[OperationRow]:
     return [_operation(row) for row in rows]
 
 
-def open_operations(reader: Reader, customer_id: str | None = None) -> list[OperationRow]:
+def open_operations(
+    reader: Reader, customer_id: str | None = None, plan_id: str | None = None
+) -> list[OperationRow]:
     """Customer operations whose outcome is not final: SUBMITTED and UNKNOWN."""
-    sql = "SELECT * FROM operations WHERE status IN (?, ?) AND logical_action_id IS NOT NULL"
+    sql = (
+        "SELECT o.* FROM operations o LEFT JOIN actions a"
+        " ON a.logical_action_id = o.logical_action_id AND a.revision = o.revision"
+        " WHERE o.status IN (?, ?) AND o.logical_action_id IS NOT NULL"
+    )
     params: list[Any] = [_O.SUBMITTED.value, _O.UNKNOWN.value]
     if customer_id is not None:
-        sql += " AND customer_id = ?"
+        sql += " AND o.customer_id = ?"
         params.append(customer_id)
-    rows = reader.execute(sql + " ORDER BY submitted_at, operation_id", params).fetchall()
+    if plan_id is not None:
+        sql += " AND a.plan_id = ?"
+        params.append(plan_id)
+    rows = reader.execute(sql + " ORDER BY o.submitted_at, o.operation_id", params).fetchall()
     return [_operation(row) for row in rows]
 
 

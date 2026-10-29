@@ -30,13 +30,13 @@ from wg.contracts.api import (
     ChallengeView,
     SourceLabel,
 )
-from wg.contracts.enums import ActionStatus, ApprovalScopeKind, AuditActor, Tier
+from wg.contracts.enums import ActionStatus, ApprovalScopeKind, AuditActor, PlanKind, Tier
 from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.ids import IdPrefix, new_id
 from wg.core.hashes import hmac_hex, sha256_hex
 from wg.core.k1_session import not_found, owned
 from wg.core.k3_policy import check_not_locked, day_bounds
-from wg.k6 import actions, approvals, audit, challenges
+from wg.k6 import actions, approvals, audit, challenges, plans
 from wg.k6.actions import ActionRow
 from wg.k6.approvals import ApprovalRow, CardRow
 from wg.k6.challenges import ChallengeRow
@@ -244,6 +244,8 @@ def open_action_card(
             if card_status(uow, card, now) is CardStatus.OPEN:
                 return card
     elif action.status is ActionStatus.DRAFT:
+        if action.plan_id is None:
+            action = plans.attach_single(uow, action)
         action = actions.set_status(uow, action, ActionStatus.AWAITING_APPROVAL)
     else:
         raise state_refusal(action).error()
@@ -259,7 +261,7 @@ def open_action_card(
         terms_hash=terms_hash(terms),
         content=content.to_json(),
         expires_at=expires_at,
-        plan_id=action.plan_id,
+        plan_id=visible_plan_id(uow, action),
         logical_action_id=action.logical_action_id,
         revision=action.revision,
         cash_snapshot_id=cash_snapshot_id,
@@ -274,6 +276,14 @@ def open_action_card(
         decision=action.tier.value,
     )
     return card
+
+
+def visible_plan_id(reader: Reader, action: ActionRow) -> str | None:
+    """The plan the customer sees for an action: none for a standalone action's own plan."""
+    if action.plan_id is None:
+        return None
+    plan = plans.get_plan(reader, action.plan_id)
+    return None if plan.kind is PlanKind.SINGLE else plan.plan_id
 
 
 def open_plan_card(
