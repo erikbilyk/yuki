@@ -39,8 +39,8 @@ from wg.k6.db import NestedTransactionError, UnitOfWork, open_database
 
 from ..conftest import Live
 from ..harness.client import MAIN_CUSTOMER, WgClient, describe
-from ..harness.inject import delete_bank_request, rewind_event_cursors
-from .common import active_locks, load_variant
+from ..harness.inject import delete_bank_request, rewind_event_cursors, set_settle_days
+from .common import active_locks
 from .plan_flow import (
     BOUGHT,
     DAD,
@@ -56,6 +56,7 @@ from .plan_flow import (
     PLAN_EXPIRY,
     PURCHASE_FEN,
     REDEMPTION_SETTLED,
+    REDEMPTION_SUBMITTED,
     RENT,
     RENT_FEN,
     RENT_PAID,
@@ -167,8 +168,12 @@ def test_r2_one_jump_from_t3_to_t7_records_the_checkpoint_at_t5(app_client: WgCl
 @pytest.mark.layer("D")
 def test_r2_delayed_redemption_and_one_jump_from_t2_to_t7(app_client: WgClient) -> None:
     wg = app_client
-    load_variant(wg, "t65")
-    plan = redeemed(wg)
+    plan = approved(wg)
+    # The redemption slows down after the plan was approved on the base calendar.
+    set_settle_days(wg.db.path, "redeem_settle_days", 6)
+    plan.redeem()
+    assert_row(wg, REDEMPTION_SUBMITTED)
+    plan.assert_statuses(redeem=ActionStatus.SUBMITTED, purchase=ActionStatus.DRAFT)
     at_day(wg, 2)
     challenge = wg.challenge(plan.rent_id)
     code = wg.sms_code(challenge.challenge_id)

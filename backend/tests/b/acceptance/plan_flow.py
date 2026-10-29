@@ -500,7 +500,8 @@ def bills_in_order(wg: WgClient, plan: S6Plan) -> list[tuple[str, Card]]:
     )
     assert_row(wg, Row(1_958_500, 1_480_000, 478_500, 620_000, 3))
 
-    bills.append(new_bill(wg, 40_000))
+    # A later due date: the same payee, kind, amount and due date would return the second bill.
+    bills.append(new_bill(wg, 40_000, NEW_BILL_DUE + timedelta(days=1)))
     node = plan.node("purchase")
     assert node.status is ActionStatus.PAUSED and node.revision == 2
     assert set(node.pause_reasons) == {
