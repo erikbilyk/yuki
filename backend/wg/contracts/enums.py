@@ -49,6 +49,7 @@ ACTION_TRANSITIONS: Mapping[ActionStatus, frozenset[ActionStatus]] = MappingProx
                 _S.SUBMITTED,
                 _S.SETTLED,
                 _S.REJECTED,
+                _S.AWAITING_APPROVAL,
                 _S.AWAITING_STEPUP,
                 _S.UNKNOWN,
                 _S.CANCELLED,

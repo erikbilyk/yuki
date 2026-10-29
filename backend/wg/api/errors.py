@@ -23,7 +23,7 @@ MESSAGES_ZH: dict[ErrorCode, str] = {
     ErrorCode.TIER_CHANGED: "当日累计金额已变化，需要短信验证码",
     ErrorCode.LOCKED_WRITE: "相关操作已暂停，请联系工作人员",
     ErrorCode.READ_SCOPE_DENIED: "超出本次请求的数据范围",
-    ErrorCode.APPROVAL_REQUIRED: "请先在确认卡片上确认",
+    ErrorCode.APPROVAL_REQUIRED: "请先确认卡片；需要验证码时请重新获取",
     ErrorCode.APPROVAL_EXPIRED: "确认已过期，请重新发起",
     ErrorCode.APPROVAL_REVOKED: "确认已撤销",
     ErrorCode.TERMS_MISMATCH: "确认内容与当前条款不一致，请重新查看卡片",

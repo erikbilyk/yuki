@@ -55,7 +55,7 @@ SPEC_TRANSITIONS = (
     | _expand("DRAFT", "SETTLED")
     | _expand("AWAITING_STEPUP", "READY")
     | _expand("READY", "SUBMITTED SETTLED REJECTED")
-    | _expand("READY", "AWAITING_STEPUP")
+    | _expand("READY", "AWAITING_APPROVAL AWAITING_STEPUP")
     | _expand("SUBMITTED", "SETTLED REJECTED")
     | _expand("SUBMITTED READY", "UNKNOWN")
     | _expand("UNKNOWN", "SUBMITTED SETTLED REJECTED")
