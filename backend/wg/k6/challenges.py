@@ -230,9 +230,13 @@ def expired_open(reader: Reader, at: datetime) -> list[ChallengeRow]:
     return [_challenge(row) for row in rows]
 
 
+class ChallengeChanged(RuntimeError):
+    """The challenge row was no longer in the state it was read in."""
+
+
 def _changed(rowcount: int, challenge: ChallengeRow) -> None:
     if rowcount != 1:
-        raise RuntimeError(f"challenge {challenge.challenge_id} changed concurrently")
+        raise ChallengeChanged(f"challenge {challenge.challenge_id} changed concurrently")
 
 
 # Simulated SMS outbox

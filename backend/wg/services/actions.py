@@ -23,6 +23,7 @@ from wg.core import k4_approval as k4
 from wg.core.k1_session import not_found, owned
 from wg.core.k3_policy import check_not_locked
 from wg.core.k4_approval import InvalidationReason, StepUp
+from wg.core.k5_coordinator import store_status
 from wg.k6 import accounts, actions, audit, operations
 from wg.k6.actions import ActionRow
 from wg.k6.db import Database, UnitOfWork
@@ -102,6 +103,7 @@ class ActionService:
         self, uow: UnitOfWork, customer_id: str, draft: TransferDraft, actor: AuditActor
     ) -> tuple[ActionRow, tuple[Infeasible, ...]]:
         at = now(uow)
+        check_not_locked(uow, customer_id, None)
         payee = owned(accounts.find_payee(uow, draft.payee.value), customer_id, _owner)
         if not payee.active:
             raise not_found()
@@ -209,6 +211,7 @@ class ActionService:
                 return action
             if action.status not in CANCELLABLE:
                 raise k4.state_refusal(action).error()
+            # Cancelling reduces risk, so it is allowed under a lock (SPEC §16).
             k4.invalidate_grants(
                 uow,
                 self.step_up,
@@ -220,6 +223,8 @@ class ActionService:
             audit.record(
                 uow, actor, "action_cancelled", customer_id=customer_id, ref=logical_action_id
             )
+            if cancelled.plan_id is not None:
+                store_status(uow, cancelled.plan_id)
             return cancelled
 
         with self._audited(customer_id, "cancel_refused", logical_action_id, actor):

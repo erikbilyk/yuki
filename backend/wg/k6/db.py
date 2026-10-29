@@ -40,6 +40,20 @@ class Reader(Protocol):
     def execute(self, sql: str, parameters: Sequence[Any] = ..., /) -> sqlite3.Cursor: ...
 
 
+class FailurePolicy(Protocol):
+    """Decides, inside the failure-recording unit, what a recorded failure leads to."""
+
+    def __call__(self, uow: UnitOfWork, failure: RecordedFailure) -> None: ...
+
+
+class RecordedFailure(Protocol):
+    error_class: ErrorClass
+    detail: dict[str, str]
+    plan_id: str | None
+    logical_action_id: str | None
+    breaker_count: int | None
+
+
 class UnitOfWork:
     """One open write transaction. Repositories receive it to run their statements."""
 
@@ -79,6 +93,8 @@ class Database:
     def __init__(self, path: Path, busy_timeout_ms: int = BUSY_TIMEOUT_MS) -> None:
         self.path = Path(path).resolve()
         self.busy_timeout_ms = busy_timeout_ms
+        # Called inside the unit that records a failure; K8 uses it to set locks (SPEC §16).
+        self.failure_policy: FailurePolicy | None = None
         self._lock = threading.Lock()
         self._conn: sqlite3.Connection | None = None
 
@@ -161,6 +177,7 @@ class Database:
                 detail=_failure_detail(exc),
                 plan_id=plan_id,
                 logical_action_id=logical_action_id,
+                policy=self.failure_policy,
             )
         except Exception:
             # The original exception is re-raised by the caller; this one is only logged.
@@ -197,6 +214,10 @@ def _failure_detail(exc: Exception) -> dict[str, str]:
     detail = {"exception": type(exc).__name__}
     if isinstance(exc, WgError):
         detail["code"] = exc.code.value
+        for key in ("reason", "operation_id"):
+            value = exc.detail.get(key)
+            if isinstance(value, str):
+                detail[key] = value
     else:
         detail["message"] = str(exc)[:200]
     return detail

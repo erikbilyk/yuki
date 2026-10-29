@@ -108,7 +108,9 @@ class TrustedService:
             )
 
         with self._audited(customer_id, "verify_refused", challenge_id):
-            outcome = self.db.run_in_uow(run, "verify code")
+            outcome = self.db.run_in_uow(
+                run, "verify code", plan_id=self._plan_of_challenge(challenge_id)
+            )
         if isinstance(outcome, Refusal):
             # The refusal and its audit row were committed with the attempt count.
             raise outcome.error()
@@ -121,6 +123,15 @@ class TrustedService:
             action_status=action.status,
             operation=operation,
         )
+
+    def _plan_of_challenge(self, challenge_id: str) -> str | None:
+        """The plan a verification failure is recorded against (SPEC §16)."""
+        with self.db.read() as conn:
+            challenge = challenges.find_challenge(conn, challenge_id)
+            if challenge is None:
+                return None
+            action = actions.get_revision(conn, challenge.logical_action_id, challenge.revision)
+            return action.plan_id
 
     def sms(self, customer_id: str) -> SmsView:
         """Open codes of the customer's simulated phone; expired and closed ones never show."""

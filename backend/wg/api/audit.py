@@ -51,6 +51,15 @@ EVENT_TEXT: dict[str, str] = {
     "operation_unknown": "执行结果待核实",
     "operation_reconciled": "执行结果已核实",
     "incoming_payment": "收到转入款项",
+    "awaiting_code": "等待您操作：需要短信验证码",
+    "node_ready": "计划步骤已就绪",
+    "node_paused": "计划步骤已暂停",
+    "node_cancelled": "计划步骤已取消",
+    "plan_status": "计划状态已更新",
+    "plan_stopped": "计划已停止",
+    "unlock_refused": "解除暂停未被接受",
+    "operator_reconcile": "运营人员核实了执行结果",
+    "sim_crash": "模拟服务中断",
 }
 
 

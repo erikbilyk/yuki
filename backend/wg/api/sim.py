@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 
 from wg.api.guards import require_role
 from wg.contracts.api import (
@@ -44,3 +44,10 @@ def arm_fault(body: FaultRequest, request: Request) -> FaultsView:
 @router.post("/incoming-payment")
 def incoming_payment(body: IncomingPaymentRequest, request: Request) -> SimPostingResult:
     return _service(request).incoming_payment(body)
+
+
+@router.post("/crash")
+def crash(request: Request) -> Response:
+    """Ends the process; the client sees the connection close without a response."""
+    _service(request).crash()
+    return Response(status_code=204)

@@ -1,7 +1,8 @@
 """Failure records and the per-plan breaker counter (SPEC §11, §16).
 
 `record_failure` runs in its own unit of work after the failed unit has rolled back, so
-the evidence survives the rollback. Locking the plan at the threshold is K8's decision.
+the evidence survives the rollback. Locking is K8's decision: the database's failure policy
+is called inside the same unit with the recorded failure and the plan's new count.
 """
 
 from __future__ import annotations
@@ -13,8 +14,17 @@ from datetime import datetime
 from wg.contracts.enums import AuditActor
 from wg.contracts.errors import ErrorClass
 from wg.k6 import audit
-from wg.k6.db import Database, Reader, UnitOfWork
+from wg.k6.db import Database, FailurePolicy, Reader, UnitOfWork
 from wg.k6.simtime import ClockError, from_db, now_db, wall_now
+
+
+@dataclass(frozen=True)
+class Failure:
+    error_class: ErrorClass
+    detail: dict[str, str]
+    plan_id: str | None
+    logical_action_id: str | None
+    breaker_count: int | None
 
 
 @dataclass(frozen=True)
@@ -44,10 +54,12 @@ def record_failure(
     detail: dict[str, str],
     plan_id: str | None = None,
     logical_action_id: str | None = None,
+    policy: FailurePolicy | None = None,
 ) -> int | None:
     """Write a failure record in a new unit; return the plan's breaker count if it changed.
 
     Only unexpected failures count toward the breaker, and only for a plan that exists.
+    `policy` runs in the same unit, so a lock it sets commits with the record.
     """
     with db.unit_of_work("record_failure") as uow:
         at = _stamp(uow)
@@ -81,6 +93,8 @@ def record_failure(
                 decision=error_class.value,
                 reason=detail.get("code") or detail.get("exception"),
             )
+        if policy is not None:
+            policy(uow, Failure(error_class, detail, plan_id, logical_action_id, count))
         return count
 
 
