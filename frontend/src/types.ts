@@ -208,6 +208,7 @@ export interface OperationView {
   amount_fen: number | null;
   payee_id: string | null;
   submitted_at: string;
+  settle_due_at: string | null;
   settled_at: string | null;
   receipt_id: string | null;
 }
@@ -287,4 +288,126 @@ export interface ChatMessageView {
   text: string;
   explanation_replaced: boolean;
   created_at: string;
+}
+
+export type PlanKind = "rebalance" | "mixed" | "single" | string;
+export type PlanStatus = "draft" | "active" | "paused" | "completed" | "partial" | "locked";
+export type RevisionReason = "initial" | "bill_change" | "new_approval";
+export type CheckpointResult = "passed" | "failed" | "checkpoint_missed";
+
+export interface PlanNodeView {
+  logical_action_id: string;
+  revision: number;
+  kind: ActionKind;
+  status: ActionStatus;
+  phrase: NodePhrase;
+  tier: Tier;
+  depends_on: string[];
+  not_before: string | null;
+  due_date: string | null;
+  amount_fen: number | null;
+  shares: string | null;
+  product_id: string | null;
+  payee_id: string | null;
+  payee_display: string | null;
+  commitment_id: string | null;
+  pause_reasons: string[];
+  challenge_expires_at: string | null;
+  card_id: string | null;
+  operation_id: string | null;
+  receipt_id: string | null;
+  submitted_at: string | null;
+  settled_at: string | null;
+}
+
+export interface PlanRevisionView {
+  revision: number;
+  reason: RevisionReason;
+  trigger_event_id: string | null;
+  cash_snapshot_id: string;
+  calc_result_id: string | null;
+  approval_id: string | null;
+  within_bounds: boolean;
+  purchase_before_fen: number | null;
+  purchase_after_fen: number | null;
+  created_at: string;
+}
+
+export interface CheckpointView {
+  logical_action_id: string;
+  result: CheckpointResult;
+  measured_pct: string;
+  lower_pct: string;
+  upper_pct: string;
+  target_max_pct: string;
+  quality: PercentQuality;
+  evaluated_at: string;
+}
+
+export interface PlanSummary {
+  plan_id: string;
+  kind: PlanKind;
+  status: PlanStatus;
+  mode: string;
+  created_at: string;
+  expires_at: string | null;
+  next_operation: NextOperationView | null;
+}
+
+export interface PlanView extends PlanSummary {
+  active_revision: number;
+  root_approval_id: string | null;
+  card_id: string | null;
+  nodes: PlanNodeView[];
+  revisions: PlanRevisionView[];
+  checkpoint: CheckpointView | null;
+}
+
+export interface AuditLine {
+  at: string;
+  actor: string;
+  event: string;
+  ref: string | null;
+  decision: string | null;
+  reason: string | null;
+  text: string;
+}
+
+export interface HealthView {
+  status: "ok";
+  build: string;
+  demo: boolean;
+  features: string[];
+}
+
+export interface ClockView {
+  now: string;
+  epoch: string;
+  day: number;
+}
+
+export type FaultName =
+  | "crash_before_commit"
+  | "crash_after_commit"
+  | "pause_before_commit"
+  | "pause_after_commit"
+  | "drop_response"
+  | "bank_ack_lost"
+  | "settlement_reject"
+  | "probe_timeout"
+  | "busy"
+  | "unexpected"
+  | "tick_crash";
+
+export interface FaultView {
+  fault: FaultName;
+  remaining_count: number;
+  persistent: boolean;
+  armed_at: string;
+}
+
+export interface SimResetResult {
+  profile: string;
+  variant: string | null;
+  clock: ClockView;
 }
