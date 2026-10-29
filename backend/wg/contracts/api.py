@@ -75,7 +75,16 @@ from wg.contracts.ids import (
     ReceiptId,
     StatementId,
 )
-from wg.contracts.money import Fen, Nav, NonNegativeFen, Pct, PositiveFen, Shares
+from wg.contracts.money import (
+    DecimalStr,
+    Fen,
+    Nav,
+    NonNegativeFen,
+    Pct,
+    PositiveFen,
+    Rate,
+    Shares,
+)
 from wg.contracts.plan import ComposePlanRequest, PlanValidationResult
 
 Revision = Annotated[int, Field(strict=True, ge=1)]
@@ -479,6 +488,44 @@ class ExposureView(ContractModel):
     basis: ExposureBasis
     quality: PercentQuality
     exposure: ExposureResult
+
+
+class PublicFeeTier(ContractModel):
+    """Redemption fee for a holding period of `from_days` to `to_days` whole days (open if None)."""
+
+    from_days: NonNegativeInt
+    to_days: NonNegativeInt | None
+    rate: Rate
+
+
+class PublicFund(ContractModel):
+    product_id: FundCode
+    name: Label
+    share_class: Label
+    net_assets_fen: NonNegativeFen
+    redemption_tiers: tuple[PublicFeeTier, ...]
+    report_title: Text
+    report_sha256: Sha256Hex
+    source_url: Text | None
+
+
+class PublicOverlap(ContractModel):
+    """`overlap_percent` is in percent (26.709382 means 26.709382 %), unlike `Pct` fractions."""
+
+    definition: Text
+    shared_securities: Count
+    overlap_percent: DecimalStr(6)
+
+
+class PublicDiagnosticsView(ContractModel):
+    """Dated figures from the funds' interim reports; they never back an order (SPEC §22)."""
+
+    calc_result_id: CalcResultId
+    period_end: date
+    retrieved_on: date
+    executable: Literal[False]
+    funds: tuple[PublicFund, ...]
+    overlap: PublicOverlap
 
 
 class PositionView(ContractModel):
@@ -1235,6 +1282,7 @@ ROUTES: tuple[Route, ...] = (
     _get("/v1/unresolved", _R.CUSTOMER, _G.READS, UnresolvedView),
     _get("/v1/funds/exposure", _R.CUSTOMER, _G.READS, ExposureView, ExposureQuery),
     _get("/v1/funds/positions", _R.CUSTOMER, _G.READS, PositionsView),
+    _get("/v1/funds/public-diagnostics", _R.CUSTOMER, _G.READS, PublicDiagnosticsView),
     _post("/v1/funds/candidates", _R.CUSTOMER, _G.READS, CandidatesView, CandidatesRequest),
     _post("/v1/funds/stress", _R.CUSTOMER, _G.READS, StressView, StressRequest),
     _get("/v1/funds/fees/estimate", _R.CUSTOMER, _G.READS, FeeEstimateView, FeeEstimateQuery),

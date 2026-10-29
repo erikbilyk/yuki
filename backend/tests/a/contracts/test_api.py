@@ -52,6 +52,7 @@ GET /v1/transactions
 GET /v1/unresolved
 GET /v1/funds/exposure
 GET /v1/funds/positions
+GET /v1/funds/public-diagnostics
 POST /v1/funds/candidates
 POST /v1/funds/stress
 GET /v1/funds/fees/estimate
