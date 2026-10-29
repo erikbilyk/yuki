@@ -1,0 +1,64 @@
+{
+  "010737": {
+    "balance_sheet_assets": {
+      "fen": 668743944034,
+      "page": 15
+    },
+    "class_net_assets_fen": [
+      345705854116,
+      290002664554,
+      27860139187
+    ],
+    "class_net_assets_page": 7,
+    "domestic_industry_total": {
+      "fen": 575971122489,
+      "page": 46
+    },
+    "hong_kong_industry_total": {
+      "fen": 17398326321,
+      "page": 46
+    },
+    "net_assets": {
+      "fen": 663568657857,
+      "page": 15
+    },
+    "portfolio_total": {
+      "fen": 668743944034,
+      "page": 44
+    },
+    "report_sha256": "547fb0592afd67e961000dfa9fb2f96ca489f006c647bcc6b3af8ee6375de196",
+    "stock_investment": {
+      "fen": 593369448810,
+      "page": 44
+    }
+  },
+  "019018": {
+    "balance_sheet_assets": {
+      "fen": 2190101161744,
+      "page": 14
+    },
+    "class_net_assets_fen": [
+      1302415645277,
+      811944800095
+    ],
+    "class_net_assets_page": 7,
+    "domestic_industry_total": {
+      "fen": 1822459350854,
+      "page": 43
+    },
+    "hong_kong_industry_total": null,
+    "net_assets": {
+      "fen": 2114360445372,
+      "page": 14
+    },
+    "portfolio_total": {
+      "fen": 2190101161744,
+      "page": 42
+    },
+    "report_sha256": "e590d3398d013ce751c766277c12b3cacaa43d3f6e670efef4a2cbf2242c3d99",
+    "stock_investment": {
+      "fen": 1822459350854,
+      "page": 42
+    }
+  }
+}

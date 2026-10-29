@@ -1,0 +1,48 @@
+{
+  "010737": {
+    "redemption_tiers": [
+      {
+        "from_days": 1,
+        "rate": "0.0150",
+        "source_page": 3,
+        "to_days": 6
+      },
+      {
+        "from_days": 7,
+        "rate": "0.0050",
+        "source_page": 3,
+        "to_days": 29
+      },
+      {
+        "from_days": 30,
+        "rate": "0.0000",
+        "source_page": 3,
+        "to_days": null
+      }
+    ],
+    "summary_sha256": "9cce14d3d41a70bb0d1aada37cc7ccaeae9e915db2c731ad1ea6cd5997a80422"
+  },
+  "019018": {
+    "redemption_tiers": [
+      {
+        "from_days": 1,
+        "rate": "0.0150",
+        "source_page": 3,
+        "to_days": 6
+      },
+      {
+        "from_days": 7,
+        "rate": "0.0050",
+        "source_page": 3,
+        "to_days": 29
+      },
+      {
+        "from_days": 30,
+        "rate": "0.0000",
+        "source_page": 3,
+        "to_days": null
+      }
+    ],
+    "summary_sha256": "29c62deb394e8f5e1bd6807bb89fb5d73fdb80fc3ca18a5ba7a7e82e4106bc77"
+  }
+}

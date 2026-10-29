@@ -1,0 +1,131 @@
+{
+  "checks": {
+    "010737": [
+      {
+        "actual": "contiguous",
+        "expected": "contiguous",
+        "name": "row numbers 7.3.1 run 1..60",
+        "ok": true,
+        "page": null
+      },
+      {
+        "actual": "contiguous",
+        "expected": "contiguous",
+        "name": "row numbers 7.3.2 run 1..48",
+        "ok": true,
+        "page": null
+      },
+      {
+        "actual": "593369448810 fen",
+        "expected": "593369448810 fen",
+        "name": "sum of all holdings = 7.1 stock investment",
+        "ok": true,
+        "page": 44
+      },
+      {
+        "actual": "575971122489 fen",
+        "expected": "575971122489 fen",
+        "name": "sum of 6-digit holdings = 7.2.1 industry totals",
+        "ok": true,
+        "page": 46
+      },
+      {
+        "actual": "17398326321 fen",
+        "expected": "17398326321 fen",
+        "name": "sum of 5-digit holdings = 7.2.2 Hong Kong total",
+        "ok": true,
+        "page": 46
+      },
+      {
+        "actual": "668743944034 fen",
+        "expected": "668743944034 fen",
+        "name": "7.1 portfolio total = balance sheet total assets",
+        "ok": true,
+        "page": 15
+      },
+      {
+        "actual": "663568657857 fen",
+        "expected": "663568657857 fen",
+        "name": "sum of share class net assets = balance sheet net assets",
+        "ok": true,
+        "page": 7
+      },
+      {
+        "actual": "0 rows differ",
+        "expected": "0 rows differ",
+        "name": "printed share of net assets = value / net assets (two decimals)",
+        "ok": true,
+        "page": null
+      },
+      {
+        "actual": "1-6d 0.0150; 7-29d 0.0050; 30-d 0.0000",
+        "expected": "1-6d 0.0150; 7-29d 0.0050; 30-d 0.0000",
+        "name": "redemption fee tiers = SPEC 14.4",
+        "ok": true,
+        "page": 3
+      }
+    ],
+    "019018": [
+      {
+        "actual": "contiguous",
+        "expected": "contiguous",
+        "name": "row numbers 7.3 run 1..128",
+        "ok": true,
+        "page": null
+      },
+      {
+        "actual": "1822459350854 fen",
+        "expected": "1822459350854 fen",
+        "name": "sum of all holdings = 7.1 stock investment",
+        "ok": true,
+        "page": 42
+      },
+      {
+        "actual": "1822459350854 fen",
+        "expected": "1822459350854 fen",
+        "name": "sum of 6-digit holdings = 7.2.1 industry totals",
+        "ok": true,
+        "page": 43
+      },
+      {
+        "actual": "0 fen",
+        "expected": "0 fen",
+        "name": "sum of 5-digit holdings = 7.2.2 Hong Kong total",
+        "ok": true,
+        "page": null
+      },
+      {
+        "actual": "2190101161744 fen",
+        "expected": "2190101161744 fen",
+        "name": "7.1 portfolio total = balance sheet total assets",
+        "ok": true,
+        "page": 14
+      },
+      {
+        "actual": "2114360445372 fen",
+        "expected": "2114360445372 fen",
+        "name": "sum of share class net assets = balance sheet net assets",
+        "ok": true,
+        "page": 7
+      },
+      {
+        "actual": "0 rows differ",
+        "expected": "0 rows differ",
+        "name": "printed share of net assets = value / net assets (two decimals)",
+        "ok": true,
+        "page": null
+      },
+      {
+        "actual": "1-6d 0.0150; 7-29d 0.0050; 30-d 0.0000",
+        "expected": "1-6d 0.0150; 7-29d 0.0050; 30-d 0.0000",
+        "name": "redemption fee tiers = SPEC 14.4",
+        "ok": true,
+        "page": 3
+      }
+    ]
+  },
+  "expected_overlap_pct": "26.709382",
+  "overlap_pct": "26.709382",
+  "overlap_reproduced": true,
+  "period_end": "2026-06-30"
+}
