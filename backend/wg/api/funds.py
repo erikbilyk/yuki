@@ -20,12 +20,14 @@ from wg.contracts.api import (
     FeeEstimateView,
     PlanDraftResult,
     PositionsView,
+    PublicDiagnosticsView,
     RebalancePlanDraftRequest,
     StressRequest,
     StressView,
 )
 from wg.core.k1_session import Principal
 from wg.services.funds import FundsService
+from wg.services.public_import import public_diagnostics
 
 router = APIRouter(prefix="/v1")
 
@@ -33,6 +35,7 @@ ExposureReader = Annotated[Principal, Depends(route_guard("GET", "/v1/funds/expo
 PositionsReader = Annotated[Principal, Depends(route_guard("GET", "/v1/funds/positions"))]
 CandidateSearcher = Annotated[Principal, Depends(route_guard("POST", "/v1/funds/candidates"))]
 StressRunner = Annotated[Principal, Depends(route_guard("POST", "/v1/funds/stress"))]
+PublicReader = Annotated[Principal, Depends(route_guard("GET", "/v1/funds/public-diagnostics"))]
 FeeEstimator = Annotated[Principal, Depends(route_guard("GET", "/v1/funds/fees/estimate"))]
 PlanDrafter = Annotated[Principal, Depends(route_guard("POST", "/v1/funds/plans"))]
 
@@ -44,6 +47,11 @@ def _service(request: Request) -> FundsService:
 @router.get("/funds/positions")
 def positions(request: Request, principal: PositionsReader) -> PositionsView:
     return _service(request).positions(principal.customer_id)
+
+
+@router.get("/funds/public-diagnostics")
+def public_diagnostics_view(request: Request, _: PublicReader) -> PublicDiagnosticsView:
+    return public_diagnostics(request.app.state.db)
 
 
 @router.get("/funds/exposure")

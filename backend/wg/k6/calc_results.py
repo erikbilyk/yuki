@@ -24,6 +24,10 @@ class CalcKind(StrEnum):
     EXPOSURE = "exposure"
     CANDIDATES = "candidates"
     STRESS = "stress"
+    PUBLIC_DIAGNOSTICS = "public_diagnostics"
+
+
+PUBLIC_CUSTOMER_ID = "cus_public"
 
 
 @dataclass(frozen=True)
@@ -92,5 +96,23 @@ def store(
 def find(reader: Reader, calc_result_id: str) -> CalcResultRow | None:
     row = reader.execute(
         "SELECT * FROM calc_results WHERE calc_result_id = ?", (calc_result_id,)
+    ).fetchone()
+    return None if row is None else _row(row)
+
+
+def ensure_public_customer(uow: UnitOfWork) -> None:
+    """The system row that owns results belonging to no customer; it cannot log in."""
+    uow.execute(
+        "INSERT OR IGNORE INTO customers (customer_id, handle, password_hash, display_name,"
+        " created_at) VALUES (?, 'system-public', '!', 'Public data', ?)",
+        (PUBLIC_CUSTOMER_ID, now_db(uow)),
+    )
+
+
+def latest(reader: Reader, kind: CalcKind, customer_id: str) -> CalcResultRow | None:
+    row = reader.execute(
+        "SELECT * FROM calc_results WHERE customer_id = ? AND kind = ?"
+        " ORDER BY created_at DESC, rowid DESC LIMIT 1",
+        (customer_id, kind.value),
     ).fetchone()
     return None if row is None else _row(row)
