@@ -8,13 +8,16 @@ work, so a tier computed for a draft or a card is never trusted at execution tim
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from datetime import date, datetime, time, timedelta
+from typing import Any
 
 from wg.contracts.enums import ActionKind, AuditActor, LockScope, OperationStatus, Tier
 from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.tools import DataSource, Intent
 from wg.k6 import audit, locks
 from wg.k6.db import Database, Reader, in_transaction
+from wg.k6.reserves import reserve_target
 from wg.k6.simtime import SHANGHAI, to_db
 
 # SPEC §10.1, in fen. The YELLOW limit is inclusive: a day total of exactly ¥1,000.00 is YELLOW.
@@ -142,6 +145,15 @@ def _marks(values: list[str]) -> str:
 
 
 # Locks (SPEC §16)
+
+
+def is_risk_reducing(
+    reader: Reader, customer_id: str, kind: ActionKind, params: Mapping[str, Any]
+) -> bool:
+    """True for a write that only raises protection: a reserve increase (SPEC §16)."""
+    if ActionKind(kind) is not ActionKind.DESIGNATE_RESERVE:
+        return False
+    return int(params["target_fen"]) >= reserve_target(reader, customer_id)
 
 
 def check_not_locked(

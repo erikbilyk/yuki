@@ -58,6 +58,7 @@ def receipt_view(reader: Reader, operation: OperationRow, receipt: ReceiptRow) -
         payee_id=operation.payee_id,
         payee_display=payee_display(reader, operation.payee_id),
         commitment_id=operation.commitment_id,
+        unpaid_after_fen=receipt.effect.get("unpaid_after_fen"),
         reason_code=_error_code(receipt.reason_code),
         created_at=receipt.created_at,
     )

@@ -214,7 +214,7 @@ def _failure_detail(exc: Exception) -> dict[str, str]:
     detail = {"exception": type(exc).__name__}
     if isinstance(exc, WgError):
         detail["code"] = exc.code.value
-        for key in ("reason", "operation_id"):
+        for key in ("reason", "operation_id", "customer_id"):
             value = exc.detail.get(key)
             if isinstance(value, str):
                 detail[key] = value

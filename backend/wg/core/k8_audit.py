@@ -64,7 +64,10 @@ def on_failure(uow: UnitOfWork, failure: RecordedFailure) -> None:
 
 
 def _customer_of(reader: Reader, failure: RecordedFailure) -> str | None:
-    """The customer a failure concerns, from its operation, action or plan."""
+    """The customer a failure concerns, from its detail, operation, action or plan."""
+    customer_id = failure.detail.get("customer_id")
+    if customer_id is not None:
+        return customer_id
     operation_id = failure.detail.get("operation_id")
     if operation_id is not None:
         operation = operations.find_operation(reader, operation_id)

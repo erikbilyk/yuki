@@ -35,7 +35,7 @@ from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.ids import IdPrefix, new_id
 from wg.core.hashes import hmac_hex, sha256_hex
 from wg.core.k1_session import not_found, owned
-from wg.core.k3_policy import check_not_locked, day_bounds
+from wg.core.k3_policy import check_not_locked, day_bounds, is_risk_reducing
 from wg.k6 import actions, approvals, audit, challenges, plans
 from wg.k6.actions import ActionRow
 from wg.k6.approvals import ApprovalRow, CardRow
@@ -395,7 +395,12 @@ def confirm_card(
     action = actions.get_revision(uow, card.logical_action_id, card.revision)
     if not _same(terms_hash(action_terms(action, card.expires_at)), card.terms_hash):
         raise WgError(ErrorCode.TERMS_MISMATCH, {"card_id": card.card_id})
-    check_not_locked(uow, customer_id, action.plan_id)
+    check_not_locked(
+        uow,
+        customer_id,
+        action.plan_id,
+        risk_reducing=is_risk_reducing(uow, customer_id, action.kind, action.params),
+    )
     approval = approvals.insert_approval(
         uow,
         approval_id=new_id(IdPrefix.APPROVAL),
@@ -576,7 +581,12 @@ def request_challenge(
     assert approval is not None
     if action.status is not ActionStatus.AWAITING_STEPUP:
         raise state_refusal(action).error()
-    check_not_locked(uow, customer_id, action.plan_id)
+    check_not_locked(
+        uow,
+        customer_id,
+        action.plan_id,
+        risk_reducing=is_risk_reducing(uow, customer_id, action.kind, action.params),
+    )
     return issue_challenge(uow, step_up, action, approval, now)
 
 
@@ -638,7 +648,12 @@ def verify_code(
         return _refuse(uow, challenge, refusal)
     if action.status is not ActionStatus.AWAITING_STEPUP:
         return _refuse(uow, challenge, state_refusal(action).code)
-    check_not_locked(uow, customer_id, action.plan_id)
+    check_not_locked(
+        uow,
+        customer_id,
+        action.plan_id,
+        risk_reducing=is_risk_reducing(uow, customer_id, action.kind, action.params),
+    )
 
     if not correct:
         challenge = challenges.record_failed_attempt(uow, challenge)

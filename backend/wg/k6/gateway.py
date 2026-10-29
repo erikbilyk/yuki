@@ -54,15 +54,15 @@ from wg.contracts.events import (
 )
 from wg.core import k4_approval as k4
 from wg.core.k1_session import owned
-from wg.core.k3_policy import check_not_locked
+from wg.core.k3_policy import check_not_locked, is_risk_reducing
 from wg.k6 import actions, audit, events, failures, faults, operations
 from wg.k6.actions import ActionRow
 from wg.k6.bank import AckLost, BankRequest, find_request
 from wg.k6.db import Database, Reader, UnitOfWork
 from wg.k6.operations import OperationRow
 from wg.k6.simtime import now
-from wg.packs.base import ActionPack, OperationTerms
-from wg.packs.registry import pack_for
+from wg.packs.base import ActionPack, OperationTerms, Pack, StatePack
+from wg.packs.registry import money_pack, pack_for
 
 log = logging.getLogger("wg.k6.gateway")
 
@@ -81,8 +81,8 @@ _AFTER_COMMIT = (Fault.CRASH_AFTER_COMMIT, Fault.PAUSE_AFTER_COMMIT, Fault.DROP_
 class ResponseDropped(Exception):
     """`drop_response` fired: the submission committed, and the response must not be sent."""
 
-    def __init__(self, operation: OperationRow) -> None:
-        super().__init__(operation.operation_id)
+    def __init__(self, operation: OperationRow | None) -> None:
+        super().__init__(operation.operation_id if operation else "no operation")
         self.operation = operation
 
 
@@ -92,7 +92,9 @@ class FaultFailure(RuntimeError):
 
 @dataclass(frozen=True)
 class Submission:
-    operation: OperationRow
+    """The result of a submission; `operation` is None for an action that moves no money."""
+
+    operation: OperationRow | None
     created: bool
 
 
@@ -188,37 +190,66 @@ class Gateway:
                     ErrorCode.IDEMPOTENCY_MISMATCH, {"logical_action_id": logical_action_id}
                 )
             return Submission(existing, created=False)
+        pack = pack_for(action.kind)
+        if action.status is ActionStatus.SETTLED and isinstance(pack, StatePack):
+            # A state change leaves no operation; its settled action is the original result.
+            return Submission(None, created=False)
         if action.status is ActionStatus.AWAITING_STEPUP:
             raise WgError(ErrorCode.APPROVAL_REQUIRED, {"logical_action_id": logical_action_id})
         if action.status is not ActionStatus.READY:
             raise k4.state_refusal(action).error()
-        check_not_locked(uow, customer_id, action.plan_id)
+        check_not_locked(
+            uow,
+            customer_id,
+            action.plan_id,
+            risk_reducing=is_risk_reducing(uow, customer_id, action.kind, action.params),
+        )
 
-        pack = pack_for(action.kind)
         self._authorize(uow, pack, action, at)
         reasons = pack.precheck(uow, customer_id, action.kind, action.params, at)
         if reasons:
             raise reasons[0].error()
+        if isinstance(pack, StatePack):
+            return self._execute_state(uow, pack, action, at, armed)
 
-        terms = pack.operation_terms(uow, action, at)
+        payment = money_pack(action.kind)
+        terms = payment.operation_terms(uow, action, at)
         operation = self._insert_operation(uow, action, terms, at)
-        pack.reserve(uow, operation, terms)
+        payment.reserve(uow, operation, terms)
         if armed.unexpected:
             raise FaultFailure("fault: unexpected")
         try:
-            bank_request = pack.apply(uow, operation, terms, at)
+            bank_request = payment.apply(uow, operation, terms, at)
         except AckLost:
             # An unknown outcome neither counts toward the breaker nor resets it (SPEC §16).
             operation = _mark_unknown(uow, operation)
         else:
-            operation = _record_outcome(uow, pack, operation, bank_request)
+            operation = _record_outcome(uow, payment, operation, bank_request)
             if action.plan_id is not None:
                 failures.record_success(uow, action.plan_id)
         return Submission(operation, created=True)
 
-    def _authorize(
-        self, uow: UnitOfWork, pack: ActionPack, action: ActionRow, at: datetime
-    ) -> None:
+    def _execute_state(
+        self, uow: UnitOfWork, pack: StatePack, action: ActionRow, at: datetime, armed: _Armed
+    ) -> Submission:
+        """Run an action that changes the customer's records: no operation, receipt or bank."""
+        if armed.unexpected:
+            raise FaultFailure("fault: unexpected")
+        pack.execute(uow, action, at)
+        actions.set_status(uow, action, ActionStatus.SETTLED)
+        audit.record(
+            uow,
+            AuditActor.SYSTEM,
+            "action_executed",
+            customer_id=action.customer_id,
+            ref=action.logical_action_id,
+            decision=action.kind.value,
+        )
+        if action.plan_id is not None:
+            failures.record_success(uow, action.plan_id)
+        return Submission(None, created=True)
+
+    def _authorize(self, uow: UnitOfWork, pack: Pack, action: ActionRow, at: datetime) -> None:
         """A valid approval for every tier; a grant when the action or its recomputed tier is RED.
 
         A YELLOW action whose day total has since risen to RED has no grant; it is refused with
@@ -436,12 +467,16 @@ def _finish(
         OperationEventKind.SETTLED if settled else OperationEventKind.REJECTED,
         reason,
     )
+    effect = pack.receipt_effect(operation, bank_request)
+    if settled:
+        effect |= pack.on_settled(uow, operation)
     receipt = operations.insert_receipt(
         uow,
         operation_id=operation.operation_id,
         status=outcome,
-        effect=pack.receipt_effect(operation, bank_request),
+        effect=effect,
         terms_hash=approval.terms_hash if approval else None,
+        reason_code=None if settled else ErrorCode.BANK_REJECTED.value,
     )
     actions.set_status(uow, action, ActionStatus.SETTLED if settled else ActionStatus.REJECTED)
     if settled and action.plan_id is not None:
@@ -515,7 +550,7 @@ def reconcile_operation(uow: UnitOfWork, operation_id: str) -> OperationRow:
             ErrorCode.INTEGRITY_VIOLATION,
             {"operation_id": operation_id, "reason": "no_bank_record"},
         )
-    pack = pack_for(operation.action_kind)
+    pack = money_pack(operation.action_kind)
     if operation.status is OperationStatus.UNKNOWN:
         operations.append_event(uow, operation_id, OperationEventKind.RECONCILED)
         if not (bank_request.rejected or bank_request.settled):
@@ -543,7 +578,7 @@ def settle_operation(uow: UnitOfWork, operation_id: str, at: datetime) -> Operat
         return operation
     if operation.settle_due_at is None or operation.settle_due_at > at:
         return operation
-    pack = pack_for(operation.action_kind)
+    pack = money_pack(operation.action_kind)
     bank_request = pack.settle(uow, operation, operation.settle_due_at)
     return _record_outcome(uow, pack, operation, bank_request)
 

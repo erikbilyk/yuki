@@ -35,6 +35,7 @@ from wg.k6.simtime import from_db, now_db, to_db
 
 CLEARING_ACCOUNT = "acc_sys_clearing"
 INCOMING_PAYMENT = "INCOMING_PAYMENT"
+EXTERNAL_DEBIT = "EXTERNAL_DEBIT"
 SETTLEMENT_REJECTED = "settlement_rejected"
 
 
@@ -278,6 +279,71 @@ def post_incoming_payment(
         uow,
         AuditActor.SYSTEM,
         "incoming_payment",
+        customer_id=customer_id,
+        ref=operation.operation_id,
+    )
+    return operation
+
+
+def post_external_debit(
+    uow: UnitOfWork,
+    *,
+    customer_id: str,
+    account_id: str,
+    amount_fen: int,
+    merchant: str,
+    at: datetime,
+) -> OperationRow:
+    """Debit a customer account for a payment the bank did not take through WealthGuard.
+
+    The money has left already, so nothing can refuse it except a balance that cannot cover
+    it. The merchant text is untrusted and stored as received.
+    """
+    if amount_fen <= 0:
+        raise ValueError("an external debit is positive")
+    balance = uow.execute(
+        "SELECT balance_fen FROM accounts WHERE account_id = ?", (account_id,)
+    ).fetchone()
+    if balance is None or balance["balance_fen"] < amount_fen:
+        raise WgError(ErrorCode.INSUFFICIENT_FUNDS, {"account_id": account_id})
+    key = f"external-debit:{secrets.token_hex(8)}"
+    operation = operations.insert_operation(
+        uow,
+        key=key,
+        request_hash=sha256_hex(
+            {"kind": EXTERNAL_DEBIT, "account_id": account_id, "amount_fen": amount_fen}
+        ),
+        kind=EXTERNAL_DEBIT,
+        submitted_at=at,
+        status=OperationStatus.SETTLED,
+        customer_id=customer_id,
+        account_id=account_id,
+        amount_fen=amount_fen,
+        settled_at=at,
+    )
+    operations.append_event(uow, operation.operation_id, OperationEventKind.SETTLED, "external")
+    _insert_request(
+        uow,
+        key,
+        BankRequestStatus.EXECUTED,
+        {
+            "operation_id": operation.operation_id,
+            "account_id": account_id,
+            "amount_fen": amount_fen,
+            "merchant": merchant,
+            "settled_at": to_db(at),
+        },
+    )
+    post_entries(
+        uow,
+        operation.operation_id,
+        (Posting(account_id, -amount_fen), Posting(CLEARING_ACCOUNT, amount_fen)),
+        at,
+    )
+    audit.record(
+        uow,
+        AuditActor.SYSTEM,
+        "external_debit",
         customer_id=customer_id,
         ref=operation.operation_id,
     )

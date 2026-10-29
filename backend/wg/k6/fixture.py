@@ -20,14 +20,16 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from wg.contracts.enums import AuditActor, OperationEventKind, OperationStatus
-from wg.contracts.fixture import Fixture, FixtureError, load_fixture
+from wg.contracts.fixture import Fixture, FixtureError, FixtureStatement, load_fixture
 from wg.contracts.ids import IdPrefix, new_id
 from wg.contracts.tools import READ_SCOPES
-from wg.k6 import audit, sessions
+from wg.k6 import audit, imports, sessions
+from wg.k6.categories import seed_categories
 from wg.k6.clock import start_clock
 from wg.k6.db import Database, Reader, UnitOfWork, open_database
 from wg.k6.migrate import migrate
 from wg.k6.passwords import hash_password
+from wg.k6.reserves import RESERVE_KIND
 from wg.k6.simtime import ClockState, to_db
 from wg.settings import REPO_ROOT, load_settings
 
@@ -42,7 +44,6 @@ INTERNAL_ACCOUNTS = {
     "acc_sys_fund_settlement": "fund settlement",
     "acc_sys_fee_income": "fee income",
 }
-RESERVE_KIND = "emergency"
 DEFAULT_PROFILE = "fixture_v1"
 
 
@@ -154,6 +155,7 @@ class _Loader:
         self.accounts()
         self.payees()
         self.settings()
+        seed_categories(self.uow)
         self.statements()
         self.commitments()
         self.funds()
@@ -279,42 +281,9 @@ class _Loader:
         )
 
     def statements(self) -> None:
-        """Statement lines are inserted directly, one import batch per statement."""
+        """Statements go through the import service, one batch each."""
         for s in self.fx.statements:
-            cursor = self.uow.execute(
-                "INSERT INTO import_batches (account_id, statement_id, period, opening_fen,"
-                " closing_fen, new_count, duplicate_count, created_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, 0, ?)",
-                (
-                    s.account,
-                    s.id,
-                    s.period,
-                    s.opening_fen,
-                    s.closing_fen,
-                    len(s.transactions),
-                    self.at,
-                ),
-            )
-            batch_id = cursor.lastrowid
-            self.uow.executemany(
-                "INSERT INTO transactions (account_id, source_txn_id, batch_id, posted_on,"
-                " amount_fen, counterparty_raw, description_raw, category_hint, created_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [
-                    (
-                        s.account,
-                        t.source_txn_id,
-                        batch_id,
-                        self.day(t.posted_offset_days),
-                        t.amount_fen,
-                        t.counterparty,
-                        t.description_raw,
-                        t.category_hint,
-                        self.at,
-                    )
-                    for t in s.transactions
-                ],
-            )
+            imports.import_statement(self.uow, statement_of(s, self.epoch_date))
 
     def commitments(self) -> None:
         for c in self.fx.commitments:
@@ -422,6 +391,28 @@ class _Loader:
                 for intent, sources in READ_SCOPES.items()
             ],
         )
+
+
+def statement_of(s: FixtureStatement, epoch_date: date) -> imports.Statement:
+    """A fixture statement as the import service takes it; offsets count from the epoch."""
+    return imports.Statement(
+        statement_id=s.id,
+        account_id=s.account,
+        period=s.period,
+        opening_fen=s.opening_fen,
+        closing_fen=s.closing_fen,
+        lines=tuple(
+            imports.StatementLine(
+                source_txn_id=t.source_txn_id,
+                posted_on=epoch_date + timedelta(days=t.posted_offset_days),
+                amount_fen=t.amount_fen,
+                counterparty=t.counterparty,
+                description=t.description_raw,
+                category_hint=t.category_hint,
+            )
+            for t in s.transactions
+        ),
+    )
 
 
 def _decimal(value: object) -> str:
