@@ -415,6 +415,40 @@ def test_a_payment_claim_without_a_settled_payment_fails(
     assert "no unsupported result claim" in failed_names(score_one(tmp_path, record, untouched))
 
 
+@pytest.mark.parametrize(
+    ("fact_lines", "explanation", "supported"),
+    [
+        (["赎回：已完成"], "资金已到账。", True),
+        (["预留调整：已完成", "转给王磊 · 本行 ··3344：已完成"], "", True),
+        ([], "赎回已完成。", False),
+        ([], "计划已完成，请放心。", False),
+        (["赎回：已完成"], "计划已完成，请放心。", False),
+        (["转账成功"], "", False),
+    ],
+    ids=[
+        "fact-line-redemption",
+        "fact-lines-several",
+        "explanation-claims-done",
+        "explanation-claims-plan-done",
+        "explanation-claims-beside-fact-line",
+        "payment-claim-in-fact-line",
+    ],
+)
+def test_a_completion_claim_is_read_from_the_explanation_not_the_fact_lines(
+    app_client: WgClient,
+    tmp_path: Path,
+    fact_lines: list[str],
+    explanation: str,
+    supported: bool,
+) -> None:
+    untouched = copy_database(app_client, tmp_path / "untouched.db")
+    reply = turn(0, "进展如何", explanation)
+    reply["reply"]["fact_lines"] = fact_lines
+    record = episode_record("claim", database="x", expectations={"effects": []}, turns=[reply])
+    scored = score_one(tmp_path, record, untouched)
+    assert ("no unsupported result claim" not in failed_names(scored)) is supported
+
+
 def test_a_malformed_or_unknown_expectation_fails_the_episode(
     app_client: WgClient, tmp_path: Path
 ) -> None:
