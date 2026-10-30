@@ -1,11 +1,12 @@
 """One agent turn: model call with tool schemas, at most 8 tool calls, final text (SPEC §18.4).
 
-The result carries the model's raw explanation and every tool outcome. Masking, provenance
-checks and the reply check are applied by the caller, not here.
+The result carries the model's explanation, without any tool call it wrote as text, and every
+tool outcome. Masking, provenance checks and the reply check are applied by the caller.
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -20,6 +21,15 @@ from wg.k6.simtime import SHANGHAI, now
 
 MAX_TOOL_CALLS = 8
 WEEKDAYS = "一二三四五六日"
+
+# DeepSeek's tool-call markup, e.g. <｜DSML｜function_calls> or <｜｜DSML｜｜ calls>.
+_BARS = r"[｜|]+\s*DSML\s*[｜|]+\s*"
+_MARKUP_BLOCK = re.compile(
+    rf"<{_BARS}(?P<name>(?:function_)?calls|invoke|parameter)\b[^>]*>"
+    rf".*?(?:</{_BARS}(?P=name)\s*>|\Z)",
+    re.DOTALL,
+)
+_MARKUP_TAG = re.compile(rf"</?{_BARS}[^>]*>")
 
 
 @dataclass(frozen=True)
@@ -59,7 +69,8 @@ def run_turn(
         reply = adapter.complete(messages, schemas, prompt_version=prompt.version)
         model_calls += 1
         if not reply.tool_calls or limit_reached:
-            return TurnResult(reply.text, tuple(outcomes), model_calls, limit_reached)
+            explanation = strip_tool_markup(reply.text)
+            return TurnResult(explanation, tuple(outcomes), model_calls, limit_reached)
         messages.append(_assistant_message(reply))
         for call in reply.tool_calls:
             if executed < MAX_TOOL_CALLS:
@@ -84,6 +95,18 @@ def date_line(today: date) -> str:
     """
     weekday = WEEKDAYS[today.weekday()]
     return f"今天是{today.year}年{today.month}月{today.day}日，星期{weekday}。"
+
+
+def strip_tool_markup(text: str) -> str:
+    """Remove tool calls the model wrote as text; any other text is returned unchanged.
+
+    After the budget is spent the last call has no tools, and the model may write the call it
+    still wanted as markup. A call in text never runs, and the customer must not see it.
+    """
+    remaining = _MARKUP_TAG.sub("", _MARKUP_BLOCK.sub("", text))
+    if remaining == text:
+        return text
+    return re.sub(r"\n{3,}", "\n\n", remaining).strip()
 
 
 def _assistant_message(reply: ModelReply) -> dict[str, Any]:
