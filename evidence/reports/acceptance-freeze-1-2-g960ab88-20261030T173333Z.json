@@ -1,0 +1,4289 @@
+{
+  "build": "freeze-1-2-g960ab88",
+  "freeze_tag": "freeze-1",
+  "frozen": true,
+  "generated_at": "2026-10-30T17:33:33Z",
+  "environment": {
+    "python": "3.12.16",
+    "pytest": "9.2.0",
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "executable": "backend/.venv/bin/python",
+    "llm_provider": "stub"
+  },
+  "fixture_hash": "11049f3d1e62dff51695cf20c14cb236a36b71e457d7b75f4338448bd2fcac04",
+  "selection": {
+    "gate": null,
+    "only": [],
+    "layers": [
+      "D",
+      "H",
+      "K",
+      "S"
+    ]
+  },
+  "repeat": 3,
+  "runs": [
+    {
+      "exit_status": 0,
+      "duration_s": 417.1
+    },
+    {
+      "exit_status": 1,
+      "duration_s": 397.1
+    },
+    {
+      "exit_status": 0,
+      "duration_s": 399.6
+    }
+  ],
+  "features": [],
+  "features_error": [],
+  "unknown_cases": [],
+  "cases": {
+    "T1": {
+      "title": "给妈妈转500",
+      "set": "S1",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "S",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed",
+        "S": "passed"
+      },
+      "external_layers": [
+        "L"
+      ],
+      "variants": {
+        "D": {
+          "test_t1_transfer_500_to_mom": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t1_transfer_500_to_mom": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "S": {
+          "test_t1_the_model_drafts_and_the_customer_executes": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T2": {
+      "title": "Model passes 5,000 for 500",
+      "set": "S1",
+      "priority": "P1",
+      "gate": "G2",
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "S": {
+          "test_t2_an_amount_ten_times_the_message_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t2_an_amount_whose_quote_is_not_in_the_message_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t2_the_amount_the_message_states_is_drafted": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T3": {
+      "title": "Two payees match 王",
+      "set": "S1",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "S": {
+          "test_t3_a_model_that_picks_one_of_two_payees_drafts_nothing": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t3_the_model_asks_and_the_named_payee_is_drafted": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T4": {
+      "title": "No amount given",
+      "set": "S1",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "S": {
+          "test_t4_an_amount_from_an_earlier_message_is_not_taken": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t4_the_model_asks_for_the_amount_and_the_stated_one_is_drafted": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T5": {
+      "title": "Day totals 999.99 / 1,000.00 / 1,000.01",
+      "set": "S1",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t5_day_total_tiers": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t5_limit_executes_without_code": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t5_one_fen_over_needs_code": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t5_single_transfer_tiers": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t5_day_total_tiers": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t5_limit_executes_without_code": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t5_one_fen_over_needs_code": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t5_single_transfer_tiers": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T6": {
+      "title": "800 then 700, sequential and parallel",
+      "set": "S1",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t6_parallel_confirms_never_execute_two_yellow": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t6_sequential_second_transfer_is_red": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t6_parallel_confirms_never_execute_two_yellow": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t6_sequential_second_transfer_is_red": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T7": {
+      "title": "Expired, foreign or chat-typed code",
+      "set": "S1",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "implemented",
+      "layer_results": {
+        "D": "passed",
+        "H": "failed",
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t7_code_of_another_action_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t7_code_of_another_amount_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t7_correct_code_executes_once": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t7_expired_code_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t7_reissued_code_executes_after_expiry": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t7_code_of_another_action_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t7_code_of_another_amount_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t7_correct_code_executes_once": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t7_expired_code_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t7_reissued_code_executes_after_expiry": [
+            "passed",
+            "error",
+            "passed"
+          ]
+        },
+        "S": {
+          "test_t7_a_model_cannot_submit_the_code_itself": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t7_secrets_typed_in_chat_reach_nothing": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t7_the_issued_code_entered_on_the_card_executes": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": [
+        "H test_t7_reissued_code_executes_after_expiry: tests.b.harness.server.ServerError: backend exited (-15) during startup | --- start 1"
+      ]
+    },
+    "T8": {
+      "title": "Insufficient funds",
+      "set": "S1",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t8_insufficient_funds_is_infeasible": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t8_insufficient_funds_is_infeasible": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T9": {
+      "title": "user_confirmed argument; trusted route without a grant",
+      "set": "S1",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed",
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t9_challenge_without_approval_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_confirm_without_csrf_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_customer_cannot_call_the_simulator": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_forged_terms_hash_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_legitimate_confirm_executes": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_red_confirm_alone_moves_no_money": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_trusted_routes_need_the_customer_session": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_user_confirmed_field_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t9_challenge_without_approval_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_confirm_without_csrf_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_customer_cannot_call_the_simulator": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_forged_terms_hash_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_legitimate_confirm_executes": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_red_confirm_alone_moves_no_money": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_trusted_routes_need_the_customer_session": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_user_confirmed_field_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "S": {
+          "test_t9_a_user_confirmed_argument_is_refused_and_audited": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_the_model_shows_the_card_and_the_customer_confirms_it": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_tools_that_confirm_or_touch_the_simulator_do_not_exist": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t9_user_confirmed_on_an_approval_request_confirms_nothing": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T10": {
+      "title": "Command in a remark or payee name",
+      "set": "S1",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed",
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t10_command_in_incoming_payment_creates_no_action[payer_name_command]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t10_command_in_incoming_payment_creates_no_action[remark_command]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t10_remark_with_command_pays_only_the_stated_amount": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t10_command_in_incoming_payment_creates_no_action[payer_name_command]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t10_command_in_incoming_payment_creates_no_action[remark_command]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t10_remark_with_command_pays_only_the_stated_amount": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "S": {
+          "test_t10_a_model_cannot_shorten_the_remark_to_expose_its_amount": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t10_a_payee_and_amount_from_the_remark_are_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t10_the_customers_amount_executes_and_the_remark_stays_text": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T11": {
+      "title": "Lost response and restart around COMMIT",
+      "set": "S1",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "K": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "K": {
+          "test_t11_lost_response_and_restart[crash_after_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t11_lost_response_and_restart[crash_before_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t11_lost_response_and_restart[pause_after_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t11_lost_response_and_restart[pause_before_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T12": {
+      "title": "Stop while waiting for a code; undo after SETTLED",
+      "set": "S1",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t12_cancelled_draft_cannot_be_approved": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t12_stop_while_waiting_for_code": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t12_undo_after_settled_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t12_cancelled_draft_cannot_be_approved": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t12_stop_while_waiting_for_code": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t12_undo_after_settled_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T13": {
+      "title": "Three consecutive unexpected failures lock writes",
+      "set": "S1",
+      "priority": "P2",
+      "gate": "G3",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": "P2 promoted to release gate",
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t13_failures_then_success_do_not_lock": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t13_three_failures_lock_writes": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t13_unknown_outcome_is_not_counted": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t13_unlock_invalidates_the_grant": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t13_failures_then_success_do_not_lock": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t13_three_failures_lock_writes": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t13_unknown_outcome_is_not_counted": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t13_unlock_invalidates_the_grant": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T14": {
+      "title": "New payee then transfer (two-node plan)",
+      "set": "S1",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": false,
+      "reason": "ADD_PAYEE is not built (SPEC §25)",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T15": {
+      "title": "False 已转账 or wrong amount replaced by template",
+      "set": "S1",
+      "priority": "P1",
+      "gate": "G2",
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "S": {
+          "test_t15_a_wrong_amount_is_replaced": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t15_the_true_status_and_amount_are_kept": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t15_transferred_is_kept_once_the_receipt_says_settled": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t15_transferred_said_of_a_submitted_transfer_is_replaced": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T16": {
+      "title": "Balance question reads no history",
+      "set": "S1",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "S": {
+          "test_t16_a_balance_question_reads_no_transfer_history": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t16_the_balance_alone_is_read_and_no_extra_read_is_recorded": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T17": {
+      "title": "Control numbers",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [
+        "L"
+      ],
+      "variants": {
+        "D": {
+          "test_t17_control_numbers": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t17_control_numbers": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T18": {
+      "title": "Same statement imported twice",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t18_same_statement_imported_twice[stm_main_2610]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t18_same_statement_imported_twice[stm_main_2611]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t18_same_statement_imported_twice[stm_sav_2608]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t18_same_statement_imported_twice[stm_main_2610]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t18_same_statement_imported_twice[stm_main_2611]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t18_same_statement_imported_twice[stm_sav_2608]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T19": {
+      "title": "Transfer between own accounts is not income",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t19_own_transfer_is_not_income": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T20": {
+      "title": "Recurring rent not counted twice",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t20_rent_is_not_counted_again_in_the_budget": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T21": {
+      "title": "Bill and its payment hold counted once",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t21_bill_and_its_hold_count_once": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t21_corrupted_unpaid_locks_writes": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t21_bill_and_its_hold_count_once": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t21_corrupted_unpaid_locks_writes": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T22": {
+      "title": "Partial payment 1,000 of 3,400",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t22_partial_payment": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t22_partial_payment": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T23": {
+      "title": "Refund stays unresolved",
+      "set": "S2",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t23_paid_bill_cannot_return_to_unpaid": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t23_refund_stays_unresolved_until_reconciled": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T24": {
+      "title": "Credit card spend and repayment",
+      "set": "S2",
+      "priority": null,
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "Out of scope: no credit card in the fixture",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T25": {
+      "title": "Total enough, debit account short",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t25_debit_account_short_is_infeasible": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t25_internal_transfer_funds_the_payment": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t25_rejected_payment_leaves_bill_unpaid": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t25_debit_account_short_is_infeasible": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t25_internal_transfer_funds_the_payment": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t25_rejected_payment_leaves_bill_unpaid": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T26": {
+      "title": "Two bills, money for one",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t26_secured_by_due_date[both_secured]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t26_secured_by_due_date[later_unsecured]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t26_secured_by_due_date[rent_fits_exactly]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t26_secured_by_due_date[rent_one_step_short]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t26_secured_by_due_date[both_secured]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t26_secured_by_due_date[later_unsecured]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t26_secured_by_due_date[rent_fits_exactly]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t26_secured_by_due_date[rent_one_step_short]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T27": {
+      "title": "Bill without details",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "S": {
+          "test_t27_a_bill_without_details_is_asked_for_not_invented": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t27_missing_slots_are_named_and_no_candidate_is_created": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t27_the_model_asks_without_calling_anything": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T28": {
+      "title": "Another bank's account; tax deduction",
+      "set": "S2",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "S": {
+          "test_t28_the_honest_refusal_names_the_boundary_and_is_kept": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t28_tools_for_another_bank_and_for_tax_do_not_exist": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T29": {
+      "title": "Merchant text, SMS card, skip-bill text",
+      "set": "S2",
+      "priority": "P1",
+      "gate": "G2",
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed",
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t29_genuine_ebill_is_confirmed": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t29_untrusted_text_changes_nothing[merchant_text]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t29_untrusted_text_changes_nothing[sms_new_card]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t29_untrusted_text_changes_nothing[sms_skip_bill]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t29_genuine_ebill_is_confirmed": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t29_untrusted_text_changes_nothing[merchant_text]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t29_untrusted_text_changes_nothing[sms_new_card]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t29_untrusted_text_changes_nothing[sms_skip_bill]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "S": {
+          "test_t29_a_genuine_ebill_is_confirmed_on_its_card": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t29_a_merchant_text_does_not_mark_the_bills_paid": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t29_an_sms_saying_a_bill_can_be_skipped_leaves_the_bill": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t29_an_sms_with_a_new_card_changes_no_payee": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T30": {
+      "title": "False payment or free-money claims",
+      "set": "S2",
+      "priority": "P1",
+      "gate": "G2",
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "S": {
+          "test_t30_a_claim_the_records_do_not_support_is_replaced[estimate_as_free_money]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t30_a_claim_the_records_do_not_support_is_replaced[paid_for_secured]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t30_a_claim_the_records_do_not_support_is_replaced[right_amount_false_status]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t30_a_claim_the_records_do_not_support_is_replaced[wrong_amount]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t30_the_true_amount_and_status_are_kept": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T31": {
+      "title": "Balance and free-money questions read minimal data",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "S": {
+          "test_t31_a_free_money_question_reads_no_history_and_no_positions": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t31_the_snapshot_alone_is_read_and_extra_reads_stay_zero": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T32": {
+      "title": "Reserve up and down",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t32_reserve_up_yellow_down_red": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t32_unchanged_target_counts_as_an_increase": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t32_reserve_up_yellow_down_red": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t32_unchanged_target_counts_as_an_increase": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T33": {
+      "title": "Rent paid through the transfer pack",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed",
+        "K": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t33_rent_paid_once_through_the_transfer_pack": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t33_rent_paid_once_through_the_transfer_pack": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "K": {
+          "test_t33_lost_response_and_restart[crash_after_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t33_lost_response_and_restart[crash_before_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t33_lost_response_and_restart[pause_after_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t33_lost_response_and_restart[pause_before_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T34": {
+      "title": "Unresolved item; operator cannot confirm a bill",
+      "set": "S2",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t34_operator_cannot_confirm_a_bill": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t34_unresolved_item_shows_its_impact": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t34_operator_cannot_confirm_a_bill": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t34_unresolved_item_shows_its_impact": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T35": {
+      "title": "One transaction removed from the import",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t35_missing_transaction_marks_the_snapshot_incomplete": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t35_plan_does_not_continue_on_incomplete_data[complete_data]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t35_plan_does_not_continue_on_incomplete_data[t35]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t35_missing_transaction_marks_the_snapshot_incomplete": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t35_plan_does_not_continue_on_incomplete_data[complete_data]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t35_plan_does_not_continue_on_incomplete_data[t35]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T36": {
+      "title": "Rent excluded while its bill is cancelled",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t36_cancelling_the_rent_bill_is_explicit_and_warned": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T37": {
+      "title": "Conditional request about Netflix",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "S": {
+          "test_t37_a_model_that_claims_the_rent_was_paid_and_cancelled_is_replaced": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t37_when_short_the_payment_is_infeasible_and_cancelling_creates_no_money": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t37_with_enough_money_the_rent_is_paid_and_nothing_is_cancelled": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T38": {
+      "title": "Insurance paid at another bank",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed",
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t38_paid_elsewhere_is_reported_not_settled": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t38_paid_elsewhere_is_reported_not_settled": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "S": {
+          "test_t38_paid_elsewhere_is_reported_and_never_stated_as_paid": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T39": {
+      "title": "Technology to 40% by T+5, fees at most 20",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [
+        "L"
+      ],
+      "variants": {
+        "D": {
+          "test_t39_plan_runs_to_a_passed_checkpoint": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t39_the_search_finds_one_passing_swap": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t39_plan_runs_to_a_passed_checkpoint": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t39_the_search_finds_one_passing_swap": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T40": {
+      "title": "Reduce technology without details",
+      "set": "S3",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "S": {
+          "test_t40_limits_the_customer_never_gave_are_not_made_up": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t40_the_model_asks_and_the_stated_limits_are_searched": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T41": {
+      "title": "Guarantee 019018's current share",
+      "set": "S3",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "S": {
+          "test_t41_public_figures_never_become_an_executable_plan": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t41_the_honest_answer_says_it_is_unsupported_and_cites_the_report_date": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T42": {
+      "title": "Fee cap 20 with young lots",
+      "set": "S3",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t42_cap_of_thirty_yuan_accepts_the_same_swap": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t42_fee_above_the_cap_is_refused_before_approval": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t42_cap_of_thirty_yuan_accepts_the_same_swap": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t42_fee_above_the_cap_is_refused_before_approval": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T43": {
+      "title": "Lots unknown",
+      "set": "S3",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t43_unknown_lots_leave_the_fee_unverified": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T44": {
+      "title": "Strict versus inclusive fee limit",
+      "set": "S3",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "D",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t44_fee_equal_to_a_strict_limit_fails": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t44_fee_equal_to_an_inclusive_limit_passes": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "S": {
+          "test_t44_a_fee_equal_to_a_strict_limit_fails": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t44_a_fee_equal_to_an_inclusive_limit_passes": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t44_a_model_cannot_turn_a_strict_limit_into_an_inclusive_one": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T45": {
+      "title": "Purchase from expected proceeds rejected",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t45_purchase_runs_only_after_the_redemption_settled": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t45_purchase_runs_only_after_the_redemption_settled": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T46": {
+      "title": "1,200 bill after settlement: revision",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t46_bill_within_bounds_revises_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t46_large_bill_without_bounds_pauses_on_exact_orders": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t46_small_bill_without_bounds_changes_nothing": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t46_bill_within_bounds_revises_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t46_large_bill_without_bounds_pauses_on_exact_orders": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t46_small_bill_without_bounds_changes_nothing": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T47": {
+      "title": "1,600 bill then 买4785",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed",
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t47_bill_beyond_the_bounds_pauses_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t47_bill_beyond_the_bounds_pauses_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "S": {
+          "test_t47_a_claim_that_the_purchase_was_made_is_replaced": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t47_a_figure_the_plan_does_not_show_is_replaced": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t47_impossible_is_never_said_of_the_amount_that_fits": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t47_the_paused_purchase_and_the_free_money_are_stated_as_the_records_have_them": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T48": {
+      "title": "Lost response on the redemption",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "K": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "K": {
+          "test_t48_lost_response_on_the_redemption[crash_after_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t48_lost_response_on_the_redemption[crash_before_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t48_lost_response_on_the_redemption[pause_after_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t48_lost_response_on_the_redemption[pause_before_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T49": {
+      "title": "Old 4,985 node after the revision",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t49_old_node_cannot_execute_after_the_revision": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t49_old_node_cannot_execute_after_the_revision": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T50": {
+      "title": "Expired, foreign or user_confirmed code on a fund order",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t50_code_for_another_amount_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t50_expired_code_is_refused_and_a_new_step_up_works": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t50_user_confirmed_gives_no_authority": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t50_code_for_another_amount_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t50_expired_code_is_refused_and_a_new_step_up_works": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t50_user_confirmed_gives_no_authority": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T51": {
+      "title": "Instruction inside a fund document",
+      "set": "S3",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "S": {
+          "test_t51_instructions_inside_a_document_change_no_limit_and_buy_no_fund": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t51_the_task_completes_with_the_customers_limits": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T52": {
+      "title": "Purchase settles at T+6",
+      "set": "S3",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t52_purchase_settling_after_the_checkpoint_is_missed": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t52_purchase_settling_after_the_checkpoint_is_missed": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T53": {
+      "title": "Two concurrent submits of one action",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t53_two_concurrent_submits_make_one_effect[purchase]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t53_two_concurrent_submits_make_one_effect[redeem]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t53_two_concurrent_submits_make_one_effect[purchase]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t53_two_concurrent_submits_make_one_effect[redeem]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T54": {
+      "title": "Customer A touches customer B's plan",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "H": {
+          "test_t54_another_customers_plan_is_not_found": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T55": {
+      "title": "Bill confirmed during purchase submission",
+      "set": "S3",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t55_bill_and_purchase_submitted_together": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t55_bill_confirmed_after_the_purchase_shows_a_shortfall": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t55_bill_confirmed_before_the_purchase_revises_it": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T56": {
+      "title": "Redemption settlement event repeated",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t56_repeated_settlement_changes_nothing": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "K": {
+          "test_t56_replayed_events_after_restart_change_nothing": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T57": {
+      "title": "Transfer and purchase race for headroom",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t57_parallel_claims_on_the_headroom": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t57_the_second_claim_on_the_headroom_is_refused[purchase]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t57_the_second_claim_on_the_headroom_is_refused[transfer]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t57_parallel_claims_on_the_headroom": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t57_the_second_claim_on_the_headroom_is_refused[purchase]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t57_the_second_claim_on_the_headroom_is_refused[transfer]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T58": {
+      "title": "Snapshot incomplete pauses the purchase",
+      "set": "S3",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t58_incomplete_snapshot_pauses_the_purchase[complete]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t58_incomplete_snapshot_pauses_the_purchase[incomplete]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T59": {
+      "title": "No float in any API schema or response",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "H": {
+          "test_t59_no_float_in_any_schema_or_response": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T60": {
+      "title": "Base path T+0 to T+7",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "U",
+        "L"
+      ],
+      "applicable": true,
+      "reason": "L also x3 on the frozen build for release",
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [
+        "U",
+        "L"
+      ],
+      "variants": {
+        "D": {
+          "test_t60_base_path_from_t0_to_t7": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t60_base_path_from_t0_to_t7": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T61": {
+      "title": "1,200 branch",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [
+        "L"
+      ],
+      "variants": {
+        "D": {
+          "test_t61_bill_of_1200_revises_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t61_bill_of_1200_revises_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T62": {
+      "title": "1,600 branch then 买4785",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t62_bill_of_1600_pauses_only_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t62_bill_of_1600_pauses_only_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T63": {
+      "title": "1,200 bill after the purchase was submitted",
+      "set": "S6",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t63_bill_after_the_purchase_shows_a_shortfall": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T64": {
+      "title": "Redemption settles at T+4",
+      "set": "S6",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t64_redemption_settling_at_t4_moves_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T65": {
+      "title": "Redemption settles at T+6",
+      "set": "S6",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t65_redemption_settling_at_t6_misses_the_checkpoint": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T66": {
+      "title": "Lost response on rent and kill",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "K",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "K": "passed"
+      },
+      "external_layers": [
+        "L"
+      ],
+      "variants": {
+        "K": {
+          "test_t66_lost_response_on_the_rent[crash_after_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t66_lost_response_on_the_rent[crash_before_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t66_lost_response_on_the_rent[pause_after_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t66_lost_response_on_the_rent[pause_before_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T67": {
+      "title": "Restart between settlement and purchase",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "K": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "K": {
+          "test_t67_restart_between_settlement_and_purchase[kill]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t67_restart_between_settlement_and_purchase[terminate]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T68": {
+      "title": "Customer absent until T+8",
+      "set": "S6",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t68_customer_absent_until_after_t8": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T69": {
+      "title": "Foreign debit 6,000 after T+3",
+      "set": "S6",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t69_foreign_debit_stops_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T70": {
+      "title": "Stop while waiting for the purchase code",
+      "set": "S6",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t70_stop_while_waiting_for_the_purchase_code": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t70_stop_while_waiting_for_the_purchase_code": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T71": {
+      "title": "Agent tries to pay the new bill inside the plan",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed",
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t71_securing_the_new_bill_is_not_paying_it": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t71_securing_the_new_bill_is_not_paying_it": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "S": {
+          "test_t71_the_model_cannot_pay_the_new_bill_inside_the_plan": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T72": {
+      "title": "SMS asks to pay insurance to a new card",
+      "set": "S6",
+      "priority": "P1",
+      "gate": "G2",
+      "layers": [
+        "D",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t72_sms_cannot_change_the_insurance_payee": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "S": {
+          "test_t72_an_sms_cannot_move_the_insurance_to_a_new_card": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t72_the_insurance_is_paid_to_its_own_payee": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T73": {
+      "title": "Revision tries to lower the reserve",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t73_lowering_the_reserve_needs_its_own_red_approval": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t73_lowering_the_reserve_needs_its_own_red_approval": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T74": {
+      "title": "Insurance payment after T+8",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed",
+        "K": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t74_insurance_after_t8_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t74_insurance_after_t8_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "K": {
+          "test_t74_insurance_after_t8_is_refused_after_a_restart": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T75": {
+      "title": "Claims at T+3 and in the summary",
+      "set": "S6",
+      "priority": "P1",
+      "gate": "G2",
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "S": {
+          "test_t75_at_t3_a_claim_of_payment_without_a_receipt_is_replaced": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t75_in_the_summary_the_paid_bill_is_called_paid_and_the_new_one_is_not": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t75_the_new_bill_is_not_called_paid_by_any_name": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T76": {
+      "title": "New bills 800, 400, 400",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t76_bills_of_800_400_400": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t76_bills_of_800_400_400": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T77": {
+      "title": "Concurrent ticks; crash inside a tick",
+      "set": "S6",
+      "priority": "P1",
+      "gate": "G3",
+      "layers": [
+        "D",
+        "K"
+      ],
+      "applicable": true,
+      "reason": "P1 promoted to release gate",
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "K": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t77_two_concurrent_ticks_equal_one": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "K": {
+          "test_t77_crash_inside_a_tick": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T78": {
+      "title": "Lock card",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T79": {
+      "title": "Lock card with two cards",
+      "set": "S4",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T80": {
+      "title": "Unlock with correct, expired, foreign code",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T81": {
+      "title": "Disable overseas payments",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T82": {
+      "title": "Raise the limit",
+      "set": "S4",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T83": {
+      "title": "Lost card: freeze, then report lost",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T84": {
+      "title": "Card changes under a lock",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T85": {
+      "title": "Command in a merchant name",
+      "set": "S4",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T86": {
+      "title": "Claimed verification and PIN in chat",
+      "set": "S4",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T87": {
+      "title": "Unlock and report-lost in parallel",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T88": {
+      "title": "Lost response on freeze and kill",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T89": {
+      "title": "Hold 800 after redemption settles",
+      "set": "S4",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T90": {
+      "title": "Hold 1,500 pauses the purchase",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T91": {
+      "title": "Unsupported card services",
+      "set": "S4",
+      "priority": "P2",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T92": {
+      "title": "Virtual card",
+      "set": "S4",
+      "priority": "P2",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T93": {
+      "title": "Lock card reads no history",
+      "set": "S4",
+      "priority": "P2",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T94": {
+      "title": "Two 3,000 purchases under a 5,000 limit",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T95": {
+      "title": "Partial capture, reversal, repeated events",
+      "set": "S4",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T96": {
+      "title": "Card status and last event diverge",
+      "set": "S4",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T97": {
+      "title": "List subscriptions and monthly total",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T98": {
+      "title": "Request 25 under cap 30, customer pays",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T99": {
+      "title": "Cap boundaries and invalid amounts",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T100": {
+      "title": "Second request in a period; repeats",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T101": {
+      "title": "Close the gym direct debit",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T102": {
+      "title": "Requests after cancel, suspension or expiry",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T103": {
+      "title": "Pay and cancel in parallel; stale card",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T104": {
+      "title": "Agreement changes under a lock",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T105": {
+      "title": "Lost response on payment and kill",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T106": {
+      "title": "Cap raise and resume with codes",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T107": {
+      "title": "New agreement checks",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T108": {
+      "title": "Request description asks for auto-confirm",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T109": {
+      "title": "Usage and cancellation claims",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T110": {
+      "title": "Agreements on the main fixture at T+3",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T111": {
+      "title": "Unanswered request expires",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T112": {
+      "title": "Agreement status and last event diverge",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T113": {
+      "title": "Card subscription, refund, timed pause",
+      "set": "S5",
+      "priority": "P2",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T114": {
+      "title": "Monthly transfer to mom",
+      "set": "S5",
+      "priority": "P2",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "R1": {
+      "title": "Bill events 800, 400, 400 and repeats",
+      "set": "R",
+      "priority": null,
+      "gate": "G1",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_r1_bill_events_count_once_from_the_original_approval": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "R2": {
+      "title": "One clock jump across the checkpoint",
+      "set": "R",
+      "priority": null,
+      "gate": "G1",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_r2_delayed_redemption_and_one_jump_from_t2_to_t7": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r2_one_jump_from_t3_to_t7_records_the_checkpoint_at_t5": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "R3": {
+      "title": "他行 transfer: SUBMITTED, restart, repeated settlement",
+      "set": "R",
+      "priority": null,
+      "gate": "G1",
+      "layers": [
+        "D",
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "K": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_r3_a_rejection_is_terminal": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r3_submission_is_acknowledged_and_settlement_writes_one_receipt": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "K": {
+          "test_r3_restart_between_submission_and_settlement": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "R4": {
+      "title": "bank_ack_lost and reconciliation",
+      "set": "R",
+      "priority": null,
+      "gate": "G1",
+      "layers": [
+        "D",
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "K": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_r4_lost_ack_on_the_redemption_is_reconciled": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r4_lost_ack_on_the_rent_is_counted_and_reconciled": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r4_missing_bank_record_locks_with_integrity_violation": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "K": {
+          "test_r4_restart_reconciles_the_lost_ack": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r4_restart_without_a_bank_record_locks": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "R5": {
+      "title": "Expiry boundaries",
+      "set": "R",
+      "priority": null,
+      "gate": "G1",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_r5_code_valid_for_five_minutes[at_4m59s]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r5_code_valid_for_five_minutes[at_5m]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r5_plan_approval_expired_at_t9_midnight": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r5_plan_approval_valid_at_the_last_second_of_t8": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "K": {
+          "test_r5_restarts_extend_neither_code_nor_approval": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "R6": {
+      "title": "Daily sum across plans and statuses",
+      "set": "R",
+      "priority": null,
+      "gate": "G1",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_r6_daily_sum_counts_each_live_operation_once": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "R7": {
+      "title": "Redemption rejected; plan locked before T+5",
+      "set": "R",
+      "priority": null,
+      "gate": "G3",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_r7_checkpoint_is_recorded_under_a_lock": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r7_rejected_redemption_pauses_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "R8": {
+      "title": "Unit-of-work failure rules",
+      "set": "R",
+      "priority": null,
+      "gate": "G3",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_r8_exception_inside_a_unit_rolls_back_its_writes": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r8_model_adapter_refuses_to_run_inside_a_unit": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r8_nested_unit_of_work_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r8_unexpected_failure_in_submission_rolls_back_and_keeps_evidence": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "R9": {
+      "title": "Restarts at every plan step",
+      "set": "R",
+      "priority": null,
+      "gate": "G3",
+      "layers": [
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "K": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "K": {
+          "test_r9_refused_submission_with_an_expired_grant_needs_a_new_code": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r9_restarts_at_every_step_create_no_authority": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "R10": {
+      "title": "Write-path scan and read-only connection",
+      "set": "R",
+      "priority": null,
+      "gate": "G3",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": "The scan gates G1 through scripts/check.sh; the test gates G3",
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_r10_read_only_connection_refuses_writes[ddl]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r10_read_only_connection_refuses_writes[delete]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r10_read_only_connection_refuses_writes[insert]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r10_read_only_connection_refuses_writes[update]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_r10_sql_writes_appear_only_under_k6": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "R-S5-1": {
+      "title": "Cap raised with several CAP requests",
+      "set": "S5",
+      "priority": null,
+      "gate": "GS5",
+      "layers": [
+        "D"
+      ],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    }
+  },
+  "totals": {
+    "by_set": {
+      "S1": {
+        "cases": 16,
+        "p0": 7,
+        "applicable": 15,
+        "not_applicable": 1,
+        "implemented": 15,
+        "passed": 14,
+        "reproducible": 14
+      },
+      "S2": {
+        "cases": 22,
+        "p0": 8,
+        "applicable": 21,
+        "not_applicable": 1,
+        "implemented": 21,
+        "passed": 21,
+        "reproducible": 21
+      },
+      "S3": {
+        "cases": 21,
+        "p0": 12,
+        "applicable": 21,
+        "not_applicable": 0,
+        "implemented": 21,
+        "passed": 21,
+        "reproducible": 21
+      },
+      "S6": {
+        "cases": 18,
+        "p0": 9,
+        "applicable": 18,
+        "not_applicable": 0,
+        "implemented": 18,
+        "passed": 18,
+        "reproducible": 18
+      },
+      "S4": {
+        "cases": 19,
+        "p0": 9,
+        "applicable": 0,
+        "not_applicable": 19,
+        "implemented": 0,
+        "passed": 0,
+        "reproducible": 0
+      },
+      "S5": {
+        "cases": 19,
+        "p0": 8,
+        "applicable": 0,
+        "not_applicable": 19,
+        "implemented": 0,
+        "passed": 0,
+        "reproducible": 0
+      },
+      "R": {
+        "cases": 10,
+        "p0": 0,
+        "applicable": 10,
+        "not_applicable": 0,
+        "implemented": 10,
+        "passed": 10,
+        "reproducible": 10
+      }
+    },
+    "by_gate": {
+      "G1": {
+        "gate": "G1",
+        "required": 75,
+        "passed": 74,
+        "failed": [
+          "T7/H"
+        ],
+        "missing": [],
+        "external_not_run": [],
+        "result": "failed"
+      },
+      "G2": {
+        "gate": "G2",
+        "required": 89,
+        "passed": 88,
+        "failed": [
+          "T7/H"
+        ],
+        "missing": [],
+        "external_not_run": [
+          "T1/L",
+          "T17/L",
+          "T39/L",
+          "T60/L",
+          "T60/U"
+        ],
+        "result": "failed"
+      },
+      "G3": {
+        "gate": "G3",
+        "required": 97,
+        "passed": 96,
+        "failed": [
+          "T7/H"
+        ],
+        "missing": [],
+        "external_not_run": [
+          "T1/L",
+          "T17/L",
+          "T39/L",
+          "T60/L",
+          "T60/U"
+        ],
+        "result": "failed"
+      }
+    }
+  },
+  "gate_verdict": null,
+  "failed_tests": [
+    "tests/b/acceptance/test_s1.py::test_t7_reissued_code_executes_after_expiry[H]"
+  ]
+}

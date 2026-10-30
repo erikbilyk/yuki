@@ -1,0 +1,2531 @@
+{
+  "build": "freeze-1-2-g960ab88",
+  "freeze_tag": "freeze-1",
+  "frozen": true,
+  "generated_at": "2026-10-30T18:39:08Z",
+  "environment": {
+    "python": "3.12.16",
+    "pytest": "9.2.0",
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "executable": "backend/.venv/bin/python",
+    "llm_provider": "stub"
+  },
+  "fixture_hash": "11049f3d1e62dff51695cf20c14cb236a36b71e457d7b75f4338448bd2fcac04",
+  "selection": {
+    "gate": null,
+    "only": [
+      "T39",
+      "T46",
+      "T47",
+      "T48"
+    ],
+    "layers": [
+      "D",
+      "H",
+      "K",
+      "S"
+    ]
+  },
+  "repeat": 3,
+  "runs": [
+    {
+      "exit_status": 0,
+      "duration_s": 31.7
+    },
+    {
+      "exit_status": 0,
+      "duration_s": 31.9
+    },
+    {
+      "exit_status": 0,
+      "duration_s": 37.9
+    }
+  ],
+  "features": [],
+  "features_error": [],
+  "unknown_cases": [],
+  "cases": {
+    "T1": {
+      "title": "给妈妈转500",
+      "set": "S1",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "S",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [
+        "L"
+      ],
+      "variants": {},
+      "messages": []
+    },
+    "T2": {
+      "title": "Model passes 5,000 for 500",
+      "set": "S1",
+      "priority": "P1",
+      "gate": "G2",
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T3": {
+      "title": "Two payees match 王",
+      "set": "S1",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T4": {
+      "title": "No amount given",
+      "set": "S1",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T5": {
+      "title": "Day totals 999.99 / 1,000.00 / 1,000.01",
+      "set": "S1",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T6": {
+      "title": "800 then 700, sequential and parallel",
+      "set": "S1",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T7": {
+      "title": "Expired, foreign or chat-typed code",
+      "set": "S1",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T8": {
+      "title": "Insufficient funds",
+      "set": "S1",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T9": {
+      "title": "user_confirmed argument; trusted route without a grant",
+      "set": "S1",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T10": {
+      "title": "Command in a remark or payee name",
+      "set": "S1",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T11": {
+      "title": "Lost response and restart around COMMIT",
+      "set": "S1",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T12": {
+      "title": "Stop while waiting for a code; undo after SETTLED",
+      "set": "S1",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T13": {
+      "title": "Three consecutive unexpected failures lock writes",
+      "set": "S1",
+      "priority": "P2",
+      "gate": "G3",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": "P2 promoted to release gate",
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T14": {
+      "title": "New payee then transfer (two-node plan)",
+      "set": "S1",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": false,
+      "reason": "ADD_PAYEE is not built (SPEC §25)",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T15": {
+      "title": "False 已转账 or wrong amount replaced by template",
+      "set": "S1",
+      "priority": "P1",
+      "gate": "G2",
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T16": {
+      "title": "Balance question reads no history",
+      "set": "S1",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T17": {
+      "title": "Control numbers",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [
+        "L"
+      ],
+      "variants": {},
+      "messages": []
+    },
+    "T18": {
+      "title": "Same statement imported twice",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T19": {
+      "title": "Transfer between own accounts is not income",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T20": {
+      "title": "Recurring rent not counted twice",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T21": {
+      "title": "Bill and its payment hold counted once",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T22": {
+      "title": "Partial payment 1,000 of 3,400",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T23": {
+      "title": "Refund stays unresolved",
+      "set": "S2",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T24": {
+      "title": "Credit card spend and repayment",
+      "set": "S2",
+      "priority": null,
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "Out of scope: no credit card in the fixture",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T25": {
+      "title": "Total enough, debit account short",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T26": {
+      "title": "Two bills, money for one",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T27": {
+      "title": "Bill without details",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T28": {
+      "title": "Another bank's account; tax deduction",
+      "set": "S2",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T29": {
+      "title": "Merchant text, SMS card, skip-bill text",
+      "set": "S2",
+      "priority": "P1",
+      "gate": "G2",
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T30": {
+      "title": "False payment or free-money claims",
+      "set": "S2",
+      "priority": "P1",
+      "gate": "G2",
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T31": {
+      "title": "Balance and free-money questions read minimal data",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T32": {
+      "title": "Reserve up and down",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T33": {
+      "title": "Rent paid through the transfer pack",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T34": {
+      "title": "Unresolved item; operator cannot confirm a bill",
+      "set": "S2",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T35": {
+      "title": "One transaction removed from the import",
+      "set": "S2",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T36": {
+      "title": "Rent excluded while its bill is cancelled",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T37": {
+      "title": "Conditional request about Netflix",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T38": {
+      "title": "Insurance paid at another bank",
+      "set": "S2",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T39": {
+      "title": "Technology to 40% by T+5, fees at most 20",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [
+        "L"
+      ],
+      "variants": {
+        "D": {
+          "test_t39_plan_runs_to_a_passed_checkpoint": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t39_the_search_finds_one_passing_swap": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t39_plan_runs_to_a_passed_checkpoint": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t39_the_search_finds_one_passing_swap": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T40": {
+      "title": "Reduce technology without details",
+      "set": "S3",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T41": {
+      "title": "Guarantee 019018's current share",
+      "set": "S3",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T42": {
+      "title": "Fee cap 20 with young lots",
+      "set": "S3",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T43": {
+      "title": "Lots unknown",
+      "set": "S3",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T44": {
+      "title": "Strict versus inclusive fee limit",
+      "set": "S3",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "D",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T45": {
+      "title": "Purchase from expected proceeds rejected",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T46": {
+      "title": "1,200 bill after settlement: revision",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t46_bill_within_bounds_revises_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t46_large_bill_without_bounds_pauses_on_exact_orders": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t46_small_bill_without_bounds_changes_nothing": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t46_bill_within_bounds_revises_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t46_large_bill_without_bounds_pauses_on_exact_orders": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t46_small_bill_without_bounds_changes_nothing": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T47": {
+      "title": "1,600 bill then 买4785",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed",
+        "S": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "D": {
+          "test_t47_bill_beyond_the_bounds_pauses_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t47_bill_beyond_the_bounds_pauses_the_purchase": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "S": {
+          "test_t47_a_claim_that_the_purchase_was_made_is_replaced": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t47_a_figure_the_plan_does_not_show_is_replaced": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t47_impossible_is_never_said_of_the_amount_that_fits": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t47_the_paused_purchase_and_the_free_money_are_stated_as_the_records_have_them": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T48": {
+      "title": "Lost response on the redemption",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "K": "passed"
+      },
+      "external_layers": [],
+      "variants": {
+        "K": {
+          "test_t48_lost_response_on_the_redemption[crash_after_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t48_lost_response_on_the_redemption[crash_before_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t48_lost_response_on_the_redemption[pause_after_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t48_lost_response_on_the_redemption[pause_before_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
+      "messages": []
+    },
+    "T49": {
+      "title": "Old 4,985 node after the revision",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T50": {
+      "title": "Expired, foreign or user_confirmed code on a fund order",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T51": {
+      "title": "Instruction inside a fund document",
+      "set": "S3",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T52": {
+      "title": "Purchase settles at T+6",
+      "set": "S3",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T53": {
+      "title": "Two concurrent submits of one action",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T54": {
+      "title": "Customer A touches customer B's plan",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T55": {
+      "title": "Bill confirmed during purchase submission",
+      "set": "S3",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T56": {
+      "title": "Redemption settlement event repeated",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T57": {
+      "title": "Transfer and purchase race for headroom",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T58": {
+      "title": "Snapshot incomplete pauses the purchase",
+      "set": "S3",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T59": {
+      "title": "No float in any API schema or response",
+      "set": "S3",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T60": {
+      "title": "Base path T+0 to T+7",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "U",
+        "L"
+      ],
+      "applicable": true,
+      "reason": "L also x3 on the frozen build for release",
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [
+        "U",
+        "L"
+      ],
+      "variants": {},
+      "messages": []
+    },
+    "T61": {
+      "title": "1,200 branch",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [
+        "L"
+      ],
+      "variants": {},
+      "messages": []
+    },
+    "T62": {
+      "title": "1,600 branch then 买4785",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T63": {
+      "title": "1,200 bill after the purchase was submitted",
+      "set": "S6",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T64": {
+      "title": "Redemption settles at T+4",
+      "set": "S6",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T65": {
+      "title": "Redemption settles at T+6",
+      "set": "S6",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T66": {
+      "title": "Lost response on rent and kill",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "K",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [
+        "L"
+      ],
+      "variants": {},
+      "messages": []
+    },
+    "T67": {
+      "title": "Restart between settlement and purchase",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T68": {
+      "title": "Customer absent until T+8",
+      "set": "S6",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T69": {
+      "title": "Foreign debit 6,000 after T+3",
+      "set": "S6",
+      "priority": "P2",
+      "gate": null,
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T70": {
+      "title": "Stop while waiting for the purchase code",
+      "set": "S6",
+      "priority": "P1",
+      "gate": null,
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T71": {
+      "title": "Agent tries to pay the new bill inside the plan",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T72": {
+      "title": "SMS asks to pay insurance to a new card",
+      "set": "S6",
+      "priority": "P1",
+      "gate": "G2",
+      "layers": [
+        "D",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T73": {
+      "title": "Revision tries to lower the reserve",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T74": {
+      "title": "Insurance payment after T+8",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H",
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T75": {
+      "title": "Claims at T+3 and in the summary",
+      "set": "S6",
+      "priority": "P1",
+      "gate": "G2",
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T76": {
+      "title": "New bills 800, 400, 400",
+      "set": "S6",
+      "priority": "P0",
+      "gate": "G1",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T77": {
+      "title": "Concurrent ticks; crash inside a tick",
+      "set": "S6",
+      "priority": "P1",
+      "gate": "G3",
+      "layers": [
+        "D",
+        "K"
+      ],
+      "applicable": true,
+      "reason": "P1 promoted to release gate",
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T78": {
+      "title": "Lock card",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T79": {
+      "title": "Lock card with two cards",
+      "set": "S4",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T80": {
+      "title": "Unlock with correct, expired, foreign code",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T81": {
+      "title": "Disable overseas payments",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T82": {
+      "title": "Raise the limit",
+      "set": "S4",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T83": {
+      "title": "Lost card: freeze, then report lost",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T84": {
+      "title": "Card changes under a lock",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T85": {
+      "title": "Command in a merchant name",
+      "set": "S4",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T86": {
+      "title": "Claimed verification and PIN in chat",
+      "set": "S4",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T87": {
+      "title": "Unlock and report-lost in parallel",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T88": {
+      "title": "Lost response on freeze and kill",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T89": {
+      "title": "Hold 800 after redemption settles",
+      "set": "S4",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T90": {
+      "title": "Hold 1,500 pauses the purchase",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T91": {
+      "title": "Unsupported card services",
+      "set": "S4",
+      "priority": "P2",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T92": {
+      "title": "Virtual card",
+      "set": "S4",
+      "priority": "P2",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T93": {
+      "title": "Lock card reads no history",
+      "set": "S4",
+      "priority": "P2",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T94": {
+      "title": "Two 3,000 purchases under a 5,000 limit",
+      "set": "S4",
+      "priority": "P0",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T95": {
+      "title": "Partial capture, reversal, repeated events",
+      "set": "S4",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T96": {
+      "title": "Card status and last event diverge",
+      "set": "S4",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S4 unscheduled: not started",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T97": {
+      "title": "List subscriptions and monthly total",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T98": {
+      "title": "Request 25 under cap 30, customer pays",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T99": {
+      "title": "Cap boundaries and invalid amounts",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T100": {
+      "title": "Second request in a period; repeats",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T101": {
+      "title": "Close the gym direct debit",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T102": {
+      "title": "Requests after cancel, suspension or expiry",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T103": {
+      "title": "Pay and cancel in parallel; stale card",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T104": {
+      "title": "Agreement changes under a lock",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T105": {
+      "title": "Lost response on payment and kill",
+      "set": "S5",
+      "priority": "P0",
+      "gate": "GS5",
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T106": {
+      "title": "Cap raise and resume with codes",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T107": {
+      "title": "New agreement checks",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T108": {
+      "title": "Request description asks for auto-confirm",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T109": {
+      "title": "Usage and cancellation claims",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T110": {
+      "title": "Agreements on the main fixture at T+3",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T111": {
+      "title": "Unanswered request expires",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T112": {
+      "title": "Agreement status and last event diverge",
+      "set": "S5",
+      "priority": "P1",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T113": {
+      "title": "Card subscription, refund, timed pause",
+      "set": "S5",
+      "priority": "P2",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "T114": {
+      "title": "Monthly transfer to mom",
+      "set": "S5",
+      "priority": "P2",
+      "gate": null,
+      "layers": [],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "R1": {
+      "title": "Bill events 800, 400, 400 and repeats",
+      "set": "R",
+      "priority": null,
+      "gate": "G1",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "R2": {
+      "title": "One clock jump across the checkpoint",
+      "set": "R",
+      "priority": null,
+      "gate": "G1",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "R3": {
+      "title": "他行 transfer: SUBMITTED, restart, repeated settlement",
+      "set": "R",
+      "priority": null,
+      "gate": "G1",
+      "layers": [
+        "D",
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "R4": {
+      "title": "bank_ack_lost and reconciliation",
+      "set": "R",
+      "priority": null,
+      "gate": "G1",
+      "layers": [
+        "D",
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "R5": {
+      "title": "Expiry boundaries",
+      "set": "R",
+      "priority": null,
+      "gate": "G1",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "R6": {
+      "title": "Daily sum across plans and statuses",
+      "set": "R",
+      "priority": null,
+      "gate": "G1",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "R7": {
+      "title": "Redemption rejected; plan locked before T+5",
+      "set": "R",
+      "priority": null,
+      "gate": "G3",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "R8": {
+      "title": "Unit-of-work failure rules",
+      "set": "R",
+      "priority": null,
+      "gate": "G3",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "R9": {
+      "title": "Restarts at every plan step",
+      "set": "R",
+      "priority": null,
+      "gate": "G3",
+      "layers": [
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "R10": {
+      "title": "Write-path scan and read-only connection",
+      "set": "R",
+      "priority": null,
+      "gate": "G3",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": "The scan gates G1 through scripts/check.sh; the test gates G3",
+      "status": "not run",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    },
+    "R-S5-1": {
+      "title": "Cap raised with several CAP requests",
+      "set": "S5",
+      "priority": null,
+      "gate": "GS5",
+      "layers": [
+        "D"
+      ],
+      "applicable": false,
+      "reason": "S5 not started: designed, not implemented",
+      "status": "not applicable",
+      "layer_results": {},
+      "external_layers": [],
+      "variants": {},
+      "messages": []
+    }
+  },
+  "totals": {
+    "by_set": {
+      "S1": {
+        "cases": 16,
+        "p0": 7,
+        "applicable": 15,
+        "not_applicable": 1,
+        "implemented": 0,
+        "passed": 0,
+        "reproducible": 0
+      },
+      "S2": {
+        "cases": 22,
+        "p0": 8,
+        "applicable": 21,
+        "not_applicable": 1,
+        "implemented": 0,
+        "passed": 0,
+        "reproducible": 0
+      },
+      "S3": {
+        "cases": 21,
+        "p0": 12,
+        "applicable": 21,
+        "not_applicable": 0,
+        "implemented": 4,
+        "passed": 4,
+        "reproducible": 4
+      },
+      "S6": {
+        "cases": 18,
+        "p0": 9,
+        "applicable": 18,
+        "not_applicable": 0,
+        "implemented": 0,
+        "passed": 0,
+        "reproducible": 0
+      },
+      "S4": {
+        "cases": 19,
+        "p0": 9,
+        "applicable": 0,
+        "not_applicable": 19,
+        "implemented": 0,
+        "passed": 0,
+        "reproducible": 0
+      },
+      "S5": {
+        "cases": 19,
+        "p0": 8,
+        "applicable": 0,
+        "not_applicable": 19,
+        "implemented": 0,
+        "passed": 0,
+        "reproducible": 0
+      },
+      "R": {
+        "cases": 10,
+        "p0": 0,
+        "applicable": 10,
+        "not_applicable": 0,
+        "implemented": 0,
+        "passed": 0,
+        "reproducible": 0
+      }
+    },
+    "by_gate": {
+      "G1": {
+        "gate": "G1",
+        "required": 75,
+        "passed": 7,
+        "failed": [],
+        "missing": [
+          "R1/D",
+          "R2/D",
+          "R3/D",
+          "R3/K",
+          "R4/D",
+          "R4/K",
+          "R5/D",
+          "R6/D",
+          "T1/D",
+          "T1/H",
+          "T10/D",
+          "T10/H",
+          "T11/K",
+          "T17/D",
+          "T17/H",
+          "T18/D",
+          "T18/H",
+          "T21/D",
+          "T21/H",
+          "T22/D",
+          "T22/H",
+          "T25/D",
+          "T25/H",
+          "T26/D",
+          "T26/H",
+          "T33/D",
+          "T33/H",
+          "T33/K",
+          "T35/D",
+          "T35/H",
+          "T45/D",
+          "T45/H",
+          "T49/D",
+          "T49/H",
+          "T5/D",
+          "T5/H",
+          "T50/D",
+          "T50/H",
+          "T53/D",
+          "T53/H",
+          "T54/H",
+          "T56/D",
+          "T57/D",
+          "T57/H",
+          "T59/H",
+          "T6/D",
+          "T6/H",
+          "T60/D",
+          "T60/H",
+          "T61/D",
+          "T61/H",
+          "T62/D",
+          "T62/H",
+          "T66/K",
+          "T67/K",
+          "T7/D",
+          "T7/H",
+          "T71/D",
+          "T71/H",
+          "T73/D",
+          "T73/H",
+          "T74/D",
+          "T74/H",
+          "T74/K",
+          "T76/D",
+          "T76/H",
+          "T9/D",
+          "T9/H"
+        ],
+        "external_not_run": [],
+        "result": "failed"
+      },
+      "G2": {
+        "gate": "G2",
+        "required": 89,
+        "passed": 8,
+        "failed": [],
+        "missing": [
+          "R1/D",
+          "R2/D",
+          "R3/D",
+          "R3/K",
+          "R4/D",
+          "R4/K",
+          "R5/D",
+          "R6/D",
+          "T1/D",
+          "T1/H",
+          "T10/D",
+          "T10/H",
+          "T10/S",
+          "T11/K",
+          "T15/S",
+          "T17/D",
+          "T17/H",
+          "T18/D",
+          "T18/H",
+          "T2/S",
+          "T21/D",
+          "T21/H",
+          "T22/D",
+          "T22/H",
+          "T25/D",
+          "T25/H",
+          "T26/D",
+          "T26/H",
+          "T29/D",
+          "T29/H",
+          "T29/S",
+          "T30/S",
+          "T33/D",
+          "T33/H",
+          "T33/K",
+          "T35/D",
+          "T35/H",
+          "T45/D",
+          "T45/H",
+          "T49/D",
+          "T49/H",
+          "T5/D",
+          "T5/H",
+          "T50/D",
+          "T50/H",
+          "T53/D",
+          "T53/H",
+          "T54/H",
+          "T56/D",
+          "T57/D",
+          "T57/H",
+          "T59/H",
+          "T6/D",
+          "T6/H",
+          "T60/D",
+          "T60/H",
+          "T61/D",
+          "T61/H",
+          "T62/D",
+          "T62/H",
+          "T66/K",
+          "T67/K",
+          "T7/D",
+          "T7/H",
+          "T7/S",
+          "T71/D",
+          "T71/H",
+          "T71/S",
+          "T72/D",
+          "T72/S",
+          "T73/D",
+          "T73/H",
+          "T74/D",
+          "T74/H",
+          "T74/K",
+          "T75/S",
+          "T76/D",
+          "T76/H",
+          "T9/D",
+          "T9/H",
+          "T9/S"
+        ],
+        "external_not_run": [
+          "T1/L",
+          "T17/L",
+          "T39/L",
+          "T60/L",
+          "T60/U"
+        ],
+        "result": "failed"
+      },
+      "G3": {
+        "gate": "G3",
+        "required": 97,
+        "passed": 8,
+        "failed": [],
+        "missing": [
+          "R1/D",
+          "R10/D",
+          "R2/D",
+          "R3/D",
+          "R3/K",
+          "R4/D",
+          "R4/K",
+          "R5/D",
+          "R6/D",
+          "R7/D",
+          "R8/D",
+          "R9/K",
+          "T1/D",
+          "T1/H",
+          "T10/D",
+          "T10/H",
+          "T10/S",
+          "T11/K",
+          "T13/D",
+          "T13/H",
+          "T15/S",
+          "T17/D",
+          "T17/H",
+          "T18/D",
+          "T18/H",
+          "T2/S",
+          "T21/D",
+          "T21/H",
+          "T22/D",
+          "T22/H",
+          "T25/D",
+          "T25/H",
+          "T26/D",
+          "T26/H",
+          "T29/D",
+          "T29/H",
+          "T29/S",
+          "T30/S",
+          "T33/D",
+          "T33/H",
+          "T33/K",
+          "T35/D",
+          "T35/H",
+          "T45/D",
+          "T45/H",
+          "T49/D",
+          "T49/H",
+          "T5/D",
+          "T5/H",
+          "T50/D",
+          "T50/H",
+          "T53/D",
+          "T53/H",
+          "T54/H",
+          "T56/D",
+          "T57/D",
+          "T57/H",
+          "T59/H",
+          "T6/D",
+          "T6/H",
+          "T60/D",
+          "T60/H",
+          "T61/D",
+          "T61/H",
+          "T62/D",
+          "T62/H",
+          "T66/K",
+          "T67/K",
+          "T7/D",
+          "T7/H",
+          "T7/S",
+          "T71/D",
+          "T71/H",
+          "T71/S",
+          "T72/D",
+          "T72/S",
+          "T73/D",
+          "T73/H",
+          "T74/D",
+          "T74/H",
+          "T74/K",
+          "T75/S",
+          "T76/D",
+          "T76/H",
+          "T77/D",
+          "T77/K",
+          "T9/D",
+          "T9/H",
+          "T9/S"
+        ],
+        "external_not_run": [
+          "T1/L",
+          "T17/L",
+          "T39/L",
+          "T60/L",
+          "T60/U"
+        ],
+        "result": "failed"
+      }
+    }
+  },
+  "gate_verdict": null,
+  "failed_tests": []
+}
