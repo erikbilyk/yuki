@@ -14,7 +14,7 @@ run() {
 }
 
 tests=(tests/a)
-for dir in tests/b/engines tests/b/goldens tests/b/sources; do
+for dir in tests/b/engines tests/b/goldens tests/b/sources tests/b/evals tests/b/im; do
   [ -d "backend/$dir" ] && tests+=("$dir")
 done
 

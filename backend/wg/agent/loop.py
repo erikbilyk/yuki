@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 
 from wg.agent.llm import ModelAdapter, ModelReply
@@ -15,8 +16,10 @@ from wg.agent.prompt import SystemPrompt, load_system_prompt
 from wg.agent.registry import ToolContext, ToolOutcome, ToolRegistry
 from wg.contracts.errors import ErrorCode
 from wg.contracts.tools import ToolError
+from wg.k6.simtime import SHANGHAI, now
 
 MAX_TOOL_CALLS = 8
+WEEKDAYS = "一二三四五六日"
 
 
 @dataclass(frozen=True)
@@ -40,8 +43,10 @@ def run_turn(
 ) -> TurnResult:
     """Play one customer message through the model and the registry."""
     prompt = prompt or load_system_prompt()
+    with registry.db.read() as conn:
+        today = now(conn).astimezone(SHANGHAI).date()
     messages: list[dict[str, Any]] = [
-        {"role": "system", "content": prompt.text},
+        {"role": "system", "content": f"{prompt.text}\n\n{date_line(today)}"},
         *(dict(item) for item in history),
         {"role": "user", "content": message},
     ]
@@ -70,6 +75,15 @@ def run_turn(
             # The budget is spent: one last call without tools makes the model answer in text.
             limit_reached = True
             schemas = []
+
+
+def date_line(today: date) -> str:
+    """The simulated date, so the model can turn "11月7日前" into a day count.
+
+    It follows the versioned prompt text, which stays an unchanged prefix for the cache.
+    """
+    weekday = WEEKDAYS[today.weekday()]
+    return f"今天是{today.year}年{today.month}月{today.day}日，星期{weekday}。"
 
 
 def _assistant_message(reply: ModelReply) -> dict[str, Any]:

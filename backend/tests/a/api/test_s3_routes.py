@@ -39,6 +39,7 @@ pytestmark = pytest.mark.layer("H")
 
 EPOCH = datetime(2026, 11, 2, 9, 0, tzinfo=SHANGHAI)
 FUND_C, FUND_D = "990003", "990004"
+SECTORS = ["consumer", "finance", "healthcare", "industrial", "technology"]
 SEARCH = {"sector": "technology", "target_max_pct": "40.0000", "fee_cap_fen": 2_000}
 
 
@@ -244,6 +245,18 @@ def test_search_without_a_passing_swap_names_the_closest_reason(browser: Browser
     assert body.code is ErrorCode.FEE_CAP and body.detail["codes"] == ["FEE_CAP"]
     assert ok(browser.get("/v1/plans"), PlansView, (200,)).plans == ()
     assert rows(browser, "SELECT COUNT(*) AS n FROM cards") == [{"n": 0}]
+
+
+def test_an_unknown_sector_is_refused_rather_than_read_as_zero(browser: Browser):
+    for response in (
+        browser.post("/v1/funds/candidates", {**SEARCH, "sector": "tech"}),
+        browser.get("/v1/funds/exposure", key="tech", target_max_pct="40.0000"),
+    ):
+        assert response.status_code == 422, response.text
+        body = error(response)
+        assert body.code is ErrorCode.UNSUPPORTED_REQUEST
+        assert body.detail == {"reason": "unknown_sector", "sectors": SECTORS}
+    assert rows(browser, "SELECT COUNT(*) AS n FROM calc_results") == [{"n": 0}]
 
 
 def test_unknown_lots_refuse_the_plan_as_incomplete_data(browser: Browser):

@@ -10,7 +10,7 @@ import pytest
 from wg.agent.llm import ModelOutputError, build_adapter
 from wg.agent.loop import MAX_TOOL_CALLS, run_turn
 from wg.agent.prompt import load_system_prompt
-from wg.agent.registry import ToolContext, ToolRegistry
+from wg.agent.registry import ToolContext, ToolRegistry, tool_schemas
 from wg.contracts.enums import Channel
 from wg.contracts.errors import ErrorCode
 from wg.settings import Settings
@@ -144,3 +144,23 @@ def test_a_model_error_ends_the_turn(adapter_factory, registry: ToolRegistry, co
 def test_the_im_channel_sees_the_same_tools(registry: ToolRegistry):
     im = ToolContext(customer_id="cus_main", channel=Channel.IM)
     assert len(registry.schemas(im)) == 27
+
+
+def test_the_system_message_ends_with_the_simulated_date(
+    adapter_factory, registry: ToolRegistry, context: ToolContext
+):
+    provider = ScriptedProvider([reply(text="好")])
+    run_turn(adapter_factory(provider), registry, context, "你好")
+    system = provider.calls[0][0][0]["content"]
+    assert system.startswith(load_system_prompt().text)
+    assert system.endswith("今天是2026年11月2日，星期一。")
+
+
+def test_the_checkpoint_day_is_described_as_a_day_count():
+    [schema] = [
+        s
+        for s in tool_schemas(Channel.WEB)
+        if s["function"]["name"] == "search_rebalance_candidates"
+    ]
+    described = schema["function"]["parameters"]["properties"]["checkpoint_day"]["description"]
+    assert "not a day of the month" in described
