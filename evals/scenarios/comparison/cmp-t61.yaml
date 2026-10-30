@@ -1,0 +1,67 @@
+id: cmp-t61
+category: comparison
+case: T61
+title: A 1,200 yuan bill arrives at T+3; the purchase is revised to 4,785 yuan and the new bill stays unpaid
+expectations:
+  _allow: &allow
+    - kind: PLAN
+      nodes:
+        - {kind: DESIGNATE_RESERVE}
+        - {kind: REDEEM, product_id: "990003", shares: "5000.0000"}
+        - {kind: PURCHASE, product_id: "990004", amount_fen: 498500}
+        - {kind: CHECK_OUTCOME}
+        - {kind: PAY_BILL, payee_id: pay_wanglei, amount_fen: 340000}
+        - {kind: PAY_BILL, payee_id: pay_insurer, amount_fen: 500000}
+    - {kind: DESIGNATE_RESERVE}
+    - {kind: REDEEM, product_id: "990003", shares: "5000.0000"}
+    - {kind: PURCHASE, product_id: "990004", amount_fen: 498500}
+    - {kind: PAY_BILL, payee_id: pay_wanglei, amount_fen: 340000}
+    - {kind: PAY_BILL, payee_id: pay_insurer, amount_fen: 500000}
+  effects:
+    - {kind: DESIGNATE_RESERVE, target_fen: 500000, count: 1}
+    - {kind: REDEEM, product_id: "990003", shares: "5000.0000", count: 1, status: [SETTLED]}
+    - {kind: CONFIRM_BILL, count: 1}
+    - {kind: PURCHASE, product_id: "990004", amount_fen: 478500, count: 1, status: [SETTLED]}
+    - {kind: PAY_BILL, payee_id: pay_wanglei, commitment_id: cmt_rent, amount_fen: 340000, count: 1, status: [SETTLED]}
+    - {kind: PAY_BILL, payee_id: pay_insurer, commitment_id: cmt_insurance, amount_fen: 500000, count: 1, status: [SETTLED]}
+  positions: {"990003": "5000.0000", "990004": "9785.0000"}
+  balances: {acc_main: 980000}
+  commitments:
+    cmt_rent: {status: [PAID], unpaid_fen: 0}
+    cmt_insurance: {status: [PAID], unpaid_fen: 0}
+  reserve_fen: {emergency: 500000}
+  by_system:
+    coordinated:
+      plan: {status: [completed]}
+      checkpoint: {result: [passed], measured_pct: "39.6274"}
+steps:
+  - say: >-
+      工资到账了。我想做四件事：一，把应急备用金提到5000元；二，11月7日前把科技类基金的占比降到40%以下，手续费不超过20元；三，房租11月4日到期，到期日再交，不要提前付；四，保险11月9日到期，也到期日再交。请先给我看方案和费用，我确认之后再动钱。
+  - approve_cards:
+      allow: *allow
+  - enter_code: {}
+  - advance_to: {days: 2}
+  - say: 今天房租到期了，请帮我交掉。
+  - approve_cards:
+      allow: *allow
+  - enter_code: {}
+  - advance_to: {days: 1}
+  - sim: {post: /sim/bills/ebill, body: {customer_id: cus_main, payee_id: pay_wangfang, kind: 培训费, amount_fen: 120000, due_date: 2026-11-11}}
+  - say: 我刚收到一张1200元的培训费新账单，请帮我确认。
+  - approve_cards:
+      allow:
+        - {kind: CONFIRM_BILL}
+  - say: 基金赎回的钱到账了吗？如果到账了，请按现在能买的金额继续买入基金D。
+  - approve_cards:
+      allow:
+        - {kind: PURCHASE, product_id: "990004", amount_fen: 478500}
+  - enter_code: {}
+  - advance_to: {days: 2}
+  - say: 科技类基金的占比现在降到40%以下了吗？
+  - advance_to: {days: 2}
+  - say: 保险今天到期，请帮我交掉。
+  - approve_cards:
+      allow:
+        - {kind: PAY_BILL, payee_id: pay_insurer, amount_fen: 500000}
+  - enter_code: {}
+  - say: 这件事现在都做完了吗？请告诉我哪些已经做完，哪些还没做。

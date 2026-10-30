@@ -8,8 +8,23 @@ from contextlib import closing
 from pathlib import Path
 from typing import Any
 
-from ..acceptance.plan_flow import at_day, bought, redeemed, redemption_settled, rent_paid
+from wg.contracts.enums import ActionKind
+
+from ..acceptance.plan_flow import (
+    INSURANCE,
+    REVISED_FEN,
+    SEARCH,
+    approved,
+    at_day,
+    bought,
+    confirm_new_bill,
+    redeemed,
+    redemption_settled,
+    rent_paid,
+    settled_at_t3,
+)
 from ..harness.client import WgClient
+from ..harness.inject import set_settle_days
 
 
 def copy_database(client: WgClient, target: Path) -> Path:
@@ -45,6 +60,61 @@ def base_path(client: WgClient) -> None:
     redemption_settled(client, plan)
     bought(client, plan)
     at_day(client, 5)
+    at_day(client, 7)
+    plan.pay_insurance()
+
+
+def revised_purchase_path(client: WgClient) -> None:
+    """The 1,200 yuan bill at T+3: the purchase is revised, then the base path to T+7."""
+    plan = settled_at_t3(client)
+    confirm_new_bill(client, 120_000)
+    bought(client, plan, REVISED_FEN, revision=2)
+    at_day(client, 5)
+    at_day(client, 7)
+    plan.pay_insurance()
+
+
+def paused_purchase_path(client: WgClient) -> None:
+    """The 1,600 yuan bill at T+3 pauses the purchase; rent and insurance still go through."""
+    plan = settled_at_t3(client)
+    confirm_new_bill(client, 160_000)
+    at_day(client, 5)
+    at_day(client, 7)
+    plan.pay_insurance()
+
+
+def bill_before_purchase_path(client: WgClient) -> None:
+    """Rent at T+2, the 1,200 yuan bill at T+3, the revised purchase; no checkpoint yet."""
+    plan = settled_at_t3(client)
+    confirm_new_bill(client, 120_000)
+    bought(client, plan, REVISED_FEN, revision=2)
+
+
+def fund_plan_path(client: WgClient) -> None:
+    """Only the fund plan: approved and redeemed at T+0, purchase code entered at T+3."""
+    found = client.candidates(**SEARCH)
+    plan = client.draft_plan(found.calc_result_id, True)
+    view = client.plan(plan.plan_id)
+    client.confirm(client.card(view.card_id))
+    ids = {node.kind: node.logical_action_id for node in view.nodes}
+    client.verify(client.challenge(ids[ActionKind.REDEEM]).challenge_id)
+    at_day(client, 3)
+    client.verify(client.challenge(ids[ActionKind.PURCHASE]).challenge_id)
+
+
+def insurance_paid_path(client: WgClient) -> None:
+    """The insurance paid at T+0 with its own code."""
+    client.approve(client.draft_pay_bill(INSURANCE))
+
+
+def late_redemption_path(client: WgClient) -> None:
+    """The redemption slows to six days after the plan is approved; nothing is bought."""
+    plan = approved(client)
+    set_settle_days(client.db.path, "redeem_settle_days", 6)
+    plan.redeem()
+    rent_paid(client, plan)
+    at_day(client, 5)
+    at_day(client, 6)
     at_day(client, 7)
     plan.pay_insurance()
 
