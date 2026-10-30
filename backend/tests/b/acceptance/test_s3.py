@@ -1344,16 +1344,20 @@ def sweep(wg: WgClient, secret: str, plan: Plan, ids: dict[str, str]) -> None:
 
     wg.post(
         "/v1/channels/feishu/messages",
-        {"message_id": "msg_t59", "open_id": "ou_unbound", "text": "余额"},
+        {"message_id": "msg_t59", "open_id": "ou_unbound", "chat_id": "oc_t59", "text": "余额"},
         csrf=False,
     )
     channel = wg.http.post(
         "/v1/channels/feishu/messages",
-        json={"message_id": "msg_t59b", "open_id": "ou_unbound", "text": "余额"},
+        json={
+            "message_id": "msg_t59b",
+            "open_id": "ou_unbound",
+            "chat_id": "oc_t59",
+            "text": "余额",
+        },
         headers={"X-Channel-Secret": secret},
     )
-    # 405 while the route is absent and a built frontend answers every GET path.
-    assert channel.status_code in (200, 404, 405), describe(channel)
+    assert channel.status_code == 200, describe(channel)
 
     wg.login(Role.OPERATOR)
     wg.get("/v1/operator/locks", active_only="false")
