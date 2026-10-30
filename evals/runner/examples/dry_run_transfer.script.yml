@@ -1,0 +1,10 @@
+# Stub model turns for the dry run: one draft, then a short answer.
+- tool_calls:
+    - name: draft_transfer
+      arguments:
+        intent: transfer.create
+        payee_ref: pay_mom
+        payee_quote: 妈妈
+        amount_fen: 50000
+        amount_quote: "500"
+- text: 已为您起草向妈妈转账500元的草稿,请在确认卡片上核对后确认。

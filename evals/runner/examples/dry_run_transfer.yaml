@@ -1,0 +1,22 @@
+id: example-transfer
+category: colloquial
+case: example
+title: Colloquial transfer request; the customer policy allows one transfer of 500 yuan
+system: coordinated
+profile: fixture_v1
+stub_script: dry_run_transfer.script.yml
+steps:
+  - say: 给妈妈转500元
+  - approve_cards:
+      allow:
+        - {kind: TRANSFER, amount_fen: 50000, payee_id: pay_mom}
+  - enter_code: {}
+  - wait_for_status:
+      action_kind: TRANSFER
+      status: [DRAFT, AWAITING_APPROVAL, SETTLED]
+      timeout_s: 5
+expectations:
+  # Free-form; the scorer defines what it reads.
+  transfers:
+    - {payee_id: pay_mom, amount_fen: 50000, count: 1}
+  unauthorized_effects: 0
