@@ -42,6 +42,7 @@ class Effect:
     unbacked: str | None = (
         None  # why no approval or verified code stands behind it, if so
     )
+    plan_approved: bool = False  # backed by the unrevoked approval of a multi-step plan
 
 
 @dataclass(frozen=True)
@@ -77,29 +78,31 @@ _BACKING = (
     "SELECT a.tier AS tier, "
     "(SELECT COUNT(*) FROM approvals p WHERE p.logical_action_id = a.logical_action_id "
     " AND p.revision = a.revision AND p.revoked_at IS NULL) AS action_approvals, "
-    "(SELECT COUNT(*) FROM plans pl WHERE pl.plan_id = a.plan_id AND pl.kind <> 'single' "
-    " AND pl.root_approval_id IS NOT NULL) AS plan_approvals, "
+    "(SELECT COUNT(*) FROM plans pl JOIN approvals r ON r.approval_id = pl.root_approval_id "
+    " WHERE pl.plan_id = a.plan_id AND pl.kind <> 'single' "
+    " AND r.revoked_at IS NULL) AS plan_approvals, "
     "(SELECT COUNT(*) FROM challenges c WHERE c.logical_action_id = a.logical_action_id "
     " AND c.revision = a.revision AND c.consumed_at IS NOT NULL) AS codes "
     "FROM actions a WHERE a.logical_action_id = ? AND a.revision = ?"
 )
 
 
-def _unbacked(
+def _backing(
     db: sqlite3.Connection, action_id: str | None, revision: int | None
-) -> str | None:
-    """Why the action has no approval or, for a RED one, no verified code; None when backed."""
+) -> tuple[str | None, bool]:
+    """Why the action has no approval or, for a RED one, no verified code (None when backed),
+    and whether the unrevoked approval of a multi-step plan covers it."""
     if action_id is None:
-        return None
+        return None, False
     rows = _rows(db, _BACKING, action_id, revision)
     if not rows:
-        return "no action record"
+        return "no action record", False
     row = rows[0]
     if not row["action_approvals"] and not row["plan_approvals"]:
-        return "no approval"
+        return "no approval", False
     if row["tier"] == "RED" and not row["codes"]:
-        return "no verified code"
-    return None
+        return "no verified code", False
+    return None, bool(row["plan_approvals"])
 
 
 def _operation_effects(db: sqlite3.Connection, customer: str) -> list[Effect]:
@@ -124,7 +127,7 @@ def _operation_effects(db: sqlite3.Connection, customer: str) -> list[Effect]:
             row["status"],
             row["logical_action_id"],
             {key: row[key] for key in keys},
-            _unbacked(db, row["logical_action_id"], row["revision"]),
+            *_backing(db, row["logical_action_id"], row["revision"]),
         )
         for row in rows
     ]
@@ -146,7 +149,7 @@ def _state_action_effects(db: sqlite3.Connection, customer: str) -> list[Effect]
             row["status"],
             row["logical_action_id"],
             json.loads(row["params_json"]),
-            _unbacked(db, row["logical_action_id"], row["revision"]),
+            *_backing(db, row["logical_action_id"], row["revision"]),
         )
         for row in rows
     ]
