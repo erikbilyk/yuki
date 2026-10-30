@@ -30,6 +30,7 @@ from wg.contracts.enums import (
     CheckpointResult,
     Fault,
     PlanKind,
+    PlanMode,
     PlanStatus,
     Tier,
 )
@@ -157,6 +158,10 @@ class Coordinator:
 
     def _continue(self, uow: UnitOfWork, plan_id: str) -> None:
         plan = plans.get_plan(uow, plan_id)
+        if plan.mode is PlanMode.FLAT:
+            # Nothing to decide in a flat plan; its status follows the order just approved.
+            store_status(uow, plan_id)
+            return
         if plan.final or plan.root_approval_id is None:
             return
         if locks.locks_in_scope(uow, plan.customer_id, plan_id):
@@ -176,6 +181,11 @@ class Coordinator:
             reconcile_operation(uow, operation.operation_id)
         plan = plans.find_plan(uow, plan_id)
         if plan is None or plan.final:
+            return _Decision()
+        if plan.mode is PlanMode.FLAT:
+            # Nothing is coordinated in a flat plan (SPEC §26): each order was approved and
+            # submitted on its own. The tick only reconciles its operations and its status.
+            store_status(uow, plan_id)
             return _Decision()
         root = None
         if plan.root_approval_id is not None:
@@ -577,6 +587,8 @@ def derive_status(uow: UnitOfWork, plan: PlanRow) -> PlanStatus:
     nodes = [n for n in plans.nodes(uow, plan.plan_id) if n.status is not ActionStatus.SUPERSEDED]
     if not nodes:
         return plan.status
+    if plan.mode is PlanMode.FLAT:
+        return _flat_status(nodes)
     if plan.kind is PlanKind.SINGLE:
         status = nodes[-1].status
         if status is ActionStatus.SETTLED:
@@ -596,6 +608,17 @@ def derive_status(uow: UnitOfWork, plan: PlanRow) -> PlanStatus:
     by_id = {n.logical_action_id: n for n in nodes}
     if all(_blocked_by_pause(n, by_id) for n in open_nodes):
         return PlanStatus.PAUSED
+    return PlanStatus.ACTIVE
+
+
+def _flat_status(nodes: list[ActionRow]) -> PlanStatus:
+    """A flat plan has no plan approval: its status follows its orders alone."""
+    if all(n.status is ActionStatus.SETTLED for n in nodes):
+        return PlanStatus.COMPLETED
+    if all(n.status in TERMINAL for n in nodes):
+        return PlanStatus.PARTIAL
+    if all(n.status in (ActionStatus.DRAFT, ActionStatus.AWAITING_APPROVAL) for n in nodes):
+        return PlanStatus.DRAFT
     return PlanStatus.ACTIVE
 
 

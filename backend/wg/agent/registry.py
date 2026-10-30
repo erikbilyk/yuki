@@ -26,7 +26,14 @@ from wg.contracts.api import (
     TransactionsQuery,
 )
 from wg.contracts.engines import Candidate
-from wg.contracts.enums import ActionKind, AuditActor, Channel, PlanStatus, Provenance
+from wg.contracts.enums import (
+    ActionKind,
+    AuditActor,
+    Channel,
+    PlanMode,
+    PlanStatus,
+    Provenance,
+)
 from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.plan import ComposePlanRequest
 from wg.contracts.tools import (
@@ -74,6 +81,7 @@ class ToolContext:
 
     `read_scope` further limits the sources a call may read, on top of the declared intent;
     None leaves the intent as the only limit. `utterance` is the customer's message of this turn.
+    `mode` is the session's agent mode (SPEC §26).
     """
 
     customer_id: str
@@ -81,6 +89,7 @@ class ToolContext:
     capabilities: frozenset[Capability] = BOTH_CAPABILITIES
     read_scope: frozenset[DataSource] | None = None
     utterance: str = ""
+    mode: PlanMode = PlanMode.COORDINATED
 
 
 @dataclass(frozen=True)
@@ -227,7 +236,7 @@ class ToolRegistry:
             "run_stress": lambda c, a: services.funds.stress(c.customer_id, a.calc_result_id),
             "get_plan_status": self._plan_status,
             "draft_rebalance_plan": lambda c, a: services.funds.draft_rebalance_plan(
-                c.customer_id, a.calc_result_id, a.with_bounds, AuditActor.AGENT
+                c.customer_id, a.calc_result_id, a.with_bounds, AuditActor.AGENT, c.mode
             ),
             "compose_plan": self._compose_plan,
         }
@@ -530,6 +539,10 @@ class ToolRegistry:
         )
 
     def _compose_plan(self, context: ToolContext, args: ComposePlanArgs) -> BaseModel:
+        if context.mode is PlanMode.FLAT:
+            self._refuse(
+                context, "compose_plan", ErrorCode.UNSUPPORTED_REQUEST, {"reason": "flat_mode"}
+            )
         request = ComposePlanRequest(draft_ids=args.draft_ids, depends_on=args.depends_on)
         return self.services.composer.compose(context.customer_id, request, AuditActor.AGENT)
 

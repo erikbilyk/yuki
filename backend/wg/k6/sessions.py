@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from wg.contracts.enums import Role
+from wg.contracts.enums import PlanMode, Role
 from wg.k6.db import Reader, UnitOfWork
 from wg.k6.simtime import from_db, to_db
 
@@ -23,6 +23,7 @@ class SessionRow:
     csrf_token: str
     expires_at: datetime
     revoked_at: datetime | None
+    agent_mode: PlanMode = PlanMode.COORDINATED
 
     @property
     def subject_id(self) -> str:
@@ -51,6 +52,7 @@ def _session(row) -> SessionRow:
         csrf_token=row["csrf_token"],
         expires_at=from_db(row["expires_at"]),
         revoked_at=from_db(row["revoked_at"]) if row["revoked_at"] else None,
+        agent_mode=PlanMode(row["agent_mode"]),
     )
 
 
@@ -128,6 +130,16 @@ def revoke_session(uow: UnitOfWork, session_id: str, at: datetime) -> bool:
         (to_db(at), session_id),
     )
     return cursor.rowcount == 1
+
+
+def set_agent_mode(uow: UnitOfWork, mode: PlanMode, at: datetime) -> int:
+    """Set the agent mode of every customer session valid at `at`; returns how many."""
+    cursor = uow.execute(
+        "UPDATE sessions SET agent_mode = ?, version = version + 1"
+        " WHERE role = 'customer' AND revoked_at IS NULL AND expires_at > ?",
+        (PlanMode(mode).value, to_db(at)),
+    )
+    return cursor.rowcount
 
 
 def delete_orphaned_sessions(uow: UnitOfWork) -> int:

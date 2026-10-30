@@ -93,6 +93,7 @@ POST /sim/sms
 POST /sim/incoming-payment
 POST /sim/external-debit
 POST /sim/crash
+POST /sim/agent-mode
 POST /v1/channels/feishu/messages
 GET /healthz
 """

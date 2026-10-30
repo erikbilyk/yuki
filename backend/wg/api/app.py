@@ -11,7 +11,10 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from wg.api import actions, audit, auth, cash, funds, operator, plans, reads, sim, trusted
+from wg.agent.chat import ChatService
+from wg.agent.llm import build_adapter
+from wg.agent.registry import Services, ToolRegistry
+from wg.api import actions, audit, auth, cash, chat, funds, operator, plans, reads, sim, trusted
 from wg.api.errors import install_error_handlers
 from wg.core import k8_audit as k8
 from wg.core.k1_session import SessionService
@@ -137,8 +140,12 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
     app.state.trusted = TrustedService(db, step_up, action_service, coordinator)
     app.state.operator = OperatorService(db, step_up, gateway)
     app.state.sim = SimService(db, coordinator)
-    install_error_handlers(app)
     build_id = resolve_build_id()
+    app.state.chat = ChatService(
+        ToolRegistry(db, Services.from_state(app.state)),
+        lambda: build_adapter(settings, build_id=build_id),
+    )
+    install_error_handlers(app)
 
     @app.middleware("http")
     async def security_headers(
@@ -164,6 +171,7 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
     app.include_router(actions.router)
     app.include_router(trusted.router)
     app.include_router(audit.router)
+    app.include_router(chat.router)
     app.include_router(operator.router)
     if settings.demo_mode:
         app.include_router(sim.router)

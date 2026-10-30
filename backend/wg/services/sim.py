@@ -8,6 +8,7 @@ from collections.abc import Callable
 from datetime import timedelta
 
 from wg.contracts.api import (
+    AgentModeRequest,
     ClockAdvanceRequest,
     ClockView,
     EbillRequest,
@@ -29,9 +30,19 @@ from wg.contracts.enums import AuditActor
 from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.fixture import FixtureError
 from wg.core.hashes import sha256_hex
-from wg.core.k1_session import not_found
+from wg.core.k1_session import not_found, wall_clock
 from wg.core.k5_coordinator import Coordinator
-from wg.k6 import accounts, audit, bank, commitments, faults, fixture, imports, snapshots
+from wg.k6 import (
+    accounts,
+    audit,
+    bank,
+    commitments,
+    faults,
+    fixture,
+    imports,
+    sessions,
+    snapshots,
+)
 from wg.k6.db import Database, UnitOfWork
 from wg.k6.gateway import CRASH_EXIT_STATUS
 from wg.k6.simtime import ClockState, now, read_clock
@@ -88,6 +99,25 @@ class SimService:
         )
         log.warning("simulated crash")
         self._exit(CRASH_EXIT_STATUS)
+
+    def set_agent_mode(self, request: AgentModeRequest) -> int:
+        """Set the agent mode of every current customer session (SPEC §26); returns how many.
+
+        A session logged in afterwards starts coordinated, so the mode is set after login.
+        """
+
+        def run(uow: UnitOfWork) -> int:
+            count = sessions.set_agent_mode(uow, request.mode, wall_clock())
+            audit.record(
+                uow,
+                AuditActor.SYSTEM,
+                "agent_mode_set",
+                decision=request.mode.value,
+                reason=str(count),
+            )
+            return count
+
+        return self.db.run_in_uow(run, "sim agent mode")
 
     def arm_fault(self, request: FaultRequest) -> FaultsView:
         def arm(uow: UnitOfWork) -> FaultsView:

@@ -28,6 +28,7 @@ from wg.contracts.enums import (
     AuditActor,
     CommitmentStatus,
     PlanKind,
+    PlanMode,
     Provenance,
 )
 from wg.contracts.errors import ErrorClass, ErrorCode, WgError
@@ -446,8 +447,9 @@ class ActionService:
             if action.status not in (ActionStatus.DRAFT, ActionStatus.AWAITING_APPROVAL):
                 raise k4.state_refusal(action).error()
             if action.plan_id is not None:
-                if plans.get_plan(uow, action.plan_id).kind is not PlanKind.SINGLE:
-                    # A plan's node is approved with its plan card, never on a card of its own.
+                plan = plans.get_plan(uow, action.plan_id)
+                if plan.kind is not PlanKind.SINGLE and plan.mode is not PlanMode.FLAT:
+                    # A coordinated plan's node is approved with its plan card, never alone.
                     raise WgError(ErrorCode.UNSUPPORTED_REQUEST, {"reason": "plan_node"})
             pack = pack_for(action.kind)
             if action.status is ActionStatus.DRAFT:
