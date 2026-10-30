@@ -1,6 +1,6 @@
 """Read-only queries on the episode database: what the customer's screen would show.
 
-The runner never writes here. Card terms and action statuses are read from the records the
+The queries never write. Card terms and action statuses are read from the records the
 gateway itself uses, so the customer policy does not depend on the model's wording.
 """
 
@@ -10,7 +10,7 @@ import json
 import shutil
 import sqlite3
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -104,13 +104,20 @@ class DbView:
 
 
 def copy_database(source: Path, target: Path) -> None:
-    """A consistent copy of a database that no process writes any more."""
-    with sqlite3.connect(f"file:{source}?mode=ro", uri=True) as src:
-        dst = sqlite3.connect(target)
+    """A single-file copy of a database that no process writes any more, with its log folded in.
+
+    After a SIGKILL the newest rows may exist only in the `-wal` file. The source is
+    checkpointed first, the copy is taken through SQLite (which reads the log), and the copy
+    leaves WAL mode, so it needs no sidecar file when the scorer opens it.
+    """
+    with closing(sqlite3.connect(source, timeout=10)) as src:
         try:
+            src.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        except sqlite3.OperationalError:
+            pass  # busy: the backup below still reads the log
+        with closing(sqlite3.connect(target)) as dst:
             src.backup(dst)
-        finally:
-            dst.close()
+            dst.execute("PRAGMA journal_mode=DELETE")
 
 
 def copy_file(source: Path, target: Path) -> None:
