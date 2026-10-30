@@ -142,9 +142,7 @@ class ChatService:
     def _reply(self, customer_id: str, done: AgentTurn) -> ChatReply:
         outcomes = done.turn.outcomes
         results = [o.result for o in outcomes if o.result is not None]
-        plan_id = next(
-            (r.plan_id for r in results if isinstance(r, PlanDraftResult) and r.plan_id), None
-        )
+        plan_id = newest_plan_id(results)
         card_ids = [r.card_id for r in results if isinstance(r, ApprovalRequestResult)]
         if plan_id is not None:
             plan_card = self.registry.services.plans.plan(customer_id, plan_id).card_id
@@ -173,10 +171,17 @@ def _action_ids(results: list[BaseModel]) -> list[str]:
     return ids
 
 
+def newest_plan_id(results: list[BaseModel]) -> str | None:
+    """The last plan the turn drafted or composed; a composed plan replaces its sources."""
+    plans = [r.plan_id for r in results if isinstance(r, PlanDraftResult) and r.plan_id]
+    return plans[-1] if plans else None
+
+
 def disposition(outcomes: tuple[ToolOutcome, ...] | list[ToolOutcome]) -> Disposition | None:
     """How the turn ended, from its tool calls; None when no call decides it.
 
-    The model never executes anything, so a turn is never `executed`.
+    The model never executes anything, so a turn is never `executed`. A refused call in a
+    turn that still put a card or a plan before the customer does not make it `unsupported`.
     """
     codes = {o.error.code for o in outcomes if o.error is not None}
     results = [o.result for o in outcomes if o.result is not None]
@@ -186,9 +191,15 @@ def disposition(outcomes: tuple[ToolOutcome, ...] | list[ToolOutcome]) -> Dispos
         return Disposition.CANCELLED
     if any(isinstance(r, DraftResult) and not r.feasible for r in results):
         return Disposition.INFEASIBLE
-    if codes & _UNSUPPORTED:
+    if codes & _UNSUPPORTED and not any(_prepared(r) for r in results):
         return Disposition.UNSUPPORTED
     return None
+
+
+def _prepared(result: BaseModel) -> bool:
+    if isinstance(result, ApprovalRequestResult):
+        return True
+    return isinstance(result, PlanDraftResult) and result.plan_id is not None
 
 
 def shown_text(reply: ChatReply) -> str:
