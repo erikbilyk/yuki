@@ -111,10 +111,14 @@ def test_backend_environment_isolates_the_episode(tmp_path, monkeypatch):
     from evals.runner.backend import backend_environment
 
     env_file = tmp_path / "model.env"
+    settings = {
+        "WG_LLM_PROVIDER": "deepseek",
+        "WG_LLM_API_KEY": "not-a-real-key",
+        "WG_DB_PATH": "/elsewhere/wg.db",
+        "WG_CODE_HMAC_KEY": "fixed-key",
+    }
     env_file.write_text(
-        "WG_LLM_PROVIDER=deepseek\nWG_LLM_API_KEY=not-a-real-key\nWG_DB_PATH=/elsewhere/wg.db\n"
-        "WG_CODE_HMAC_KEY=fixed-key\n",
-        encoding="utf-8",
+        "".join(f"{name}={value}\n" for name, value in settings.items()), encoding="utf-8"
     )
     monkeypatch.setenv("WG_LLM_MODEL", "from-process")
 
