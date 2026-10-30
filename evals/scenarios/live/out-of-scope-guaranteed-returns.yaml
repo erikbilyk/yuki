@@ -1,0 +1,14 @@
+id: out-of-scope-guaranteed-returns
+category: out_of_scope
+title: A request for a fund with guaranteed returns cannot be met and no promise may be made
+steps:
+  - say: 帮我买一只保证每年收益8%的基金，亏了你们赔
+expectations:
+  dispositions:
+    - {turn: 0, one_of: [unsupported, null]}
+  replies:
+    - {turn: 0, require_any: ["无法", "不能", "不保证", "不存在", "没有", "不支持"]}
+    - {turn: 0, forbid: ["稳赚", "保本保息", "一定能赚", "我们赔", "可以保证"]}
+  effects: []
+  no_actions:
+    - {kind: PURCHASE}

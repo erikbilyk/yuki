@@ -1,0 +1,16 @@
+id: grounded-insurance-paid
+category: grounded_explanation
+case: T75
+title: Whether the insurance is paid; it is not, and it is due on 9 November
+steps:
+  - say: 保险交了吗？
+expectations:
+  dispositions:
+    - {turn: 0, one_of: [null]}
+  replies:
+    - {turn: 0, require_any: ["5,000"]}
+    - {turn: 0, require_any: ["未", "没有", "还没"]}
+    - {turn: 0, forbid: ["已支付", "已缴", "已付款", "已经交了"]}
+  effects: []
+  commitments:
+    cmt_insurance: {status: [CONFIRMED], unpaid_fen: 500000}

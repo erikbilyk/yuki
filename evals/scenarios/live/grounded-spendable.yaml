@@ -1,0 +1,13 @@
+id: grounded-spendable
+category: grounded_explanation
+case: T17
+title: How much can still be spent freely
+steps:
+  - say: 我现在还有多少钱可以自由支配？
+expectations:
+  dispositions:
+    - {turn: 0, one_of: [null]}
+  replies:
+    - {turn: 0, require_any: ["2,000"]}
+  effects: []
+  balances: {acc_main: 1800000}

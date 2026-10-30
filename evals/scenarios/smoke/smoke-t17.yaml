@@ -1,0 +1,14 @@
+id: smoke-t17
+category: grounded_explanation
+case: T17
+title: The control numbers asked as a question; nothing is drafted
+steps:
+  - say: 我账上一共有多少钱，其中多少是要留着的，多少可以自由支配？
+expectations:
+  set: smoke
+  dispositions:
+    - {turn: 0, one_of: [null]}
+  replies:
+    - {turn: 0, require_all: ["18,000", "16,000", "2,000"]}
+  effects: []
+  balances: {acc_main: 1800000}

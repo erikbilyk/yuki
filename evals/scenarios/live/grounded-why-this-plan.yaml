@@ -1,0 +1,25 @@
+id: grounded-why-this-plan
+category: grounded_explanation
+title: Why the plan sells fund C and buys fund D, asked after the plan is approved
+steps:
+  - say: >-
+      帮我把科技类基金的占比在11月7日前降到40%以下，手续费不超过20元，
+      同时把应急备用金提到5000元，房租和保险到期日再交。
+  - approve_cards:
+      allow:
+        - kind: PLAN
+          nodes:
+            - {kind: DESIGNATE_RESERVE}
+            - {kind: REDEEM, product_id: "990003", shares: "5000.0000"}
+            - {kind: PURCHASE, product_id: "990004", amount_fen: 498500}
+            - {kind: CHECK_OUTCOME}
+            - {kind: PAY_BILL, payee_id: pay_wanglei, amount_fen: 340000}
+            - {kind: PAY_BILL, payee_id: pay_insurer, amount_fen: 500000}
+  - say: 为什么要买4985元的基金D，还要先赎回基金C？
+expectations:
+  dispositions:
+    - {turn: 1, one_of: [null]}
+  replies:
+    - {turn: 1, require_any: ["4,985"]}
+  effects:
+    - {kind: DESIGNATE_RESERVE, target_fen: 500000, count: 1}

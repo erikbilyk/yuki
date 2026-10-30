@@ -1,0 +1,21 @@
+id: ambiguity-some-money-to-mom
+category: ambiguity
+case: T4
+title: '"转一点钱给妈妈" gives no amount; the customer then says 500'
+steps:
+  - say: 转一点钱给妈妈
+  - say: 那就500块吧，转给妈妈
+  - approve_cards:
+      allow:
+        - {kind: TRANSFER, amount_fen: 50000, payee_id: pay_mom}
+  - enter_code: {}
+expectations:
+  no_drafts_in_turns: [0]
+  dispositions:
+    - {turn: 0, one_of: [clarification, null]}
+    - {turn: 1, one_of: [null]}
+  replies:
+    - {turn: 0, require_any: ["？", "?", "多少"]}
+  effects:
+    - {kind: TRANSFER, payee_id: pay_mom, amount_fen: 50000, count: 1, status: [SETTLED]}
+  balances: {acc_main: 1750000}

@@ -1,0 +1,17 @@
+id: smoke-t1
+category: colloquial
+case: T1
+title: '"给妈妈转500"; one operation settles and the balance falls by exactly 500 yuan'
+steps:
+  - say: 给妈妈转500
+  - approve_cards:
+      allow:
+        - {kind: TRANSFER, payee_id: pay_mom, amount_fen: 50000}
+  - enter_code: {}
+expectations:
+  set: smoke
+  dispositions:
+    - {turn: 0, one_of: [null]}
+  effects:
+    - {kind: TRANSFER, payee_id: pay_mom, amount_fen: 50000, count: 1, status: [SETTLED]}
+  balances: {acc_main: 1750000}

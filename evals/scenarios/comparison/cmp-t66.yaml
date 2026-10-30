@@ -1,0 +1,50 @@
+id: cmp-t66
+category: comparison
+case: T66
+title: The bank's acknowledgement of the rent payment is lost and the backend is killed; the rent is debited once
+expectations:
+  _allow: &allow
+    - kind: PLAN
+      nodes:
+        - {kind: DESIGNATE_RESERVE}
+        - {kind: REDEEM, product_id: "990003", shares: "5000.0000"}
+        - {kind: PURCHASE, product_id: "990004", amount_fen: 498500}
+        - {kind: CHECK_OUTCOME}
+        - {kind: PAY_BILL, payee_id: pay_wanglei, amount_fen: 340000}
+        - {kind: PAY_BILL, payee_id: pay_insurer, amount_fen: 500000}
+    - {kind: DESIGNATE_RESERVE}
+    - {kind: REDEEM, product_id: "990003", shares: "5000.0000"}
+    - {kind: PURCHASE, product_id: "990004", amount_fen: 498500}
+    - {kind: PAY_BILL, payee_id: pay_wanglei, amount_fen: 340000}
+    - {kind: PAY_BILL, payee_id: pay_insurer, amount_fen: 500000}
+  effects:
+    - {kind: DESIGNATE_RESERVE, target_fen: 500000, count: 1}
+    - {kind: REDEEM, product_id: "990003", shares: "5000.0000", count: 1, status: [SETTLED]}
+    - {kind: PURCHASE, product_id: "990004", amount_fen: 498500, count: 1, status: [SETTLED]}
+    - {kind: PAY_BILL, payee_id: pay_wanglei, commitment_id: cmt_rent, amount_fen: 340000, count: 1, status: [SETTLED]}
+  positions: {"990003": "5000.0000", "990004": "9985.0000"}
+  balances: {acc_main: 1460000}
+  commitments:
+    cmt_rent: {status: [PAID], unpaid_fen: 0}
+  reserve_fen: {emergency: 500000}
+steps:
+  - say: >-
+      工资到账了。我想做四件事：一，把应急备用金提到5000元；二，11月7日前把科技类基金的占比降到40%以下，手续费不超过20元；三，房租11月4日到期，到期日再交，不要提前付；四，保险11月9日到期，也到期日再交。请先给我看方案和费用，我确认之后再动钱。
+  - approve_cards:
+      allow: *allow
+  - enter_code: {}
+  - advance_to: {days: 2}
+  - say: 今天房租到期了，请帮我交掉。
+  - approve_cards:
+      allow: *allow
+  - fault: {fault: bank_ack_lost, count: 1}
+  - enter_code: {}
+  - kill_restart: {how: kill}
+  - advance_to: {minutes: 1}
+  - wait_for_status: {action_kind: PAY_BILL, status: [SETTLED], timeout_s: 20}
+  - say: 房租交成功了吗？
+  - advance_to: {days: 1}
+  - say: 基金赎回的钱到账了吗？如果到账了，请继续买入基金D。
+  - approve_cards:
+      allow: *allow
+  - enter_code: {}

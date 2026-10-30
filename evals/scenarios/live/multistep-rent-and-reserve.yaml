@@ -1,0 +1,18 @@
+id: multistep-rent-and-reserve
+category: multi_step
+title: Pay the rent and raise the reserve to 5,000 yuan in one request
+steps:
+  - say: 帮我把这个月的房租交了，再把应急备用金提到5000元
+  - approve_cards:
+      allow:
+        - {kind: PAY_BILL, payee_id: pay_wanglei, amount_fen: 340000}
+        - {kind: DESIGNATE_RESERVE}
+  - enter_code: {}
+expectations:
+  effects:
+    - {kind: PAY_BILL, payee_id: pay_wanglei, commitment_id: cmt_rent, amount_fen: 340000, count: 1, status: [SETTLED]}
+    - {kind: DESIGNATE_RESERVE, target_fen: 500000, count: 1}
+  commitments:
+    cmt_rent: {status: [PAID], unpaid_fen: 0}
+  reserve_fen: {emergency: 500000}
+  balances: {acc_main: 1460000}
