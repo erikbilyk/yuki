@@ -12,7 +12,7 @@ connection (`harness/inject.py`); the product never offers that write.
 from __future__ import annotations
 
 import ast
-import importlib.util
+import dataclasses
 import re
 import sqlite3
 from datetime import timedelta
@@ -21,6 +21,7 @@ from typing import Any
 
 import pytest
 
+from wg.agent.llm import build_adapter
 from wg.contracts.api import ChallengeView
 from wg.contracts.enums import (
     ActionStatus,
@@ -39,6 +40,7 @@ from wg.k6.db import NestedTransactionError, UnitOfWork, open_database
 
 from ..conftest import Live
 from ..harness.client import MAIN_CUSTOMER, WgClient, describe
+from ..harness.env import harness_settings
 from ..harness.inject import delete_bank_request, rewind_event_cursors, set_settle_days
 from .common import active_locks, fail_verifying_three_times
 from .plan_flow import (
@@ -749,10 +751,33 @@ def test_r8_nested_unit_of_work_is_refused(app_client: WgClient, tmp_path: Path)
 
 @pytest.mark.case("R8")
 @pytest.mark.layer("D")
-def test_r8_model_adapter_refuses_to_run_inside_a_unit(app_client: WgClient) -> None:
-    if importlib.util.find_spec("wg.agent.llm") is None:
-        pytest.skip("the model adapter wg/agent/llm.py does not exist yet (SPEC §18.1)")
-    pytest.fail("wg/agent/llm.py exists: call its entry point inside a unit and expect a refusal")
+def test_r8_model_adapter_refuses_to_run_inside_a_unit(
+    app_client: WgClient, tmp_path: Path
+) -> None:
+    script = tmp_path / "script.yaml"
+    script.write_text("- text: ok\n- text: ok\n", encoding="utf-8")
+    settings = dataclasses.replace(
+        harness_settings(tmp_path / "adapter"),
+        llm_provider="stub",
+        llm_stub_script=str(script),
+    )
+    call_log = tmp_path / "llm_calls.jsonl"
+    adapter = build_adapter(settings, log_path=call_log)
+    messages = [{"role": "user", "content": "你好"}]
+    audit_before = app_client.db.rows("SELECT COUNT(*) AS n FROM audit_log")
+
+    db = open_database(app_client.db.path)
+    with db.unit_of_work("r8 model call"):
+        with pytest.raises(RuntimeError, match="a model call must not run inside a unit of work"):
+            adapter.complete(messages, [], prompt_version="r8")
+
+    # Refused before the provider was called and before any record was written.
+    assert not call_log.exists()
+    assert app_client.db.rows("SELECT COUNT(*) AS n FROM audit_log") == audit_before
+
+    # The refusal consumed nothing: outside the unit the first scripted reply is still there.
+    assert adapter.complete(messages, [], prompt_version="r8").text == "ok"
+    assert len(call_log.read_text(encoding="utf-8").splitlines()) == 1
 
 
 # R10
