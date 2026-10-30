@@ -24,7 +24,7 @@ from wg.contracts.api import (
     DraftResult,
     PlanDraftResult,
 )
-from wg.contracts.enums import Channel, Disposition
+from wg.contracts.enums import Channel, Disposition, PlanMode
 from wg.contracts.errors import ErrorCode, WgError
 from wg.k6 import chat
 from wg.k6.sessions import SessionRow
@@ -46,11 +46,29 @@ class ChatService:
         self._adapter: ModelAdapter | None = None
         self._lock = threading.Lock()
 
-    def send(self, session: SessionRow, text: str, channel: Channel = Channel.WEB) -> ChatReply:
-        customer_id = session.subject_id
+    def send(self, session: SessionRow, text: str) -> ChatReply:
+        """A web turn for the customer of the session."""
+        return self.converse(
+            session.subject_id,
+            session.session_id,
+            text,
+            channel=Channel.WEB,
+            mode=session.agent_mode,
+        )
+
+    def converse(
+        self,
+        customer_id: str,
+        conversation_id: str,
+        text: str,
+        *,
+        channel: Channel,
+        mode: PlanMode = PlanMode.COORDINATED,
+    ) -> ChatReply:
+        """One turn of a conversation; its history is the stored messages under the same ID."""
         with self.db.read() as conn:
             earlier = chat.customer_messages(
-                conn, customer_id, HISTORY_MESSAGES, session_id=session.session_id
+                conn, customer_id, HISTORY_MESSAGES, session_id=conversation_id
             )
         history = [{"role": m.role.value, "content": m.masked_text} for m in earlier]
 
@@ -58,7 +76,7 @@ class ChatService:
             self.db.run_in_uow(
                 lambda uow: chat.insert_message(
                     uow,
-                    session_id=session.session_id,
+                    session_id=conversation_id,
                     customer_id=customer_id,
                     channel=channel,
                     role=ChatRole.USER,
@@ -75,7 +93,7 @@ class ChatService:
                 channel=channel,
                 text=text,
                 history=history,
-                mode=session.agent_mode,
+                mode=mode,
                 on_ingress=store_message,
             )
         except LlmError as error:
@@ -84,7 +102,7 @@ class ChatService:
         self.db.run_in_uow(
             lambda uow: chat.insert_message(
                 uow,
-                session_id=session.session_id,
+                session_id=conversation_id,
                 customer_id=customer_id,
                 channel=channel,
                 role=ChatRole.ASSISTANT,
