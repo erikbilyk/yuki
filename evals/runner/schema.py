@@ -141,6 +141,23 @@ class Sim(_Strict):
         return {**raw, "body": checked.model_dump(mode="json")}
 
 
+class SettleDays(_Strict):
+    """Change the settlement period of every product, for example after a plan was approved.
+
+    The runner writes `products` in the episode database itself; no route does this. The
+    change is not a product event and leaves no audit row.
+    """
+
+    redemption: Annotated[int, Field(ge=0, le=30)] | None = None
+    purchase: Annotated[int, Field(ge=0, le=30)] | None = None
+
+    @model_validator(mode="after")
+    def _something_to_set(self) -> Self:
+        if self.redemption is None and self.purchase is None:
+            raise ValueError("give redemption, purchase or both")
+        return self
+
+
 class WaitForStatus(_Strict):
     """Poll until the newest action of `action_kind`, or the newest plan, has one of `status`.
 
@@ -168,6 +185,7 @@ STEP_KINDS: dict[str, type[_Strict]] = {
     "kill_restart": KillRestart,
     "fault": Fault,
     "sim": Sim,
+    "settle_days": SettleDays,
     "wait_for_status": WaitForStatus,
 }
 

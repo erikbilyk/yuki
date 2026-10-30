@@ -8,6 +8,7 @@ from evals.runner.schema import (
     ApproveCards,
     Say,
     Scenario,
+    SettleDays,
     Sim,
     WaitForStatus,
     load_scenario,
@@ -113,6 +114,27 @@ def test_sim_step_keeps_a_yaml_date_as_the_string_the_route_expects():
 def test_sim_step_refuses_other_routes_and_bodies_that_miss_the_contract(raw):
     with pytest.raises(ValidationError):
         scenario(steps=[{"sim": raw}])
+
+
+def test_settle_days_step_takes_either_period_or_both():
+    loaded = scenario(
+        steps=[
+            {"settle_days": {"redemption": 6}},
+            {"settle_days": {"purchase": 0}},
+            {"settle_days": {"redemption": 3, "purchase": 1}},
+        ]
+    )
+    assert [type(step.body) for step in loaded.steps] == [SettleDays] * 3
+    assert loaded.steps[1].body.purchase == 0 and loaded.steps[1].body.redemption is None
+
+
+@pytest.mark.parametrize(
+    "body",
+    [{}, {"redemption": -1}, {"purchase": 31}, {"redemption": 1.5}, {"redemption": 6, "all": 1}],
+)
+def test_settle_days_step_refuses_an_empty_or_unreasonable_period(body):
+    with pytest.raises(ValidationError):
+        scenario(steps=[{"settle_days": body}])
 
 
 @pytest.mark.parametrize(

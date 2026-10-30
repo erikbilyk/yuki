@@ -23,10 +23,12 @@ from evals.runner.schema import (
     KillRestart,
     Say,
     Scenario,
+    SettleDays,
     Sim,
     Step,
     WaitForStatus,
 )
+from evals.runner.settlement import set_settle_days
 from evals.runner.usage import read_calls, summarize
 
 from wg.contracts.fixture import Fixture
@@ -226,6 +228,8 @@ class Episode:
             self._fault(body, record)
         elif isinstance(body, Sim):
             self._sim(body, record)
+        elif isinstance(body, SettleDays):
+            self._settle_days(body, record)
         elif isinstance(body, WaitForStatus):
             self._wait_for_status(body, record)
         else:  # pragma: no cover - the schema lists every step kind
@@ -414,6 +418,13 @@ class Episode:
         record["response"] = _body(response)
         if not record["ok"]:
             self.rec.errors.append(f"POST {step.post} -> {response.status_code}")
+
+    def _settle_days(self, step: SettleDays, record: dict[str, Any]) -> None:
+        record["products"] = set_settle_days(
+            self.db.path, redemption=step.redemption, purchase=step.purchase
+        )
+        record["redemption"] = step.redemption
+        record["purchase"] = step.purchase
 
     def _kill_restart(self, step: KillRestart, record: dict[str, Any]) -> None:
         assert self.backend is not None

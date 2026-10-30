@@ -302,3 +302,31 @@ def test_confirm_bill_card_for_an_injected_e_bill_needs_no_amount_in_the_allow_e
     assert rows(
         ep.db.path, "SELECT status FROM commitments WHERE commitment_id = ?", commitment_id
     ) == [("CONFIRMED",)]
+
+
+def settle_days(ep: Episode) -> list[tuple[int, int]]:
+    return rows(
+        ep.db.path,
+        "SELECT DISTINCT redeem_settle_days, purchase_settle_days FROM products"
+        " ORDER BY redeem_settle_days, purchase_settle_days",
+    )
+
+
+def test_settle_days_step_changes_every_product_while_the_backend_runs(episode):
+    ep = episode()
+    before = settle_days(ep)
+    products = rows(ep.db.path, "SELECT COUNT(*) FROM products")[0][0]
+    assert products > 0 and len(before) >= 1
+
+    ep._run_step(0, step(settle_days={"redemption": 6}))
+
+    assert ep.rec.steps[0]["ok"] and ep.rec.steps[0]["products"] == products
+    after = settle_days(ep)
+    assert {redemption for redemption, _ in after} == {6}
+    assert {purchase for _, purchase in after} == {purchase for _, purchase in before}
+    # The backend still serves requests after the injected write.
+    assert ep._customer.get("/v1/session").status_code == 200
+
+    ep._run_step(1, step(settle_days={"purchase": 2}))
+    assert {redemption for redemption, _ in settle_days(ep)} == {6}
+    assert {purchase for _, purchase in settle_days(ep)} == {2}

@@ -50,6 +50,7 @@ Steps:
 | `kill_restart` | `{how: kill \| crash}` | SIGKILL (default) or `POST /sim/crash`, then start the backend again on the same database |
 | `fault` | `{fault, count, persistent}` | `POST /sim/faults` |
 | `sim` | `{post: <route>, body: {...}}` | Inject an input through one simulator route, as the demo panel would; see below |
+| `settle_days` | `{redemption: N, purchase: N}` (one or both) | Set the settlement period, in days, of every product in the episode database |
 | `wait_for_status` | `{action_kind \| plan: last, status: [...], timeout_s, poll_s}` | Poll the newest action of that kind, or the newest plan, until it has one of the statuses; a timeout is recorded and the script goes on |
 
 `sim` accepts four routes. The body is checked against the route's request contract when the scenario loads, so a misspelled field or a missing amount is an error before any episode starts. A refused post is recorded on the step and in `errors`; the script goes on.
@@ -62,6 +63,8 @@ Steps:
 ```
 
 The step record holds the route, the HTTP status and the route's answer (commitment id or operation id). An e-bill creates a candidate commitment that the customer confirms with a `CONFIRM_BILL` card; allow it with `{kind: CONFIRM_BILL}`: the card's params hold the commitment id and no `amount_fen`, and an entry that names an amount would not match it.
+
+`settle_days` is for a calendar that slows down after a plan was approved (T65: `- settle_days: {redemption: 6}` after the approval step). No route does this and a variant applies only at reset, so the runner updates `products` itself in one `BEGIN IMMEDIATE` transaction while the backend runs; products are read from the database on every request. The change is not a product event and writes no audit row. It is the runner's only write to an episode database.
 
 Allow-list entries:
 
