@@ -333,7 +333,15 @@ class GetPositionsArgs(ToolArgs):
 class SearchRebalanceCandidatesArgs(ToolArgs):
     """Limits come with their quotes; strictness ("低于" vs "不超过") is read from the quote."""
 
-    sector: Sector
+    sector: Annotated[
+        Sector,
+        Field(
+            description=(
+                "Sector key of the fund taxonomy: lower-case English words, for example"
+                " 'technology' for 科技. An unknown key is refused with the known keys."
+            )
+        ),
+    ]
     target_max_pct: Pct
     target_quote: Quote
     checkpoint_day: Annotated[
