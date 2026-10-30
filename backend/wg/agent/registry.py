@@ -26,7 +26,14 @@ from wg.contracts.api import (
     TransactionsQuery,
 )
 from wg.contracts.engines import Candidate
-from wg.contracts.enums import ActionKind, AuditActor, Channel, PlanStatus, Provenance
+from wg.contracts.enums import (
+    ActionKind,
+    AuditActor,
+    Channel,
+    PlanMode,
+    PlanStatus,
+    Provenance,
+)
 from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.plan import ComposePlanRequest
 from wg.contracts.tools import (
@@ -74,6 +81,7 @@ class ToolContext:
 
     `read_scope` further limits the sources a call may read, on top of the declared intent;
     None leaves the intent as the only limit. `utterance` is the customer's message of this turn.
+    `mode` is the session's agent mode (SPEC §26).
     """
 
     customer_id: str
@@ -81,6 +89,7 @@ class ToolContext:
     capabilities: frozenset[Capability] = BOTH_CAPABILITIES
     read_scope: frozenset[DataSource] | None = None
     utterance: str = ""
+    mode: PlanMode = PlanMode.COORDINATED
 
 
 @dataclass(frozen=True)
@@ -227,7 +236,7 @@ class ToolRegistry:
             "run_stress": lambda c, a: services.funds.stress(c.customer_id, a.calc_result_id),
             "get_plan_status": self._plan_status,
             "draft_rebalance_plan": lambda c, a: services.funds.draft_rebalance_plan(
-                c.customer_id, a.calc_result_id, a.with_bounds, AuditActor.AGENT
+                c.customer_id, a.calc_result_id, a.with_bounds, AuditActor.AGENT, c.mode
             ),
             "compose_plan": self._compose_plan,
         }
@@ -372,7 +381,11 @@ class ToolRegistry:
             "draft_transfer",
             utterance,
             [
-                ("payee_ref", args.payee_quote, None),
+                (
+                    "payee_ref",
+                    args.payee_quote,
+                    lambda u: self._check_payee(context, args.payee_ref, args.payee_quote),
+                ),
                 (
                     "amount_fen",
                     args.amount_quote,
@@ -388,6 +401,21 @@ class ToolRegistry:
             remark=args.remark,
         )
         return self.services.actions.draft_transfer(context.customer_id, draft, AuditActor.AGENT)
+
+    def _check_payee(self, context: ToolContext, payee_ref: str, quote: str) -> None:
+        """The customer's words must name exactly one payee, and the model must have chosen it.
+
+        "王" names both 王磊 and 王芳: the model has to ask, not pick one (T3).
+        """
+        named = [
+            payee.payee_id
+            for payee in self.services.reads.payees(context.customer_id).payees
+            if _names(quote, payee.alias) or _names(quote, payee.display_name)
+        ]
+        if len(named) != 1:
+            raise WgError(ErrorCode.AMBIGUOUS_PAYEE, {"matches": len(named)})
+        if named[0] != payee_ref:
+            raise WgError(ErrorCode.PAYEE_MISMATCH, {})
 
     def _pay_bill(self, context: ToolContext, args: PayBillArgs) -> BaseModel:
         amount = None
@@ -511,8 +539,17 @@ class ToolRegistry:
         )
 
     def _compose_plan(self, context: ToolContext, args: ComposePlanArgs) -> BaseModel:
+        if context.mode is PlanMode.FLAT:
+            self._refuse(
+                context, "compose_plan", ErrorCode.UNSUPPORTED_REQUEST, {"reason": "flat_mode"}
+            )
         request = ComposePlanRequest(draft_ids=args.draft_ids, depends_on=args.depends_on)
         return self.services.composer.compose(context.customer_id, request, AuditActor.AGENT)
+
+
+def _names(quote: str, name: str) -> bool:
+    """A quote names a payee when it is part of the name or contains the whole name."""
+    return quote in name or name in quote
 
 
 def _slot[T](utterance: Utterance, value: T, quote: str) -> Slot[T]:

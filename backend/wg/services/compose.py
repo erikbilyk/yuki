@@ -18,7 +18,15 @@ from decimal import Decimal
 from typing import Any
 
 from wg.contracts.api import CardKind, CardLine, MoneyChange, PercentChange, PlanDraftResult
-from wg.contracts.enums import ActionKind, ActionStatus, AuditActor, PlanKind, PlanStatus, Tier
+from wg.contracts.enums import (
+    ActionKind,
+    ActionStatus,
+    AuditActor,
+    PlanKind,
+    PlanMode,
+    PlanStatus,
+    Tier,
+)
 from wg.contracts.errors import ErrorClass, ErrorCode, WgError
 from wg.contracts.plan import ComposePlanRequest, PlanValidationResult
 from wg.core import k4_approval as k4
@@ -207,8 +215,10 @@ def _source_plans(reader: Reader, drafts: Sequence[ActionRow]) -> list[PlanRow]:
         if draft.plan_id is None or draft.plan_id in sources:
             continue
         plan = plans.get_plan(reader, draft.plan_id)
+        # A flat plan's orders are approved one by one and never join a coordinated plan.
         movable = (
             plan.kind is not PlanKind.SINGLE
+            and plan.mode is PlanMode.COORDINATED
             and plan.status is PlanStatus.DRAFT
             and plan.root_approval_id is None
         )

@@ -1063,6 +1063,12 @@ class SimResetResult(ContractModel):
     clock: ClockView
 
 
+class AgentModeRequest(ContractModel):
+    """The agent mode for every current customer session (SPEC §26); the reply has no body."""
+
+    mode: PlanMode
+
+
 class ClockAdvanceRequest(ContractModel):
     """Either an absolute target `to` or a relative step of `days` and `minutes`."""
 
@@ -1219,7 +1225,8 @@ class RouteGroup(StrEnum):
 class Route:
     """One route: who may call it, whether it needs X-CSRF-Token, and its bodies.
 
-    `response` is the success body (None when there is none: /sim/crash ends the process).
+    `response` is the success body; None when the route answers without one (/sim/crash
+    ends the process, /sim/agent-mode answers 204).
     """
 
     method: Literal["GET", "POST"]
@@ -1334,6 +1341,7 @@ ROUTES: tuple[Route, ...] = (
     _post("/sim/incoming-payment", _R.DEMO, _G.SIMULATOR, SimPostingResult, IncomingPaymentRequest),
     _post("/sim/external-debit", _R.DEMO, _G.SIMULATOR, SimPostingResult, ExternalDebitRequest),
     _post("/sim/crash", _R.DEMO, _G.SIMULATOR, None),
+    _post("/sim/agent-mode", _R.DEMO, _G.SIMULATOR, None, AgentModeRequest),
     # IM channel adapter
     _post("/v1/channels/feishu/messages", _R.CHANNEL, _G.CHANNEL, ChannelReply, FeishuMessage),
 )

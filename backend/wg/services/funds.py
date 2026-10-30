@@ -43,7 +43,7 @@ from wg.contracts.engines import (
     StressResult,
     StressShock,
 )
-from wg.contracts.enums import ActionKind, AuditActor, PlanKind, Provenance, Tier
+from wg.contracts.enums import ActionKind, AuditActor, PlanKind, PlanMode, Provenance, Tier
 from wg.contracts.errors import ErrorClass, ErrorCode, WgError
 from wg.contracts.ids import IdPrefix, new_id
 from wg.contracts.money import quantize_fen
@@ -293,15 +293,20 @@ class FundsService:
         calc_result_id: str,
         with_bounds: bool,
         actor: AuditActor = AuditActor.CUSTOMER,
+        mode: PlanMode = PlanMode.COORDINATED,
     ) -> PlanDraftResult:
         """The selected swap as a plan: REDEEM, PURCHASE after it, CHECK_OUTCOME; and its card.
 
         A search without a passing swap is refused with the reason of the swap that came
-        closest, so a fee over the cap is FEE_CAP before any card or approval (T42).
+        closest, so a fee over the cap is FEE_CAP before any card or approval (T42). In flat
+        mode (SPEC §26) the plan holds the REDEEM and the PURCHASE only, without dependency,
+        checkpoint or plan card; each order is approved on its own card.
         """
         with self._audited(customer_id, "plan_draft_refused", calc_result_id, actor):
             plan_id, nodes = self.db.run_in_uow(
-                lambda uow: self._draft_plan(uow, customer_id, calc_result_id, with_bounds, actor),
+                lambda uow: self._draft_plan(
+                    uow, customer_id, calc_result_id, with_bounds, actor, mode
+                ),
                 "draft rebalance plan",
             )
         return PlanDraftResult(
@@ -318,6 +323,7 @@ class FundsService:
         calc_result_id: str,
         with_bounds: bool,
         actor: AuditActor,
+        mode: PlanMode,
     ) -> tuple[str, list[ActionRow]]:
         at = now(uow)
         check_not_locked(uow, customer_id, None)
@@ -338,7 +344,7 @@ class FundsService:
         if debit is None:
             raise not_found()
 
-        plan = plans.insert_plan(uow, customer_id, PlanKind.REBALANCE)
+        plan = plans.insert_plan(uow, customer_id, PlanKind.REBALANCE, mode)
         provenance = {"calc_result_id": {"provenance": Provenance.SERVER_RECORD.value}}
         redeem = _insert_node(
             uow,
@@ -363,8 +369,18 @@ class FundsService:
                 "amount_fen": selected.purchase_fen,
             },
             provenance,
-            depends_on=(redeem.logical_action_id,),
+            depends_on=() if mode is PlanMode.FLAT else (redeem.logical_action_id,),
         )
+        if mode is PlanMode.FLAT:
+            audit.record(
+                uow,
+                actor,
+                "plan_drafted",
+                customer_id=customer_id,
+                ref=plan.plan_id,
+                decision=Tier.YELLOW.value,
+            )
+            return plan.plan_id, [redeem, purchase]
         checkpoint_at = datetime.combine(
             date.fromisoformat(terms["checkpoint_on"]), CHECKPOINT_TIME, tzinfo=SHANGHAI
         )

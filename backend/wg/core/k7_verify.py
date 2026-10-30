@@ -45,6 +45,7 @@ from wg.contracts.enums import (
     OperationStatus,
     PlanStatus,
 )
+from wg.contracts.errors import ErrorCode
 from wg.contracts.facts import (
     ClaimViolation,
     CountFact,
@@ -62,12 +63,23 @@ from wg.contracts.tools import (
     OperationStatusResult,
     PlanStatusResult,
 )
-from wg.k6 import accounts, actions, audit, commitments
+from wg.core import k5_continuation
+from wg.k6 import accounts, actions, audit, commitments, funds, plans
 from wg.k6.db import Database, Reader
 from wg.packs.labels import bill_label
 from wg.textcheck.claims import FEASIBLE_WITH_APPROVAL, check_claims
 
 REPLACED_EVENT = "explanation_replaced"
+# A purchase paused by these is still possible at the new amount once the customer approves it.
+BOUND_PAUSES = frozenset(
+    {
+        ErrorCode.BILL_INCREASE_OVER_LIMIT,
+        ErrorCode.RETENTION_OVER_LIMIT,
+        ErrorCode.PURCHASE_BELOW_MIN,
+    }
+)
+# With these the new amount does not fit the money there is, whatever the approval.
+UNFUNDED_PAUSES = frozenset({ErrorCode.INSUFFICIENT_HEADROOM, ErrorCode.EXACT_ORDERS_ONLY})
 _C = FactConcept
 
 AMOUNT_CONCEPT = {
@@ -382,6 +394,8 @@ class FactCollector:
             if node.amount_fen is not None:
                 concept = AMOUNT_CONCEPT.get(node.kind, _C.OPERATION_AMOUNT)
                 self._money(concept, node.amount_fen, f"{label}金额", pid, subject=lid)
+            if node.kind is ActionKind.PURCHASE and node.status is ActionStatus.PAUSED:
+                self._paused_purchase(pid, lid)
         for revision in plan.revisions:
             subject = f"{pid}#{revision.revision}"
             if revision.purchase_after_fen is not None:
@@ -411,6 +425,31 @@ class FactCollector:
             self._percent(_C.TARGET_MAX, checkpoint.target_max_pct, "目标上限", ref, as_of=at)
         if plan.cash is not None:
             self._cash(plan.cash)
+
+    def _paused_purchase(self, plan_id: str, logical_action_id: str) -> None:
+        """The amount a purchase paused outside its bounds could buy with a new approval (T47)."""
+        plan = plans.find_plan(self.reader, plan_id)
+        node = actions.find_current(self.reader, logical_action_id)
+        if plan is None or node is None or plan.root_approval_id is None:
+            return
+        if not BOUND_PAUSES & {ErrorCode(r) for r in node.pause_reasons}:
+            return
+        decision = k5_continuation.decide(self.reader, plan, node, self.as_of)
+        product = funds.get_product(self.reader, str(node.params["product_id"]))
+        fits = not UNFUNDED_PAUSES & set(decision.reasons)
+        if not fits or decision.purchase_fen < max(product.min_purchase_fen, 1):
+            return
+        subject = f"{logical_action_id}#new_approval"
+        self._money(
+            _C.PURCHASE_AMOUNT,
+            decision.purchase_fen,
+            "新确认后的买入金额",
+            plan_id,
+            subject=subject,
+        )
+        self._status(
+            _C.OPTION_FEASIBILITY, FEASIBLE_WITH_APPROVAL, "新确认后买入", plan_id, subject
+        )
 
     def _candidates(self, summary: CandidateSummary) -> None:
         ref = summary.calc_result_id

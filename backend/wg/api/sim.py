@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request, Response, status
 
 from wg.api.guards import require_role
 from wg.contracts.api import (
+    AgentModeRequest,
     ClockAdvanceRequest,
     ClockView,
     EbillRequest,
@@ -71,6 +72,13 @@ def sms(body: SimSmsRequest, request: Request) -> SimSmsResult:
 @router.post("/external-debit")
 def external_debit(body: ExternalDebitRequest, request: Request) -> SimPostingResult:
     return _service(request).external_debit(body)
+
+
+@router.post("/agent-mode", status_code=status.HTTP_204_NO_CONTENT)
+def agent_mode(body: AgentModeRequest, request: Request) -> Response:
+    """Demo and evaluation only: customers never see or choose the mode."""
+    _service(request).set_agent_mode(body)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/crash")

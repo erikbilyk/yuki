@@ -7,14 +7,14 @@ the model's explanation once K7 has checked it.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
 from wg.agent.llm import ModelAdapter
 from wg.agent.loop import TurnResult, run_turn
 from wg.agent.registry import BOTH_CAPABILITIES, ToolContext, ToolRegistry
-from wg.contracts.enums import Channel
+from wg.contracts.enums import Channel, PlanMode
 from wg.contracts.tools import Capability, DataSource
 from wg.core.k2_context import challenge_open, mask_ingress
 from wg.core.k7_verify import VerifiedReply, verify_reply
@@ -40,17 +40,26 @@ def agent_turn(
     history: Sequence[Mapping[str, Any]] = (),
     capabilities: frozenset[Capability] = BOTH_CAPABILITIES,
     read_scope: frozenset[DataSource] | None = None,
+    mode: PlanMode = PlanMode.COORDINATED,
+    on_ingress: Callable[[str], None] | None = None,
 ) -> AgentTurn:
-    """Mask the message, then play it through the model; `history` must already be masked."""
+    """Mask the message, then play it through the model; `history` must already be masked.
+
+    `on_ingress` receives the masked text before the model is called, so the caller can store
+    the message even when the model then fails.
+    """
     with registry.db.read() as conn:
         ingress = mask_ingress(text, challenge_open=challenge_open(conn, customer_id))
         as_of = now(conn)
+    if on_ingress is not None:
+        on_ingress(ingress.text)
     context = ToolContext(
         customer_id=customer_id,
         channel=channel,
         capabilities=capabilities,
         read_scope=read_scope,
         utterance=ingress.text,
+        mode=mode,
     )
     result = run_turn(adapter, registry, context, ingress.text, history=history)
     results = [outcome.result for outcome in result.outcomes if outcome.result is not None]
