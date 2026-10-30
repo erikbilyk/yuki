@@ -1,30 +1,23 @@
 """A combined request within the 8-call budget: the three steps the system prompt prescribes.
 
-The model is played by a provider that reads the ids it needs from the tool results it was
-sent, as a real model does. The T60 message asks for a reserve, a rebalance and two bills.
+The model is a `ReadingModel`: it reads the ids it needs from the tool results it was sent,
+as a real model does. The T60 message asks for a reserve, a rebalance and two bills.
 """
 
 from __future__ import annotations
 
 import json
 import re
-from collections.abc import Callable, Sequence
-from itertools import count
-from pathlib import Path
 from typing import Any
 
 import pytest
 
-from wg.agent.llm import ModelAdapter, ModelReply, ToolCallRequest
 from wg.agent.loop import MAX_TOOL_CALLS
 from wg.agent.prompt import load_system_prompt
-from wg.agent.turn import AgentTurn, agent_turn
-from wg.contracts.enums import Channel
 from wg.contracts.errors import ErrorCode
 from wg.contracts.tools import TOOLS_BY_NAME
 
-from ..api.conftest import make_settings
-from .scripted import Agent
+from .scripted import Agent, ReadingModel, Results, Step
 
 pytestmark = pytest.mark.layer("U")
 
@@ -39,42 +32,6 @@ EXTRA_READS = [
     ("get_positions", {"intent": "funds.rebalance"}),
     ("get_portfolio_exposure", {"intent": "funds.rebalance", "key": "technology"}),
 ]
-
-Results = list[dict[str, Any]]
-Step = Callable[[Results], list[tuple[str, dict[str, Any]]]]
-
-
-class ReadingModel:
-    """Plays one model reply per step; each step sees the tool results sent since the last."""
-
-    name = "reading"
-
-    def __init__(self, steps: Sequence[Step], final_text: str = "已为您准备好，等待您确认。"):
-        self.steps = list(steps)
-        self.final_text = final_text
-        self.ids = count()
-        self.results: Results = []
-
-    def complete(
-        self, messages: Sequence[dict[str, Any]], tools: Sequence[dict[str, Any]]
-    ) -> ModelReply:
-        latest = []
-        for message in reversed(messages):
-            if message["role"] != "tool":
-                break
-            latest.insert(0, json.loads(message["content"]))
-        self.results.extend(latest)
-        if not self.steps or not tools:
-            return ModelReply(text=self.final_text, returned_model="test")
-        calls = self.steps.pop(0)(self.results)
-        return ModelReply(
-            text="",
-            tool_calls=tuple(
-                ToolCallRequest(f"call_{next(self.ids)}", name, json.dumps(args), args)
-                for name, args in calls
-            ),
-            returned_model="test",
-        )
 
 
 def first_step(_: Results) -> list[tuple[str, dict[str, Any]]]:
@@ -142,15 +99,6 @@ def compose_step(*, purchase_waits_for_redemption: bool = True) -> Step:
     return step
 
 
-def play(agent: Agent, tmp_path: Path, model: ReadingModel) -> AgentTurn:
-    adapter = ModelAdapter(
-        model, make_settings(tmp_path / "wg.db"), log_path=tmp_path / "llm_calls.jsonl"
-    )
-    return agent_turn(
-        adapter, agent.registry, customer_id="cus_main", channel=Channel.WEB, text=MESSAGE
-    )
-
-
 def plan_nodes(agent: Agent) -> list[str]:
     return [
         row["kind"]
@@ -161,11 +109,9 @@ def plan_nodes(agent: Agent) -> list[str]:
     ]
 
 
-def test_the_prescribed_three_steps_compose_all_six_nodes_within_the_budget(
-    agent: Agent, tmp_path: Path
-):
+def test_the_prescribed_three_steps_compose_all_six_nodes_within_the_budget(agent: Agent):
     model = ReadingModel([first_step, second_step, compose_step()])
-    done = play(agent, tmp_path, model)
+    done = agent.play(MESSAGE, model)
     assert len(done.turn.outcomes) == 7 < MAX_TOOL_CALLS and not done.turn.limit_reached
     assert all(outcome.ok for outcome in done.turn.outcomes), [o.error for o in done.turn.outcomes]
     assert plan_nodes(agent) == SIX_NODES
@@ -177,10 +123,10 @@ def test_the_prescribed_three_steps_compose_all_six_nodes_within_the_budget(
     assert done.reply.explanation is not None
 
 
-def test_extra_reads_before_the_drafts_leave_compose_over_the_budget(agent: Agent, tmp_path: Path):
+def test_extra_reads_before_the_drafts_leave_compose_over_the_budget(agent: Agent):
     reads: Step = lambda _: list(EXTRA_READS)  # noqa: E731
     model = ReadingModel([reads, first_step, second_step, compose_step()])
-    done = play(agent, tmp_path, model)
+    done = agent.play(MESSAGE, model)
     assert done.turn.limit_reached
     composed = [o for o in done.turn.outcomes if o.name == "compose_plan"]
     assert all(o.error is not None for o in composed)
@@ -189,13 +135,11 @@ def test_extra_reads_before_the_drafts_leave_compose_over_the_budget(agent: Agen
     assert agent.rows("SELECT COUNT(*) AS n FROM approvals") == [{"n": 0}]
 
 
-def test_a_composed_plan_without_the_purchase_dependency_is_still_refused(
-    agent: Agent, tmp_path: Path
-):
+def test_a_composed_plan_without_the_purchase_dependency_is_still_refused(agent: Agent):
     model = ReadingModel(
         [first_step, second_step, compose_step(purchase_waits_for_redemption=False)]
     )
-    done = play(agent, tmp_path, model)
+    done = agent.play(MESSAGE, model)
     [composed] = [o for o in done.turn.outcomes if o.name == "compose_plan"]
     assert composed.error is not None
     assert ErrorCode.UNFUNDED_DEPENDENCY.value in json.dumps(composed.error.detail)
