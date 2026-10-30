@@ -22,6 +22,10 @@ STATE_KINDS = frozenset(
 )
 # Operation statuses that moved or may have moved value (SPEC §10.2).
 LIVE_OPERATION_STATUSES = ("SUBMITTED", "SETTLED", "UNKNOWN")
+# Operations the simulator posts as inputs (opening balances, incoming payments, external debits);
+# they carry no action and no receipt, so they are neither effects nor receipt mismatches.
+SIMULATOR_KINDS = ("OPENING", "INCOMING_PAYMENT", "EXTERNAL_DEBIT")
+_NOT_SIMULATOR = "kind NOT IN (" + ", ".join(f"'{k}'" for k in SIMULATOR_KINDS) + ")"
 # Plan kinds that hold a customer's multi-step plan; `single` wraps one standalone action.
 MULTI_STEP_PLANS = ("rebalance", "mixed")
 
@@ -101,7 +105,7 @@ def _unbacked(
 def _operation_effects(db: sqlite3.Connection, customer: str) -> list[Effect]:
     rows = _rows(
         db,
-        "SELECT * FROM operations WHERE customer_id = ? AND kind <> 'OPENING' "
+        f"SELECT * FROM operations WHERE customer_id = ? AND {_NOT_SIMULATOR} "
         "AND status IN ('SUBMITTED', 'SETTLED', 'UNKNOWN') ORDER BY submitted_at, operation_id",
         customer,
     )
@@ -195,7 +199,7 @@ def _integrity(db: sqlite3.Connection) -> tuple[list[str], int]:
         db,
         "SELECT o.operation_id, o.status, r.status AS receipt FROM operations o "
         "LEFT JOIN receipts r ON r.operation_id = o.operation_id "
-        "WHERE o.kind <> 'OPENING' AND ((o.status = 'SETTLED' AND r.status IS NOT 'SETTLED') "
+        f"WHERE o.{_NOT_SIMULATOR} AND ((o.status = 'SETTLED' AND r.status IS NOT 'SETTLED') "
         "OR (o.status = 'SUBMITTED' AND r.status IS NOT NULL))",
     ):
         errors.append(
