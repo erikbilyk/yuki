@@ -164,7 +164,7 @@ def test_dry_run_writes_one_json_per_episode_and_a_database_copy(tmp_path, capsy
     assert code == 0
     run = tmp_path / "dry"
     manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
-    assert [e["status"] for e in manifest["episodes"]] == ["completed"]
+    assert [e["status"] for e in manifest["episodes"]] == ["completed", "completed"]
 
     episode = json.loads(
         (run / "episodes" / "example-transfer.coordinated.r1.json").read_text("utf-8")
@@ -180,6 +180,29 @@ def test_dry_run_writes_one_json_per_episode_and_a_database_copy(tmp_path, capsy
     assert rows(copy, "SELECT COUNT(*) FROM operations WHERE logical_action_id IS NOT NULL") == [
         (0,)
     ]
+
+
+def test_dry_run_example_uses_every_new_step_once(tmp_path):
+    assert main(["live", "--stub", "--scenarios", str(EXAMPLES), "--out", str(tmp_path)]) == 0
+    (run,) = tmp_path.iterdir()
+    episode = json.loads((run / "episodes" / "example-sim.coordinated.r1.json").read_text("utf-8"))
+    assert episode["status"] == "completed" and episode["errors"] == []
+    assert [(s["kind"], s["ok"]) for s in episode["steps"]] == [
+        ("sim", True),
+        ("sim", True),
+        ("sim", True),
+        ("sim", True),
+        ("settle_days", True),
+    ]
+    assert [s["route"] for s in episode["steps"][:4]] == [
+        "/sim/bills/ebill",
+        "/sim/sms",
+        "/sim/incoming-payment",
+        "/sim/external-debit",
+    ]
+    copy = run / "episodes" / "example-sim.coordinated.r1.db"
+    assert rows(copy, "SELECT DISTINCT redeem_settle_days FROM products") == [(6,)]
+    assert rows(copy, "SELECT COUNT(*) FROM operations WHERE amount_fen IN (3300, 4400)") == [(2,)]
 
 
 def test_a_missing_scenario_folder_is_an_error(tmp_path, capsys):
