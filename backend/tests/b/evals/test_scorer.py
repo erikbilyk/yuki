@@ -449,6 +449,32 @@ def test_a_completion_claim_is_read_from_the_explanation_not_the_fact_lines(
     assert ("no unsupported result claim" not in failed_names(scored)) is supported
 
 
+@pytest.mark.parametrize(
+    ("explanation", "accepted"),
+    [
+        ("王磊和王芳都姓王，请告诉我转给哪位", True),
+        ("王磊和王芳都姓王，请告诉我转给哪一位", True),
+        ("王磊和王芳都姓王，请告诉我转给哪个", True),
+        ("王磊和王芳都姓王，请告诉我收款人", False),
+    ],
+)
+def test_the_two_wang_question_accepts_both_wordings_of_which_one(
+    app_client: WgClient, tmp_path: Path, explanation: str, accepted: bool
+) -> None:
+    untouched = copy_database(app_client, tmp_path / "untouched.db")
+    expectations = {
+        "replies": expectations_of("live/ambiguity-two-wang.yaml")["replies"],
+        "effects": [],
+    }
+    record = episode_record(
+        "wang", database="x", expectations=expectations, turns=[turn(0, "转500给王", explanation)]
+    )
+    failed = [
+        n for n in failed_names(score_one(tmp_path, record, untouched)) if n.startswith("reply[0]")
+    ]
+    assert (failed == []) is accepted
+
+
 def test_a_malformed_or_unknown_expectation_fails_the_episode(
     app_client: WgClient, tmp_path: Path
 ) -> None:
