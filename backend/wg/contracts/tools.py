@@ -336,7 +336,15 @@ class SearchRebalanceCandidatesArgs(ToolArgs):
     sector: Sector
     target_max_pct: Pct
     target_quote: Quote
-    checkpoint_day: CheckpointDay | None = None
+    checkpoint_day: Annotated[
+        CheckpointDay | None,
+        Field(
+            description=(
+                "Calendar days from today to the date the target must hold, not a day of the"
+                " month: today 2026-11-02 and '11月7日前' give 5. Omit for the default."
+            )
+        ),
+    ] = None
     fee_cap_fen: NonNegativeFen
     fee_cap_quote: Quote
     turnover_cap_fen: NonNegativeFen | None = None
