@@ -15,7 +15,7 @@ expectations:
     - {turn: 0, one_of: [clarification, null]}
     - {turn: 1, one_of: [null]}
   replies:
-    - {turn: 0, require_any: ["？", "?", "哪位", "哪个"]}
+    - {turn: 0, require_any: ["？", "?", "哪位", "哪一位", "哪个"]}
   effects:
     - {kind: TRANSFER, payee_id: pay_wanglei, amount_fen: 50000, count: 1, status: [SETTLED]}
   no_actions:
