@@ -1,0 +1,13 @@
+id: colloquial-russian
+category: colloquial
+title: Russian request to transfer 500 to mother; the reply is in Chinese
+steps:
+  - say: Переведи маме 500
+  - approve_cards:
+      allow:
+        - {kind: TRANSFER, payee_id: pay_mom, amount_fen: 50000}
+  - enter_code: {}
+expectations:
+  effects:
+    - {kind: TRANSFER, payee_id: pay_mom, amount_fen: 50000, count: 1, status: [SETTLED]}
+  balances: {acc_main: 1750000}

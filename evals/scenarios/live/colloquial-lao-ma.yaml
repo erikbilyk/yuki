@@ -1,0 +1,14 @@
+id: colloquial-lao-ma
+category: colloquial
+case: T1
+title: Colloquial request with a family term for the payee
+steps:
+  - say: 给老妈打500块
+  - approve_cards:
+      allow:
+        - {kind: TRANSFER, payee_id: pay_mom, amount_fen: 50000}
+  - enter_code: {}
+expectations:
+  effects:
+    - {kind: TRANSFER, payee_id: pay_mom, amount_fen: 50000, count: 1, status: [SETTLED]}
+  balances: {acc_main: 1750000}

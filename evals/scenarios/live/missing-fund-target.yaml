@@ -1,0 +1,17 @@
+id: missing-fund-target
+category: missing_slots
+case: T40
+title: Reduce technology funds with no threshold, date or fee limit
+steps:
+  - say: 帮我把基金里科技股的比例降下来一点
+expectations:
+  no_drafts_in_turns: [0]
+  dispositions:
+    - {turn: 0, one_of: [clarification, null]}
+  replies:
+    - {turn: 0, require_any: ["比例", "上限", "目标", "日期", "手续费"]}
+  effects: []
+  no_actions:
+    - {kind: REDEEM}
+    - {kind: PURCHASE}
+  plan: {exists: false}

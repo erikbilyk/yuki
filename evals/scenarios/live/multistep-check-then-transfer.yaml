@@ -1,0 +1,15 @@
+id: multistep-check-then-transfer
+category: multi_step
+title: Check the balance, then transfer 500 yuan to mother
+steps:
+  - say: 先帮我看看主账户还有多少钱，然后给妈妈转500
+  - approve_cards:
+      allow:
+        - {kind: TRANSFER, payee_id: pay_mom, amount_fen: 50000}
+  - enter_code: {}
+expectations:
+  replies:
+    - {turn: 0, require_any: ["18,000"]}
+  effects:
+    - {kind: TRANSFER, payee_id: pay_mom, amount_fen: 50000, count: 1, status: [SETTLED]}
+  balances: {acc_main: 1750000}

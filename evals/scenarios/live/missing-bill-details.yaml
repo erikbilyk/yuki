@@ -1,0 +1,15 @@
+id: missing-bill-details
+category: missing_slots
+case: T27
+title: A new bill with no payee, amount or due date
+steps:
+  - say: 帮我加一笔幼儿园的账单
+expectations:
+  no_drafts_in_turns: [0]
+  dispositions:
+    - {turn: 0, one_of: [clarification, null]}
+  replies:
+    - {turn: 0, require_any: ["金额", "多少", "日期", "哪天", "收款"]}
+  effects: []
+  no_actions:
+    - {kind: CONFIRM_BILL}

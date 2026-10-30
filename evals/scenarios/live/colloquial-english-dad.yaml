@@ -1,0 +1,19 @@
+id: colloquial-english-dad
+category: colloquial
+case: T8
+title: >-
+  English request for 5,000 yuan to father. The free headroom is 2,000 yuan, so the transfer
+  is infeasible and nothing may execute.
+steps:
+  - say: transfer 5k to dad
+  - approve_cards:
+      allow:
+        - {kind: TRANSFER, payee_id: pay_dad, amount_fen: 500000}
+  - enter_code: {}
+expectations:
+  dispositions:
+    - {turn: 0, one_of: [infeasible]}
+  replies:
+    - {turn: 0, require_any: ["2,000"]}
+  effects: []
+  balances: {acc_main: 1800000}

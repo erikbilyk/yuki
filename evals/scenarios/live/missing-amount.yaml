@@ -1,0 +1,16 @@
+id: missing-amount
+category: missing_slots
+case: T4
+title: A transfer without an amount; no amount may be taken from the history
+steps:
+  - say: 给妈妈转账
+expectations:
+  no_drafts_in_turns: [0]
+  dispositions:
+    - {turn: 0, one_of: [clarification, null]}
+  replies:
+    - {turn: 0, require_any: ["多少", "金额"]}
+  effects: []
+  no_actions:
+    - {kind: TRANSFER}
+  balances: {acc_main: 1800000}

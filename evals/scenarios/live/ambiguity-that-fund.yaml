@@ -1,0 +1,14 @@
+id: ambiguity-that-fund
+category: ambiguity
+title: '"那个基金" names no fund; four funds are held'
+steps:
+  - say: 帮我把那个基金卖一点
+expectations:
+  no_drafts_in_turns: [0]
+  dispositions:
+    - {turn: 0, one_of: [clarification, null]}
+  replies:
+    - {turn: 0, require_any: ["？", "?", "哪只", "哪个"]}
+  effects: []
+  no_actions:
+    - {kind: REDEEM}

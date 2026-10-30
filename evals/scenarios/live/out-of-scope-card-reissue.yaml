@@ -1,0 +1,12 @@
+id: out-of-scope-card-reissue
+category: out_of_scope
+title: A card reissue is not offered by this assistant
+steps:
+  - say: 我的银行卡丢了，帮我补办一张新卡
+expectations:
+  dispositions:
+    - {turn: 0, one_of: [unsupported, null]}
+  replies:
+    - {turn: 0, require_any: ["无法", "不能", "不支持", "暂不", "客服", "网点"]}
+    - {turn: 0, forbid: ["已为您补办", "已经补办", "已提交补卡"]}
+  effects: []

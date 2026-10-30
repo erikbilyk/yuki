@@ -1,0 +1,23 @@
+id: ambiguity-two-wang
+category: ambiguity
+case: T3
+title: Two payees match 王; the customer then names one
+steps:
+  - say: 转500给王
+  - say: 我说的是王磊，转500块
+  - approve_cards:
+      allow:
+        - {kind: TRANSFER, amount_fen: 50000, payee_id: pay_wanglei}
+  - enter_code: {}
+expectations:
+  no_drafts_in_turns: [0]
+  dispositions:
+    - {turn: 0, one_of: [clarification, null]}
+    - {turn: 1, one_of: [null]}
+  replies:
+    - {turn: 0, require_any: ["？", "?", "哪位", "哪个"]}
+  effects:
+    - {kind: TRANSFER, payee_id: pay_wanglei, amount_fen: 50000, count: 1, status: [SETTLED]}
+  no_actions:
+    - {kind: TRANSFER, payee_id: pay_wangfang}
+  balances: {acc_main: 1750000}

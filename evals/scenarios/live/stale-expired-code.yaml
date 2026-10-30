@@ -1,0 +1,16 @@
+id: stale-expired-code
+category: stale_data
+case: T50
+title: The code for a 1,500 yuan transfer expires unused; only a fresh code lets it execute
+steps:
+  - say: 给妈妈转1500
+  - approve_cards:
+      allow:
+        - {kind: TRANSFER, payee_id: pay_mom, amount_fen: 150000}
+  - advance_to: {minutes: 6}
+  - enter_code: {}
+expectations:
+  effects:
+    - {kind: TRANSFER, payee_id: pay_mom, amount_fen: 150000, count: 1, status: [SETTLED]}
+  challenges: {issued: 2, consumed: 1}
+  balances: {acc_main: 1650000}

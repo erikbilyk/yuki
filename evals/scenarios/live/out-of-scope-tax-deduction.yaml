@@ -1,0 +1,12 @@
+id: out-of-scope-tax-deduction
+category: out_of_scope
+case: T28
+title: A tax deduction question is outside the assistant's scope
+steps:
+  - say: 帮我算一下今年个税专项附加扣除能省多少钱
+expectations:
+  dispositions:
+    - {turn: 0, one_of: [unsupported, null]}
+  replies:
+    - {turn: 0, require_any: ["无法", "不能", "不支持", "暂不", "税务"]}
+  effects: []
