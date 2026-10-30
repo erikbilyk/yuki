@@ -25,7 +25,7 @@ CATEGORIES = {
 }
 AMOUNT_KINDS = {"TRANSFER", "PAY_BILL", "PURCHASE"}
 SMOKE = {"smoke-t1", "smoke-t17", "smoke-t39", "smoke-t60"}
-COMPARED = {"T64", "T66", "T67", "T68"}
+COMPARED = {"T61", "T62", "T64", "T65", "T66", "T67", "T68"}
 
 
 def directory(name: str) -> list[Scenario]:
@@ -57,7 +57,7 @@ def test_live_trials_stay_within_three_per_category() -> None:
     live = directory("live")
     counts = Counter(s.category for s in live)
     assert set(counts) == CATEGORIES
-    assert max(counts.values()) <= 3
+    assert set(counts.values()) == {3}
     assert all(s.system == "coordinated" for s in live)
 
 
