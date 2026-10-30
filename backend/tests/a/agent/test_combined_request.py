@@ -120,6 +120,9 @@ def test_the_prescribed_three_steps_compose_all_six_nodes_within_the_budget(agen
         " WHERE p.kind = 'mixed'"
     )
     assert card == {"kind": "plan", "approval_id": None}
+    plans = agent.registry.services.plans
+    [summary] = plans.plans("cus_main").plans
+    assert plans.plan("cus_main", summary.plan_id).bounds is not None
     assert done.reply.explanation is not None
 
 
@@ -166,3 +169,8 @@ def test_the_combined_request_steps_fit_the_budget_with_two_bills():
     # Step 2 drafts one pay_bill per bill; two bills make it three calls.
     calls = len(tools[0]) + (len(tools[1]) + 1) + len(tools[2])
     assert calls == 7 < MAX_TOOL_CALLS
+
+
+def test_the_rebalance_step_asks_for_bounds_the_customer_approves_on_the_card():
+    steps = re.findall(r"^\s+\d\. (.+)$", load_system_prompt().text, flags=re.MULTILINE)
+    assert "draft_rebalance_plan" in steps[1] and "with_bounds 设为 true" in steps[1]

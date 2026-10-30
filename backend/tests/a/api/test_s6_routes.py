@@ -82,16 +82,16 @@ def draft(browser: Browser, path: str, body: dict) -> DraftResult:
     return ok(browser.post(f"/v1/drafts/{path}", body), DraftResult, (201,))
 
 
-def fund_drafts(browser: Browser) -> tuple[str, dict[ActionKind, str]]:
+def fund_drafts(browser: Browser, with_bounds: bool = True) -> tuple[str, dict[ActionKind, str]]:
     found = ok(browser.post("/v1/funds/candidates", SEARCH), CandidatesView, (200,))
-    body = {"calc_result_id": found.calc_result_id, "with_bounds": True}
+    body = {"calc_result_id": found.calc_result_id, "with_bounds": with_bounds}
     funds = ok(browser.post("/v1/funds/plans", body), PlanDraftResult, (201,))
     assert funds.plan_id is not None
     return funds.plan_id, {a.kind: a.logical_action_id for a in funds.actions}
 
 
-def compose_body(browser: Browser) -> tuple[str, dict]:
-    source, funds = fund_drafts(browser)
+def compose_body(browser: Browser, with_bounds: bool = True) -> tuple[str, dict]:
+    source, funds = fund_drafts(browser, with_bounds)
     reserve = draft(browser, "reserve", {"target_fen": 500_000})
     rent = draft(browser, "pay-bill", {"commitment_id": "cmt_rent"})
     insurance = draft(browser, "pay-bill", {"commitment_id": "cmt_insurance"})
@@ -107,8 +107,8 @@ def compose_body(browser: Browser) -> tuple[str, dict]:
     return source, {"draft_ids": ids, "depends_on": depends_on}
 
 
-def composed(browser: Browser) -> PlanView:
-    _, body = compose_body(browser)
+def composed(browser: Browser, with_bounds: bool = True) -> PlanView:
+    _, body = compose_body(browser, with_bounds)
     result = ok(browser.post("/v1/plans/compose", body), PlanDraftResult, (201,))
     assert result.plan_id is not None
     return plan_view(browser, result.plan_id)
@@ -123,8 +123,8 @@ def confirm(browser: Browser, card_id: str):
     return browser.post(f"/v1/cards/{card_id}/confirm", {"terms_hash": shown.terms_hash})
 
 
-def approved(browser: Browser) -> PlanView:
-    view = composed(browser)
+def approved(browser: Browser, with_bounds: bool = True) -> PlanView:
+    view = composed(browser, with_bounds)
     assert view.card_id is not None
     ok(confirm(browser, view.card_id), ConfirmResult, (201,))
     return plan_view(browser, view.plan_id)
@@ -146,9 +146,9 @@ def pay(browser: Browser, logical_action_id: str) -> VerifyResult:
     return ok(verify(browser, *challenge(browser, logical_action_id)), VerifyResult, (200, 202))
 
 
-def settled_at_t3(browser: Browser) -> PlanView:
+def settled_at_t3(browser: Browser, with_bounds: bool = True) -> PlanView:
     """Plan approved, redemption sent at T+0, rent paid at T+2, redemption settled at T+3."""
-    view = approved(browser)
+    view = approved(browser, with_bounds)
     pay(browser, node(view, ActionKind.REDEEM).logical_action_id)
     advance(browser, at(2))
     pay(browser, node(view, ActionKind.PAY_BILL, "cmt_rent").logical_action_id)
@@ -279,6 +279,20 @@ def test_a_bill_within_bounds_revises_the_purchase_in_one_unit(browser: Browser)
     refused(verify(browser, old_challenge, old_code), ErrorCode.SUPERSEDED)
     bought = pay(browser, purchase_id).operation
     assert bought is not None and bought.amount_fen == 478_500 and bought.revision == 2
+
+
+def test_without_bounds_the_same_bill_pauses_the_exact_purchase(browser: Browser):
+    view = settled_at_t3(browser, with_bounds=False)
+    assert view.bounds is None
+    new_bill(browser, 120_000)
+    view = plan_view(browser, view.plan_id)
+    purchase = node(view, ActionKind.PURCHASE)
+    assert purchase.status is ActionStatus.PAUSED
+    assert (purchase.revision, purchase.amount_fen) == (1, 498_500)
+    assert set(purchase.pause_reasons) == {ErrorCode.EXACT_ORDERS_ONLY}
+    assert rows(browser, "SELECT COUNT(*) AS n FROM plan_revisions WHERE revision = 2") == [
+        {"n": 0}
+    ]
 
 
 def test_bills_count_from_the_original_approval_and_once_each(browser: Browser):
