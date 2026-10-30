@@ -81,6 +81,73 @@ def test_an_amount_the_message_does_not_state_is_refused(
     assert raised.value.detail == {"slots": ["amount_fen"]}
 
 
+T60 = (
+    "工资到账了。我想做四件事：一，把应急备用金提到5000元；二，11月7日前把科技类基金的占比降到40%以下，"
+    "手续费不超过20元；三，房租11月4日到期，到期日再交，不要提前付；四，保险11月9日到期，也到期日再交。"
+)
+
+
+def test_the_t60_sentence_passes_for_the_fee_cap_and_the_reserve_target():
+    utterance = Utterance.of(T60)
+    utterance.check_amount("fee_cap_fen", "手续费不超过20元", 2_000)
+    utterance.check_amount("target_fen", "把应急备用金提到5000元", 500_000)
+
+
+@pytest.mark.parametrize(
+    ("text", "slot", "quote", "fen", "code"),
+    [
+        # an amount quoted for the other slot
+        (T60, "fee_cap_fen", "应急备用金提到5000元", 500_000, ErrorCode.MISSING_SLOT),
+        (T60, "target_fen", "手续费不超过20元", 2_000, ErrorCode.MISSING_SLOT),
+        # a quote that holds two amounts
+        (
+            T60,
+            "fee_cap_fen",
+            "应急备用金提到5000元；二，11月7日前把科技类基金的占比降到40%以下，手续费不超过20元",
+            2_000,
+            ErrorCode.MISSING_SLOT,
+        ),
+        # no word naming the slot
+        (T60, "fee_cap_fen", "不超过20元", 2_000, ErrorCode.MISSING_SLOT),
+        (T60, "target_fen", "提到5000元", 500_000, ErrorCode.MISSING_SLOT),
+        # the word is there but the amount is not the argument
+        (T60, "fee_cap_fen", "手续费不超过20元", 5_000, ErrorCode.MISSING_SLOT),
+        # the quote lies only inside the remark
+        (
+            "转账300，备用金提到5000元，备注：手续费不超过20元",
+            "fee_cap_fen",
+            "手续费不超过20元",
+            2_000,
+            ErrorCode.MISSING_SLOT,
+        ),
+        # the only amount outside the remark is not the quoted one
+        (
+            "备用金提到5000元，备注：手续费不超过20元",
+            "fee_cap_fen",
+            "手续费不超过20元",
+            2_000,
+            ErrorCode.AMOUNT_MISMATCH,
+        ),
+        # transfers, bills and purchases keep the one-amount rule
+        ("给妈妈转500，给爸爸转300", "amount_fen", "给妈妈转500", 50_000, ErrorCode.MISSING_SLOT),
+        (
+            "给妈妈转手续费500，给爸爸转300",
+            "amount_fen",
+            "手续费500",
+            50_000,
+            ErrorCode.MISSING_SLOT,
+        ),
+    ],
+)
+def test_a_slot_word_does_not_rescue_an_amount_it_does_not_single_out(
+    text: str, slot: str, quote: str, fen: int, code: ErrorCode
+):
+    with pytest.raises(WgError) as raised:
+        Utterance.of(text).check_amount(slot, quote, fen)
+    assert raised.value.code is code
+    assert raised.value.detail == {"slots": [slot]}
+
+
 def test_a_percent_limit_must_equal_the_percent_in_the_message():
     utterance = Utterance.of("把科技降到不超过35%，手续费不超过50元")
     utterance.check_percent("target_max_pct", "不超过35%", Decimal("35.0000"))
