@@ -1,0 +1,400 @@
+{
+  "run_id": "a18-comparison",
+  "mode": "comparison",
+  "repeat": 3,
+  "scenarios_dir": "evals/scenarios",
+  "model": {
+    "WG_LLM_PROVIDER": "deepseek",
+    "WG_LLM_MODEL": "deepseek-flash",
+    "WG_LLM_THINKING": "disabled",
+    "WG_LLM_BASE_URL": "https://api.deepseek.com"
+  },
+  "build": {
+    "commit": "960ab887da152850c666d556daa3a35b680b55fe",
+    "dirty": false
+  },
+  "budget_cny": null,
+  "started_at": "2026-10-30T18:44:18+00:00",
+  "episodes": [
+    {
+      "scenario_id": "cmp-t61",
+      "system": "coordinated",
+      "episode_id": "cmp-t61.coordinated.r1",
+      "status": "completed",
+      "turns": 7,
+      "cost_cny": "0.076651",
+      "file": "episodes/cmp-t61.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "cmp-t61",
+      "system": "flat",
+      "episode_id": "cmp-t61.flat.r1",
+      "status": "completed",
+      "turns": 7,
+      "cost_cny": "0.047282",
+      "file": "episodes/cmp-t61.flat.r1.json"
+    },
+    {
+      "scenario_id": "cmp-t62",
+      "system": "coordinated",
+      "episode_id": "cmp-t62.coordinated.r1",
+      "status": "completed",
+      "turns": 7,
+      "cost_cny": "0.047547",
+      "file": "episodes/cmp-t62.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "cmp-t62",
+      "system": "flat",
+      "episode_id": "cmp-t62.flat.r1",
+      "status": "completed",
+      "turns": 7,
+      "cost_cny": "0.045521",
+      "file": "episodes/cmp-t62.flat.r1.json"
+    },
+    {
+      "scenario_id": "cmp-t64",
+      "system": "coordinated",
+      "episode_id": "cmp-t64.coordinated.r1",
+      "status": "completed",
+      "turns": 6,
+      "cost_cny": "0.046579",
+      "file": "episodes/cmp-t64.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "cmp-t64",
+      "system": "flat",
+      "episode_id": "cmp-t64.flat.r1",
+      "status": "completed",
+      "turns": 6,
+      "cost_cny": "0.050481",
+      "file": "episodes/cmp-t64.flat.r1.json"
+    },
+    {
+      "scenario_id": "cmp-t65",
+      "system": "coordinated",
+      "episode_id": "cmp-t65.coordinated.r1",
+      "status": "completed",
+      "turns": 6,
+      "cost_cny": "0.072341",
+      "file": "episodes/cmp-t65.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "cmp-t65",
+      "system": "flat",
+      "episode_id": "cmp-t65.flat.r1",
+      "status": "completed",
+      "turns": 6,
+      "cost_cny": "0.036793",
+      "file": "episodes/cmp-t65.flat.r1.json"
+    },
+    {
+      "scenario_id": "cmp-t66",
+      "system": "coordinated",
+      "episode_id": "cmp-t66.coordinated.r1",
+      "status": "completed",
+      "turns": 4,
+      "cost_cny": "0.033829",
+      "file": "episodes/cmp-t66.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "cmp-t66",
+      "system": "flat",
+      "episode_id": "cmp-t66.flat.r1",
+      "status": "completed",
+      "turns": 4,
+      "cost_cny": "0.024453",
+      "file": "episodes/cmp-t66.flat.r1.json"
+    },
+    {
+      "scenario_id": "cmp-t67",
+      "system": "coordinated",
+      "episode_id": "cmp-t67.coordinated.r1",
+      "status": "completed",
+      "turns": 2,
+      "cost_cny": "0.027698",
+      "file": "episodes/cmp-t67.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "cmp-t67",
+      "system": "flat",
+      "episode_id": "cmp-t67.flat.r1",
+      "status": "completed",
+      "turns": 2,
+      "cost_cny": "0.025526",
+      "file": "episodes/cmp-t67.flat.r1.json"
+    },
+    {
+      "scenario_id": "cmp-t68",
+      "system": "coordinated",
+      "episode_id": "cmp-t68.coordinated.r1",
+      "status": "completed",
+      "turns": 5,
+      "cost_cny": "0.045848",
+      "file": "episodes/cmp-t68.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "cmp-t68",
+      "system": "flat",
+      "episode_id": "cmp-t68.flat.r1",
+      "status": "completed",
+      "turns": 5,
+      "cost_cny": "0.044993",
+      "file": "episodes/cmp-t68.flat.r1.json"
+    },
+    {
+      "scenario_id": "cmp-t61",
+      "system": "coordinated",
+      "episode_id": "cmp-t61.coordinated.r2",
+      "status": "completed",
+      "turns": 7,
+      "cost_cny": "0.045415",
+      "file": "episodes/cmp-t61.coordinated.r2.json"
+    },
+    {
+      "scenario_id": "cmp-t61",
+      "system": "flat",
+      "episode_id": "cmp-t61.flat.r2",
+      "status": "completed",
+      "turns": 7,
+      "cost_cny": "0.029666",
+      "file": "episodes/cmp-t61.flat.r2.json"
+    },
+    {
+      "scenario_id": "cmp-t62",
+      "system": "coordinated",
+      "episode_id": "cmp-t62.coordinated.r2",
+      "status": "completed",
+      "turns": 7,
+      "cost_cny": "0.039970",
+      "file": "episodes/cmp-t62.coordinated.r2.json"
+    },
+    {
+      "scenario_id": "cmp-t62",
+      "system": "flat",
+      "episode_id": "cmp-t62.flat.r2",
+      "status": "completed",
+      "turns": 7,
+      "cost_cny": "0.049569",
+      "file": "episodes/cmp-t62.flat.r2.json"
+    },
+    {
+      "scenario_id": "cmp-t64",
+      "system": "coordinated",
+      "episode_id": "cmp-t64.coordinated.r2",
+      "status": "completed",
+      "turns": 6,
+      "cost_cny": "0.045106",
+      "file": "episodes/cmp-t64.coordinated.r2.json"
+    },
+    {
+      "scenario_id": "cmp-t64",
+      "system": "flat",
+      "episode_id": "cmp-t64.flat.r2",
+      "status": "completed",
+      "turns": 6,
+      "cost_cny": "0.038727",
+      "file": "episodes/cmp-t64.flat.r2.json"
+    },
+    {
+      "scenario_id": "cmp-t65",
+      "system": "coordinated",
+      "episode_id": "cmp-t65.coordinated.r2",
+      "status": "completed",
+      "turns": 6,
+      "cost_cny": "0.022169",
+      "file": "episodes/cmp-t65.coordinated.r2.json"
+    },
+    {
+      "scenario_id": "cmp-t65",
+      "system": "flat",
+      "episode_id": "cmp-t65.flat.r2",
+      "status": "completed",
+      "turns": 6,
+      "cost_cny": "0.028481",
+      "file": "episodes/cmp-t65.flat.r2.json"
+    },
+    {
+      "scenario_id": "cmp-t66",
+      "system": "coordinated",
+      "episode_id": "cmp-t66.coordinated.r2",
+      "status": "completed",
+      "turns": 4,
+      "cost_cny": "0.031965",
+      "file": "episodes/cmp-t66.coordinated.r2.json"
+    },
+    {
+      "scenario_id": "cmp-t66",
+      "system": "flat",
+      "episode_id": "cmp-t66.flat.r2",
+      "status": "completed",
+      "turns": 4,
+      "cost_cny": "0.023976",
+      "file": "episodes/cmp-t66.flat.r2.json"
+    },
+    {
+      "scenario_id": "cmp-t67",
+      "system": "coordinated",
+      "episode_id": "cmp-t67.coordinated.r2",
+      "status": "completed",
+      "turns": 2,
+      "cost_cny": "0.026934",
+      "file": "episodes/cmp-t67.coordinated.r2.json"
+    },
+    {
+      "scenario_id": "cmp-t67",
+      "system": "flat",
+      "episode_id": "cmp-t67.flat.r2",
+      "status": "completed",
+      "turns": 2,
+      "cost_cny": "0.022346",
+      "file": "episodes/cmp-t67.flat.r2.json"
+    },
+    {
+      "scenario_id": "cmp-t68",
+      "system": "coordinated",
+      "episode_id": "cmp-t68.coordinated.r2",
+      "status": "completed",
+      "turns": 5,
+      "cost_cny": "0.044453",
+      "file": "episodes/cmp-t68.coordinated.r2.json"
+    },
+    {
+      "scenario_id": "cmp-t68",
+      "system": "flat",
+      "episode_id": "cmp-t68.flat.r2",
+      "status": "completed",
+      "turns": 5,
+      "cost_cny": "0.034412",
+      "file": "episodes/cmp-t68.flat.r2.json"
+    },
+    {
+      "scenario_id": "cmp-t61",
+      "system": "coordinated",
+      "episode_id": "cmp-t61.coordinated.r3",
+      "status": "completed",
+      "turns": 7,
+      "cost_cny": "0.045344",
+      "file": "episodes/cmp-t61.coordinated.r3.json"
+    },
+    {
+      "scenario_id": "cmp-t61",
+      "system": "flat",
+      "episode_id": "cmp-t61.flat.r3",
+      "status": "completed",
+      "turns": 7,
+      "cost_cny": "0.034043",
+      "file": "episodes/cmp-t61.flat.r3.json"
+    },
+    {
+      "scenario_id": "cmp-t62",
+      "system": "coordinated",
+      "episode_id": "cmp-t62.coordinated.r3",
+      "status": "completed",
+      "turns": 7,
+      "cost_cny": "0.046723",
+      "file": "episodes/cmp-t62.coordinated.r3.json"
+    },
+    {
+      "scenario_id": "cmp-t62",
+      "system": "flat",
+      "episode_id": "cmp-t62.flat.r3",
+      "status": "completed",
+      "turns": 7,
+      "cost_cny": "0.034442",
+      "file": "episodes/cmp-t62.flat.r3.json"
+    },
+    {
+      "scenario_id": "cmp-t64",
+      "system": "coordinated",
+      "episode_id": "cmp-t64.coordinated.r3",
+      "status": "completed",
+      "turns": 6,
+      "cost_cny": "0.046672",
+      "file": "episodes/cmp-t64.coordinated.r3.json"
+    },
+    {
+      "scenario_id": "cmp-t64",
+      "system": "flat",
+      "episode_id": "cmp-t64.flat.r3",
+      "status": "completed",
+      "turns": 6,
+      "cost_cny": "0.035460",
+      "file": "episodes/cmp-t64.flat.r3.json"
+    },
+    {
+      "scenario_id": "cmp-t65",
+      "system": "coordinated",
+      "episode_id": "cmp-t65.coordinated.r3",
+      "status": "completed",
+      "turns": 6,
+      "cost_cny": "0.041275",
+      "file": "episodes/cmp-t65.coordinated.r3.json"
+    },
+    {
+      "scenario_id": "cmp-t65",
+      "system": "flat",
+      "episode_id": "cmp-t65.flat.r3",
+      "status": "completed",
+      "turns": 6,
+      "cost_cny": "0.041072",
+      "file": "episodes/cmp-t65.flat.r3.json"
+    },
+    {
+      "scenario_id": "cmp-t66",
+      "system": "coordinated",
+      "episode_id": "cmp-t66.coordinated.r3",
+      "status": "completed",
+      "turns": 4,
+      "cost_cny": "0.031283",
+      "file": "episodes/cmp-t66.coordinated.r3.json"
+    },
+    {
+      "scenario_id": "cmp-t66",
+      "system": "flat",
+      "episode_id": "cmp-t66.flat.r3",
+      "status": "completed",
+      "turns": 4,
+      "cost_cny": "0.034592",
+      "file": "episodes/cmp-t66.flat.r3.json"
+    },
+    {
+      "scenario_id": "cmp-t67",
+      "system": "coordinated",
+      "episode_id": "cmp-t67.coordinated.r3",
+      "status": "completed",
+      "turns": 2,
+      "cost_cny": "0.020078",
+      "file": "episodes/cmp-t67.coordinated.r3.json"
+    },
+    {
+      "scenario_id": "cmp-t67",
+      "system": "flat",
+      "episode_id": "cmp-t67.flat.r3",
+      "status": "completed",
+      "turns": 2,
+      "cost_cny": "0.023663",
+      "file": "episodes/cmp-t67.flat.r3.json"
+    },
+    {
+      "scenario_id": "cmp-t68",
+      "system": "coordinated",
+      "episode_id": "cmp-t68.coordinated.r3",
+      "status": "completed",
+      "turns": 5,
+      "cost_cny": "0.044800",
+      "file": "episodes/cmp-t68.coordinated.r3.json"
+    },
+    {
+      "scenario_id": "cmp-t68",
+      "system": "flat",
+      "episode_id": "cmp-t68.flat.r3",
+      "status": "completed",
+      "turns": 5,
+      "cost_cny": "0.036564",
+      "file": "episodes/cmp-t68.flat.r3.json"
+    }
+  ],
+  "cost_cny": "1.624742",
+  "finished_at": "2026-10-30T19:03:48+00:00"
+}
