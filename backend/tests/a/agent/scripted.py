@@ -8,13 +8,14 @@ sent to the provider.
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
+from itertools import count
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from wg.agent.llm import ModelAdapter, ModelReply, StubProvider
+from wg.agent.llm import ModelAdapter, ModelReply, StubProvider, ToolCallRequest
 from wg.agent.registry import Services, ToolContext, ToolRegistry
 from wg.agent.turn import AgentTurn, agent_turn
 from wg.contracts.enums import Channel
@@ -37,6 +38,43 @@ class RecordingStub(StubProvider):
         return super().complete(messages, tools)
 
 
+Results = list[dict[str, Any]]
+Step = Callable[[Results], list[tuple[str, dict[str, Any]]]]
+
+
+class ReadingModel:
+    """A model that plays one reply per step; a step sees every tool result of the turn."""
+
+    name = "reading"
+
+    def __init__(self, steps: Sequence[Step], final_text: str = "已为您准备好，等待您确认。"):
+        self.steps = list(steps)
+        self.final_text = final_text
+        self.ids = count()
+        self.results: Results = []
+
+    def complete(
+        self, messages: Sequence[dict[str, Any]], tools: Sequence[dict[str, Any]]
+    ) -> ModelReply:
+        latest = []
+        for message in reversed(messages):
+            if message["role"] != "tool":
+                break
+            latest.insert(0, json.loads(message["content"]))
+        self.results.extend(latest)
+        if not self.steps or not tools:
+            return ModelReply(text=self.final_text, returned_model="test")
+        calls = self.steps.pop(0)(self.results)
+        return ModelReply(
+            text="",
+            tool_calls=tuple(
+                ToolCallRequest(f"call_{next(self.ids)}", name, json.dumps(args), args)
+                for name, args in calls
+            ),
+            returned_model="test",
+        )
+
+
 class Agent:
     def __init__(self, browser: Browser, tmp_path: Path) -> None:
         self.browser = browser
@@ -52,6 +90,15 @@ class Agent:
         self.stub = RecordingStub(path)
         adapter = ModelAdapter(
             self.stub, make_settings(self.tmp_path / "wg.db"), log_path=self.log_path
+        )
+        return agent_turn(
+            adapter, self.registry, customer_id="cus_main", channel=Channel.WEB, text=text
+        )
+
+    def play(self, text: str, model: ReadingModel) -> AgentTurn:
+        """One turn with a model that reacts to the tool results it is sent."""
+        adapter = ModelAdapter(
+            model, make_settings(self.tmp_path / "wg.db"), log_path=self.log_path
         )
         return agent_turn(
             adapter, self.registry, customer_id="cus_main", channel=Channel.WEB, text=text
