@@ -22,7 +22,7 @@ from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.textcheck import MaskKind
 from wg.k6 import challenges
 from wg.k6.db import Reader
-from wg.textcheck.amounts import check_quote, find_amounts
+from wg.textcheck.amounts import amounts_outside, check_quote, find_amounts
 from wg.textcheck.masking import mask_secrets
 
 Span = tuple[int, int]
@@ -31,6 +31,11 @@ Span = tuple[int, int]
 REMARK_MARKERS = ("备注", "附言", "留言", "remark", "note", "комментарий", "назначение")
 # Words that make a written percent limit exclusive ("低于 35%"); others are inclusive.
 STRICT_LIMIT_WORDS = ("低于", "少于", "小于", "不到", "<", "＜", "less than", "below", "менее")
+# Words that name a slot whose amount may be told apart from other amounts in the message.
+SLOT_WORDS: Mapping[str, tuple[str, ...]] = {
+    "fee_cap_fen": ("手续费", "费用", "费率", "fee", "комисс"),
+    "target_fen": ("备用金", "应急", "储备", "reserve", "резерв"),
+}
 # Keys the model never needs; dropped from every payload as a second line behind the views.
 HIDDEN_KEYS = frozenset(
     {"terms_hash", "scope_hash", "code_hmac", "csrf_token", "password", "token_hash"}
@@ -108,10 +113,31 @@ class Utterance:
         return Provenance.USER_UTTERANCE if outside else Provenance.UNTRUSTED_TEXT
 
     def check_amount(self, slot: str, quote: str, amount_fen: int) -> None:
-        """Refuse an amount the message does not state exactly once outside the remark."""
+        """Refuse an amount the message does not state exactly once outside the remark.
+
+        A fee cap or reserve target may be one of several amounts when its quote names the slot.
+        """
         verdict = check_quote(self.text, quote, amount_fen, self.remark_span)
+        if verdict == "MISSING_SLOT" and self._named_by_quote(slot, quote, amount_fen):
+            return
         if verdict != "ok":
             raise WgError(ErrorCode(verdict), {"slots": [slot]})
+
+    def _named_by_quote(self, slot: str, quote: str, amount_fen: int) -> bool:
+        """Whether the message holds several amounts and the quote picks out this slot's one."""
+        words = SLOT_WORDS.get(slot)
+        candidates = amounts_outside(self.text, self.remark_span)
+        if words is None or len({m.fen for m in candidates}) < 2:
+            return False
+        if not any(word in quote.lower() for word in words):
+            return False
+        quoted = find_amounts(quote)
+        if len(quoted) != 1 or quoted[0].fen != amount_fen:
+            return False
+        return any(
+            not self._in_remark(span) and any(_overlaps(span, (m.start, m.end)) for m in candidates)
+            for span in _occurrences(self.text, quote)
+        )
 
     def check_percent(self, slot: str, quote: str, value: Decimal) -> None:
         """The percent limit counterpart of `check_amount`."""
