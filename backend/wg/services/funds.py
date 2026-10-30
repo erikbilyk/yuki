@@ -37,6 +37,7 @@ from wg.contracts.engines import (
     CandidateReason,
     CandidateSearchInput,
     CandidateSearchResult,
+    ExposureGroup,
     HoldingsSnapshot,
     PlanBounds,
     PositionValue,
@@ -93,6 +94,14 @@ SHOCK_LABELS = {
     "macro": "宏观",
 }
 SECTOR_LABELS = {"technology": "科技"}
+
+
+def _require_known_sector(holdings: Sequence[HoldingsSnapshot], sector: str) -> None:
+    """Refuse a sector key the taxonomy does not use; it would read as a 0% share."""
+    known = sorted({row.sector for snapshot in holdings for row in snapshot.rows})
+    if sector not in known:
+        raise WgError(ErrorCode.UNSUPPORTED_REQUEST, {"reason": "unknown_sector", "sectors": known})
+
 
 # The candidate reason a refused plan draft reports, as the error code that names it.
 _REASON_CODES: Mapping[CandidateReason, ErrorCode] = {
@@ -159,6 +168,8 @@ class FundsService:
                 holdings = funds.holdings_snapshots(uow, executable=executable)
                 if not holdings or not positions:
                     raise WgError(ErrorCode.DATA_INCOMPLETE, {"reason": "no_holdings"})
+                if query.group is ExposureGroup.SECTOR:
+                    _require_known_sector(holdings, query.key)
                 result = exposure(positions, holdings, query.group, query.key, query.target_max_pct)
                 stored = calc_results.store(
                     uow,
@@ -225,6 +236,7 @@ class FundsService:
         positions = funds.position_values(uow, customer_id)
         if not holdings or not positions:
             raise WgError(ErrorCode.DATA_INCOMPLETE, {"reason": "no_holdings"})
+        _require_known_sector(holdings, request.sector)
         checkpoint_day = request.checkpoint_day or constants.checkpoint_day
         trade_date = at.astimezone(SHANGHAI).date()
         fee_cap = inclusive_cap_fen(request.fee_cap_fen, strict=not request.fee_cap_inclusive)
