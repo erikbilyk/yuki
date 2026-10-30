@@ -372,7 +372,11 @@ class ToolRegistry:
             "draft_transfer",
             utterance,
             [
-                ("payee_ref", args.payee_quote, None),
+                (
+                    "payee_ref",
+                    args.payee_quote,
+                    lambda u: self._check_payee(context, args.payee_ref, args.payee_quote),
+                ),
                 (
                     "amount_fen",
                     args.amount_quote,
@@ -388,6 +392,21 @@ class ToolRegistry:
             remark=args.remark,
         )
         return self.services.actions.draft_transfer(context.customer_id, draft, AuditActor.AGENT)
+
+    def _check_payee(self, context: ToolContext, payee_ref: str, quote: str) -> None:
+        """The customer's words must name exactly one payee, and the model must have chosen it.
+
+        "王" names both 王磊 and 王芳: the model has to ask, not pick one (T3).
+        """
+        named = [
+            payee.payee_id
+            for payee in self.services.reads.payees(context.customer_id).payees
+            if _names(quote, payee.alias) or _names(quote, payee.display_name)
+        ]
+        if len(named) != 1:
+            raise WgError(ErrorCode.AMBIGUOUS_PAYEE, {"matches": len(named)})
+        if named[0] != payee_ref:
+            raise WgError(ErrorCode.PAYEE_MISMATCH, {})
 
     def _pay_bill(self, context: ToolContext, args: PayBillArgs) -> BaseModel:
         amount = None
@@ -513,6 +532,11 @@ class ToolRegistry:
     def _compose_plan(self, context: ToolContext, args: ComposePlanArgs) -> BaseModel:
         request = ComposePlanRequest(draft_ids=args.draft_ids, depends_on=args.depends_on)
         return self.services.composer.compose(context.customer_id, request, AuditActor.AGENT)
+
+
+def _names(quote: str, name: str) -> bool:
+    """A quote names a payee when it is part of the name or contains the whole name."""
+    return quote in name or name in quote
 
 
 def _slot[T](utterance: Utterance, value: T, quote: str) -> Slot[T]:

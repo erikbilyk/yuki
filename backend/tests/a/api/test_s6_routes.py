@@ -20,7 +20,10 @@ from wg.contracts.api import (
 )
 from wg.contracts.enums import ActionKind, ActionStatus, CheckpointResult, PlanKind, PlanStatus
 from wg.contracts.errors import ErrorBody, ErrorCode
+from wg.contracts.facts import FactConcept
+from wg.core.k7_verify import collect_facts
 from wg.k6.simtime import SHANGHAI
+from wg.textcheck.claims import FEASIBLE_WITH_APPROVAL, check_claims
 
 from .conftest import Browser
 
@@ -357,3 +360,28 @@ def test_after_the_plan_expiry_codes_and_challenges_are_plan_approval_expired(
     assert rows(
         browser, "SELECT COUNT(*) AS n FROM operations WHERE commitment_id = ?", "cmt_insurance"
     ) == [{"n": 0}]
+
+
+@pytest.mark.case("T47")
+def test_a_paused_purchase_states_the_amount_a_new_approval_would_buy(browser: Browser):
+    view = settled_at_t3(browser)
+    new_bill(browser, 160_000)
+    state = browser.client.app.state
+    paused = state.plans.plan("cus_main", view.plan_id)
+    with browser.db.read() as conn:
+        block = collect_facts(conn, [paused], EPOCH)
+    feasible = [
+        f.subject
+        for f in block.facts
+        if f.concept is FactConcept.OPTION_FEASIBILITY and f.value == FEASIBLE_WITH_APPROVAL
+    ]
+    amounts = [
+        f.value
+        for f in block.facts
+        if f.concept is FactConcept.PURCHASE_AMOUNT and f.subject in feasible
+    ]
+    assert amounts == [438_500]
+    assert not check_claims("您可自由支配4,385元，但买入4,385元是不可能的。", block).passed
+    assert check_claims("买入已暂停，您目前可自由支配4,385元。", block).passed
+    assert node(plan_view(browser, view.plan_id), ActionKind.PURCHASE).status is ActionStatus.PAUSED
+    assert rows(browser, "SELECT COUNT(*) AS n FROM plan_revisions") == [{"n": 1}]

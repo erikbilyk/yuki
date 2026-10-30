@@ -121,3 +121,48 @@ def test_t7_ordinary_numbers_reach_the_model_unmasked(agent: Agent):
     result = agent.turn("给妈妈转500", [draft(50_000, "500"), {"text": "好的。"}])
     assert result.masked_text == "给妈妈转500"
     assert "给妈妈转500" in agent.stub.payloads[0]
+
+
+def _transfer(payee_ref: str, payee_quote: str) -> dict:
+    return {
+        "intent": "transfer.create",
+        "payee_ref": payee_ref,
+        "payee_quote": payee_quote,
+        "amount_fen": 50_000,
+        "amount_quote": "500",
+    }
+
+
+@pytest.mark.case("T3")
+def test_t3_a_name_that_fits_two_payees_is_ambiguous_and_drafts_nothing(agent: Agent):
+    outcome = agent.registry.call(
+        agent.context("给王转500"), "draft_transfer", _transfer("pay_wangfang", "王")
+    )
+    assert outcome.error is not None and outcome.error.code is ErrorCode.AMBIGUOUS_PAYEE
+    assert outcome.error.detail == {"slots": ["payee_ref"]}
+    assert agent.transfers() == []
+    refusals = agent.rows("SELECT event, decision FROM audit_log WHERE ref = 'draft_transfer'")
+    assert refusals == [{"event": "tool_refused", "decision": "AMBIGUOUS_PAYEE"}]
+
+
+@pytest.mark.case("T3")
+def test_t3_a_payee_other_than_the_one_named_is_refused(agent: Agent):
+    outcome = agent.registry.call(
+        agent.context("给妈妈转500"), "draft_transfer", _transfer("pay_dad", "妈妈")
+    )
+    assert outcome.error is not None and outcome.error.code is ErrorCode.PAYEE_MISMATCH
+    words = agent.registry.call(
+        agent.context("给妈妈转500"), "draft_transfer", _transfer("pay_mom", "转")
+    )
+    assert words.error is not None and words.error.code is ErrorCode.AMBIGUOUS_PAYEE
+    assert agent.transfers() == []
+
+
+@pytest.mark.case("T3")
+def test_t3_the_payee_the_customer_names_is_drafted(agent: Agent):
+    outcome = agent.registry.call(
+        agent.context("给王芳转500"), "draft_transfer", _transfer("pay_wangfang", "王芳")
+    )
+    assert outcome.ok
+    [params] = agent.transfers()
+    assert (params["payee_id"], params["amount_fen"]) == ("pay_wangfang", 50_000)
