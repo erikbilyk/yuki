@@ -23,6 +23,7 @@ from evals.runner.schema import (
     KillRestart,
     Say,
     Scenario,
+    Sim,
     Step,
     WaitForStatus,
 )
@@ -223,6 +224,8 @@ class Episode:
             self._kill_restart(body, record)
         elif isinstance(body, Fault):
             self._fault(body, record)
+        elif isinstance(body, Sim):
+            self._sim(body, record)
         elif isinstance(body, WaitForStatus):
             self._wait_for_status(body, record)
         else:  # pragma: no cover - the schema lists every step kind
@@ -402,6 +405,15 @@ class Episode:
         record["http_status"] = response.status_code
         if not record["ok"]:
             record["error"] = _body(response)
+
+    def _sim(self, step: Sim, record: dict[str, Any]) -> None:
+        response = self._demo.post(step.post, step.body)
+        record["route"] = step.post
+        record["ok"] = response.status_code < 300
+        record["http_status"] = response.status_code
+        record["response"] = _body(response)
+        if not record["ok"]:
+            self.rec.errors.append(f"POST {step.post} -> {response.status_code}")
 
     def _kill_restart(self, step: KillRestart, record: dict[str, Any]) -> None:
         assert self.backend is not None

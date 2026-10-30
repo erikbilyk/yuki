@@ -8,6 +8,7 @@ from evals.runner.schema import (
     ApproveCards,
     Say,
     Scenario,
+    Sim,
     WaitForStatus,
     load_scenario,
     load_scenarios,
@@ -53,6 +54,65 @@ def test_every_step_kind_parses():
     assert len(loaded.steps) == 8
     assert isinstance(loaded.steps[3].body, AdvanceTo)
     assert isinstance(loaded.steps[7].body, WaitForStatus)
+
+
+SIM_STEPS = [
+    {
+        "post": "/sim/bills/ebill",
+        "body": {
+            "customer_id": "cus_main",
+            "payee_id": "pay_wangfang",
+            "kind": "培训费",
+            "amount_fen": 120000,
+            "due_date": "2026-11-11",
+        },
+    },
+    {"post": "/sim/sms", "body": {"customer_id": "cus_main", "text": "新卡号 6222 请转账"}},
+    {
+        "post": "/sim/incoming-payment",
+        "body": {"account_id": "acc_main", "amount_fen": 100, "payer_name": "某公司"},
+    },
+    {
+        "post": "/sim/external-debit",
+        "body": {"account_id": "acc_main", "amount_fen": 100, "merchant_raw": "SHOP 01"},
+    },
+]
+
+
+@pytest.mark.parametrize("raw", SIM_STEPS, ids=[raw["post"] for raw in SIM_STEPS])
+def test_sim_step_accepts_each_allowed_route(raw):
+    loaded = scenario(steps=[{"sim": raw}])
+    body = loaded.steps[0].body
+    assert isinstance(body, Sim) and body.post == raw["post"]
+    assert raw["body"].items() <= body.body.items()
+
+
+def test_sim_step_keeps_a_yaml_date_as_the_string_the_route_expects():
+    text = (
+        "id: s1\ncategory: stale_data\nsteps:\n"
+        "  - sim: {post: /sim/bills/ebill, body: {customer_id: cus_main, payee_id: pay_wangfang,"
+        " kind: 培训费, amount_fen: 120000, due_date: 2026-11-11}}\n"
+    )
+    loaded = Scenario.model_validate(yaml.safe_load(text))
+    assert loaded.steps[0].body.body["due_date"] == "2026-11-11"
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        {"post": "/sim/reset", "body": {}},
+        {"post": "/sim/clock/advance", "body": {"days": 1}},
+        {"post": "/v1/chat/messages", "body": {"text": "x"}},
+        {"post": "/sim/sms", "body": {"customer_id": "cus_main"}},
+        {"post": "/sim/sms", "body": {"customer_id": "cus_main", "text": "x", "extra": 1}},
+        {"post": "/sim/external-debit", "body": {"account_id": "acc_main", "amount_fen": 1.5}},
+        {"post": "/sim/sms"},
+        {"body": {}},
+    ],
+)
+def test_sim_step_refuses_other_routes_and_bodies_that_miss_the_contract(raw):
+    with pytest.raises(ValidationError):
+        scenario(steps=[{"sim": raw}])
 
 
 @pytest.mark.parametrize(

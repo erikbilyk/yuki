@@ -6,7 +6,21 @@ from pathlib import Path
 from typing import Annotated, Any, Literal, Self
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    ValidationError,
+    model_validator,
+)
+
+from wg.contracts.api import (
+    EbillRequest,
+    ExternalDebitRequest,
+    IncomingPaymentRequest,
+    SimSmsRequest,
+)
 
 Category = Literal[
     "ambiguity",
@@ -93,6 +107,40 @@ class Fault(_Strict):
     persistent: bool = False
 
 
+# The simulator routes a scenario may call, with the contract each body must satisfy.
+SIM_POSTS: dict[str, type[BaseModel]] = {
+    "/sim/bills/ebill": EbillRequest,
+    "/sim/sms": SimSmsRequest,
+    "/sim/incoming-payment": IncomingPaymentRequest,
+    "/sim/external-debit": ExternalDebitRequest,
+}
+
+
+class Sim(_Strict):
+    """Inject one trusted or untrusted input as the demo panel would: `POST <post>` with `body`.
+
+    The body is checked against the route's request contract and kept in its JSON form, so a
+    YAML date (`due_date: 2026-11-11`) becomes the string the route expects.
+    """
+
+    post: str
+    body: dict[str, Any]
+
+    @model_validator(mode="before")
+    @classmethod
+    def _body_fits_route(cls, raw: Any) -> Any:
+        if not isinstance(raw, dict):
+            return raw
+        contract = SIM_POSTS.get(raw.get("post", ""))
+        if contract is None:
+            raise ValueError(f"unknown route {raw.get('post')!r}; expected {', '.join(SIM_POSTS)}")
+        try:
+            checked = contract.model_validate(raw.get("body"))
+        except ValidationError as error:
+            raise ValueError(f"body does not fit {raw['post']}: {error}") from error
+        return {**raw, "body": checked.model_dump(mode="json")}
+
+
 class WaitForStatus(_Strict):
     """Poll until the newest action of `action_kind`, or the newest plan, has one of `status`.
 
@@ -119,6 +167,7 @@ STEP_KINDS: dict[str, type[_Strict]] = {
     "advance_to": AdvanceTo,
     "kill_restart": KillRestart,
     "fault": Fault,
+    "sim": Sim,
     "wait_for_status": WaitForStatus,
 }
 

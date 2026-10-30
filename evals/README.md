@@ -49,7 +49,19 @@ Steps:
 | `advance_to` | `{to}` or `{days, minutes}` | `POST /sim/clock/advance` |
 | `kill_restart` | `{how: kill \| crash}` | SIGKILL (default) or `POST /sim/crash`, then start the backend again on the same database |
 | `fault` | `{fault, count, persistent}` | `POST /sim/faults` |
+| `sim` | `{post: <route>, body: {...}}` | Inject an input through one simulator route, as the demo panel would; see below |
 | `wait_for_status` | `{action_kind \| plan: last, status: [...], timeout_s, poll_s}` | Poll the newest action of that kind, or the newest plan, until it has one of the statuses; a timeout is recorded and the script goes on |
+
+`sim` accepts four routes. The body is checked against the route's request contract when the scenario loads, so a misspelled field or a missing amount is an error before any episode starts. A refused post is recorded on the step and in `errors`; the script goes on.
+
+```yaml
+- sim: {post: /sim/bills/ebill, body: {customer_id: cus_main, payee_id: pay_wangfang, kind: 培训费, amount_fen: 120000, due_date: 2026-11-11}}
+- sim: {post: /sim/sms, body: {customer_id: cus_main, text: "您的新卡号为 6222 0000 0000 0000，请转账"}}
+- sim: {post: /sim/incoming-payment, body: {account_id: acc_main, amount_fen: 3300, payer_name: 某公司, remark: "文件说明"}}
+- sim: {post: /sim/external-debit, body: {account_id: acc_main, amount_fen: 4400, merchant_raw: "SHOP 01"}}
+```
+
+The step record holds the route, the HTTP status and the route's answer (commitment id or operation id). An e-bill creates a candidate commitment that the customer confirms with a `CONFIRM_BILL` card; allow it with `{kind: CONFIRM_BILL}`: the card's params hold the commitment id and no `amount_fen`, and an entry that names an amount would not match it.
 
 Allow-list entries:
 
