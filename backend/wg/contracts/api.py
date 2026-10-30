@@ -1172,6 +1172,7 @@ class SimPostingResult(ContractModel):
 class FeishuMessage(ContractModel):
     message_id: Annotated[str, StringConstraints(min_length=1, max_length=128)]
     open_id: Annotated[str, StringConstraints(min_length=1, max_length=128)]
+    chat_id: Annotated[str, StringConstraints(min_length=1, max_length=128)]
     text: Annotated[str, StringConstraints(max_length=2000)]
 
 

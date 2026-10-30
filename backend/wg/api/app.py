@@ -14,12 +14,26 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from wg.agent.chat import ChatService
 from wg.agent.llm import build_adapter
 from wg.agent.registry import Services, ToolRegistry
-from wg.api import actions, audit, auth, cash, chat, funds, operator, plans, reads, sim, trusted
+from wg.api import (
+    actions,
+    audit,
+    auth,
+    cash,
+    channels,
+    chat,
+    funds,
+    operator,
+    plans,
+    reads,
+    sim,
+    trusted,
+)
 from wg.api.errors import install_error_handlers
 from wg.core import k8_audit as k8
 from wg.core.k1_session import SessionService
 from wg.core.k4_approval import SimulatedSms, StepUp
 from wg.core.k5_coordinator import Coordinator
+from wg.im.service import ImService
 from wg.k6 import faults, fixture
 from wg.k6.db import Database, open_database
 from wg.k6.gateway import Gateway, ResponseDropped
@@ -145,6 +159,9 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
         ToolRegistry(db, Services.from_state(app.state)),
         lambda: build_adapter(settings, build_id=build_id),
     )
+    app.state.im = ImService(
+        db, app.state.chat, code_key=settings.code_hmac_key, web_base_url=settings.web_base_url
+    )
     install_error_handlers(app)
 
     @app.middleware("http")
@@ -172,6 +189,7 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
     app.include_router(trusted.router)
     app.include_router(audit.router)
     app.include_router(chat.router)
+    app.include_router(channels.router)
     app.include_router(operator.router)
     if settings.demo_mode:
         app.include_router(sim.router)
