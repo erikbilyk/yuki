@@ -100,6 +100,11 @@ GET /healthz
 
 # The direct-debit routes of S5-SPEC §3.5 built so far; each arrives with its handler.
 S5_ROUTES = """
+GET /v1/mandates
+GET /v1/merchants
+GET /v1/debit-requests
+GET /v1/debit-requests/{id}
+GET /v1/subscriptions/spend
 POST /sim/debit-requests
 """
 

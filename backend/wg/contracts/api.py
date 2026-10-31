@@ -1512,6 +1512,17 @@ ROUTES: tuple[Route, ...] = (
     _get("/v1/plans", _R.CUSTOMER, _G.READS, PlansView),
     _get("/v1/plans/{id}", _R.CUSTOMER, _G.READS, PlanView),
     _get("/v1/audit", _R.CUSTOMER, _G.READS, AuditView, AuditQuery),
+    _get("/v1/mandates", _R.CUSTOMER, _G.READS, MandatesView),
+    _get("/v1/merchants", _R.CUSTOMER, _G.READS, MerchantsView),
+    _get("/v1/debit-requests", _R.CUSTOMER, _G.READS, DebitRequestsView, DebitRequestsQuery),
+    _get("/v1/debit-requests/{id}", _R.CUSTOMER, _G.READS, DebitRequestView),
+    _get(
+        "/v1/subscriptions/spend",
+        _R.CUSTOMER,
+        _G.READS,
+        SubscriptionSpendView,
+        SubscriptionSpendQuery,
+    ),
     # Drafts (guided UI)
     _post("/v1/drafts/transfer", _R.CUSTOMER, _G.DRAFTS, DraftResult, TransferDraftRequest),
     _post("/v1/drafts/bill", _R.CUSTOMER, _G.DRAFTS, DraftResult, BillDraftRequest),

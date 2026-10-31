@@ -163,6 +163,18 @@ def decide_request(
     return DebitRequestStatus.AWAITING_CLIENT, None
 
 
+def next_debit_date(mandate: MandateRow, today: date) -> date | None:
+    """The next due date on or after today (and the start) while the agreement can be debited.
+
+    None once it is cancelled or expired, or when the next due date lies after `expires_on`.
+    """
+    if mandate.status not in (MandateStatus.ACTIVE, MandateStatus.SUSPENDED):
+        return None
+    start = max(today, mandate.starts_on)
+    due = due_date(mandate.debit_day, _first_period_after(mandate.debit_day, start))
+    return due if due <= mandate.expires_on else None
+
+
 # Protection (S5-SPEC §5.6)
 
 

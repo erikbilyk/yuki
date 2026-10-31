@@ -56,6 +56,13 @@ class DebitRequestRow:
 
 
 @dataclass(frozen=True)
+class PaidRequest:
+    mandate_ref: str
+    amount_fen: int
+    paid_at: datetime
+
+
+@dataclass(frozen=True)
 class Received:
     request: DebitRequestRow
     duplicate: bool
@@ -291,3 +298,42 @@ def mandate_requests(reader: Reader, mandate_ref: str) -> list[DebitRequestRow]:
         (mandate_ref,),
     ).fetchall()
     return [_request(row) for row in rows]
+
+
+def customer_requests(
+    reader: Reader,
+    customer_id: str,
+    *,
+    status: DebitRequestStatus | None = None,
+    mandate_ref: str | None = None,
+) -> list[DebitRequestRow]:
+    """The customer's non-probe requests, newest first (arrival order within one instant)."""
+    sql = "SELECT * FROM debit_requests WHERE customer_id = ? AND probe = 0"
+    params: list[object] = [customer_id]
+    if status is not None:
+        sql += " AND status = ?"
+        params.append(status.value)
+    if mandate_ref is not None:
+        sql += " AND mandate_ref = ?"
+        params.append(mandate_ref)
+    rows = reader.execute(sql + " ORDER BY received_at DESC, rowid DESC", params).fetchall()
+    return [_request(row) for row in rows]
+
+
+def paid_requests(reader: Reader, customer_id: str, since: datetime) -> list[PaidRequest]:
+    """The customer's PAID requests whose payment was submitted since `since`, oldest first."""
+    rows = reader.execute(
+        "SELECT r.mandate_ref, r.amount_fen, o.submitted_at FROM debit_requests r"
+        " JOIN operations o ON o.operation_id = r.operation_id"
+        " WHERE r.customer_id = ? AND r.probe = 0 AND r.status = ? AND o.submitted_at >= ?"
+        " ORDER BY o.submitted_at, r.rowid",
+        (customer_id, DebitRequestStatus.PAID.value, to_db(since)),
+    ).fetchall()
+    return [
+        PaidRequest(
+            mandate_ref=row["mandate_ref"],
+            amount_fen=row["amount_fen"],
+            paid_at=from_db(row["submitted_at"]),
+        )
+        for row in rows
+    ]
