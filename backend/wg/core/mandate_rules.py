@@ -308,6 +308,30 @@ def expiry_changes(requests: Sequence[PendingRequest]) -> tuple[RequestChange, .
     )
 
 
+# Effect verification (S5-SPEC §5.7)
+
+# The changes checked by a probe, with the kind of check each one records.
+PROBE_CHECKS: dict[ActionKind, str] = {
+    ActionKind.MANDATE_CANCEL: "probe_cancel",
+    ActionKind.MANDATE_SUSPEND: "probe_suspend",
+    ActionKind.MANDATE_CAP_LOWER: "probe_cap",
+}
+# A probe answered with one of these shows the change took effect.
+REFUSED_STATUSES = frozenset({DebitRequestStatus.AUTO_DECLINED, DebitRequestStatus.OUT_OF_MANDATE})
+
+
+def probe_amount(kind: ActionKind, mandate: MandateRow, requests: Sequence[RequestState]) -> int:
+    """A closed or suspended agreement is probed at its expected amount, a lower cap 1 fen above."""
+    if ActionKind(kind) is ActionKind.MANDATE_CAP_LOWER:
+        return mandate.cap_fen + 1
+    return expected_amount(mandate, requests)
+
+
+def probe_request_id(operation_id: str, attempt: int) -> str:
+    """The merchant request id of a probe: one per change and attempt."""
+    return f"probe-{operation_id}-{attempt}"
+
+
 # Protection (S5-SPEC §5.6)
 
 

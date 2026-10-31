@@ -10,6 +10,7 @@ The results of the probes that check a change took effect are appended to
 from __future__ import annotations
 
 import json
+from collections.abc import Collection
 from dataclasses import dataclass
 from datetime import date, datetime
 
@@ -322,3 +323,29 @@ def newest_effect_event(reader: Reader, operation_id: str) -> EffectEventRow | N
         (operation_id,),
     ).fetchone()
     return _effect_event(row) if row else None
+
+
+def unverified_changes(
+    reader: Reader, kinds: Collection[str], customer_id: str | None = None
+) -> list[str]:
+    """SETTLED change operations of `kinds` whose newest effect check is missing or pending."""
+    marks = ", ".join("?" for _ in kinds)
+    sql = (
+        f"SELECT o.operation_id FROM operations o WHERE o.kind IN ({marks})"
+        " AND o.status = 'SETTLED' AND COALESCE((SELECT e.result"
+        "  FROM effect_verification_events e WHERE e.operation_id = o.operation_id"
+        "  ORDER BY e.event_id DESC LIMIT 1), 'pending') = 'pending'"
+        + (" AND o.customer_id = ?" if customer_id is not None else "")
+        + " ORDER BY o.rowid"
+    )
+    params: list[object] = list(kinds)
+    if customer_id is not None:
+        params.append(customer_id)
+    return [row["operation_id"] for row in reader.execute(sql, params).fetchall()]
+
+
+def effect_event_count(reader: Reader, operation_id: str) -> int:
+    row = reader.execute(
+        "SELECT COUNT(*) FROM effect_verification_events WHERE operation_id = ?", (operation_id,)
+    ).fetchone()
+    return int(row[0])
