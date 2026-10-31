@@ -339,3 +339,43 @@ def test_text_without_claims_passes() -> None:
     result = check_claims("好的，我来帮您看看。", block())
     assert result.passed
     assert result.claims_checked == 0
+
+
+PLAN_FACTS = block(
+    money("f_target", FactConcept.RESERVE_TARGET, 500000),
+    money("f_fee", FactConcept.FEE, 1500),
+    money("f_rent", FactConcept.BILL_AMOUNT, 340000),
+)
+PLAN_REPLY = """已为您准备好方案：
+**1. 应急备用金 → 5000.00元**
+2. 卖出基金 990003，买入基金 990004，预计手续费 15.00元，检查点在 11 月 7 日
+（3）房租 3400.00元，收款人 王磊 · 本行 ··3344，到期日 2026 年 11 月 4 日，净值 1.0000"""
+
+
+def test_a_correct_reply_with_list_markers_codes_tails_navs_and_spaced_dates_passes() -> None:
+    result = check_claims(PLAN_REPLY, PLAN_FACTS)
+    assert result.passed, result.violations
+    assert result.claims_checked == 3
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "reason", "claim"),
+    [
+        ("3400.00元", "3500.00元", Reason.UNSUPPORTED, "3500.00元"),
+        ("手续费 15.00元", "手续费 16.00元", Reason.VALUE_MISMATCH, "16.00元"),
+        ("5000.00元", "¥5,100", Reason.UNSUPPORTED, "¥5,100"),
+        ("房租 3400.00元", "房租 3500", Reason.UNSUPPORTED, "3500"),
+        (
+            "到期日 2026 年 11 月 4 日",
+            "到期日 2026 年 11 月 4 日，另转500",
+            Reason.UNSUPPORTED,
+            "500",
+        ),
+        ("净值 1.0000", "净值 1.0000，另有1200元", Reason.UNSUPPORTED, "1200元"),
+    ],
+)
+def test_an_unsupported_amount_in_the_same_reply_is_still_reported(
+    old: str, new: str, reason: Reason, claim: str
+) -> None:
+    result = check_claims(PLAN_REPLY.replace(old, new), PLAN_FACTS)
+    assert [(v.reason, v.text) for v in result.violations] == [(reason, claim)]

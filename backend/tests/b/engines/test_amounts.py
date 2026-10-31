@@ -113,6 +113,89 @@ def test_numbers_around_a_date_still_count() -> None:
 
 
 @pytest.mark.parametrize(
+    "text",
+    [
+        "1. 妈妈的收款人是哪一位",
+        "请确认：\n1. 应急备用金\n2. 科技类基金\n3. 房租",
+        "**1. 应急备用金**",
+        "- 2. 科技类基金占比",
+        "3、房租与保险",
+        "（1）先赎回再买入",
+        "好的。（2）再付房租",
+        "1）账户\n2）金额",
+        "卖出基金 990003，买入基金 990004",
+        "赎回 990003 5000 份",
+        "买入约 990004",
+        "产品990003已完成",
+        "基金C（990003）",
+        "990003 卖出，990004 买入",
+        "卖出990003买入990004",
+        "代码 010737",
+        "净值 1.0000",
+        "NAV为1.0000，因此这5000份",
+        "赎回 5,000.0000 份",
+        "收款人 王磊 · 本行 ··3344",
+        "王磊（本行 ··3344）",
+        "到期日 11 月 4 日",
+        "到 11 月 7 日的占比",
+        "2026 年 11 月 7 日",
+        "持有 4 只基金",
+        "共 61 个组合",
+        "1 笔待付账单",
+    ],
+)
+def test_list_markers_codes_navs_account_tails_and_spaced_dates_are_not_amounts(
+    text: str,
+) -> None:
+    assert find_amounts(text) == []
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("1. 房租¥3,400.00", [340000]),
+        ("**1. 应急备用金 → 5000.00元**", [500000]),
+        ("2. 转账 500 元", [50000]),
+        ("（1）手续费 15 元", [1500]),
+        ("王磊 ··3344，金额 ¥3,400", [340000]),
+        ("··3344，3400元", [340000]),
+        ("卖出基金 990003，金额 5000.00元", [500000]),
+        ("赎回 990003 共 5000 元", [500000]),
+        ("买入 990004，金额 4985 元", [498500]),
+        ("净值 1.0000，申购 4985 元", [498500]),
+        ("到 11 月 7 日，手续费 20 元", [2000]),
+        ("11 月 4 日到期 3400 元", [340000]),
+        ("2026 年 11 月 7 日转 500", [50000]),
+        ("共 3 笔，合计 ¥1,200", [120000]),
+        ("买入 4985", [498500]),
+        ("手续费 20", [2000]),
+        ("金额 340000", [34000000]),
+        ("缺口 1500", [150000]),
+    ],
+)
+def test_true_amounts_next_to_those_forms_are_still_found(text: str, expected: list[int]) -> None:
+    assert fens(text) == expected
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("¥1,200", [120000]),
+        ("1200元", [120000]),
+        ("转500", [50000]),
+        ("转 500", [50000]),
+        ("手续费 15", [1500]),
+        ("共1.5万", [15000_00]),
+        ("1. 转500元", [50000]),
+        ("好的。1200元（11 月 7 日）", [120000]),
+        ("11 月 7 日转 20 元", [2000]),
+    ],
+)
+def test_the_money_forms_the_misreads_touch_stay_checked(text: str, expected: list[int]) -> None:
+    assert fens(text) == expected
+
+
+@pytest.mark.parametrize(
     ("text", "comparator", "strict", "fen"),
     [
         ("手续费不超过15元", "<=", False, 1500),
@@ -245,3 +328,21 @@ def test_quote_must_point_at_the_candidate_outside_the_remark() -> None:
 def test_quote_that_is_not_in_the_utterance_is_a_mismatch() -> None:
     assert check_quote("给妈妈转500", "400", 40000, None) == "AMOUNT_MISMATCH"
     assert check_quote("给妈妈转500", "", 50000, None) == "AMOUNT_MISMATCH"
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("已转 500 成功", [50000]),
+        ("金额 500 点击确认", [50000]),
+    ],
+)
+def test_a_space_before_other_words_does_not_turn_an_amount_into_a_count(
+    text: str, expected: list[int]
+) -> None:
+    assert fens(text) == expected
+
+
+@pytest.mark.parametrize("text", ["锁定019018", "保证019018现在的占比", "转990003"])
+def test_a_six_digit_number_outside_a_code_context_is_still_read_as_an_amount(text: str) -> None:
+    assert len(find_amounts(text)) == 1
