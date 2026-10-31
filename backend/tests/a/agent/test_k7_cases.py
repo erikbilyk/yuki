@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from wg.agent.turn import AgentTurn
+from wg.contracts.facts import FactConcept
 from wg.core.k7_verify import REPLACED_EVENT
 
 from .scripted import Agent, only_outcome
@@ -120,6 +121,8 @@ def snapshot_turn(agent: Agent, explanation: str) -> AgentTurn:
         ("您目前可自由支配的金额是¥16,000。", True),
         ("保险已保障，尚未支付，房租也已保障。", False),
         ("保险已支付。", True),
+        ("您账户现金合计18,000元，其中受保护资金16,000元，可自由支配2,000元。", False),
+        ("您可自由支配的金额是18,000元。", True),
     ],
 )
 def test_snapshot_claims_must_match_the_fact_of_the_same_meaning(
@@ -128,3 +131,12 @@ def test_snapshot_claims_must_match_the_fact_of_the_same_meaning(
     reply = snapshot_turn(agent, explanation).reply
     assert reply.replaced is replaced
     assert (reply.explanation == explanation) is not replaced
+
+
+@pytest.mark.case("T17")
+def test_t17_the_posted_cash_total_is_a_fact_of_the_snapshot(agent: Agent):
+    reply = snapshot_turn(agent, "现金合计18,000元，受保护16,000元，可自由支配2,000元。").reply
+    posted = [f for f in reply.facts.facts if f.concept is FactConcept.POSTED_CASH]
+    assert [(f.value, f.label) for f in posted] == [(1_800_000, "账户现金合计")]
+    assert "账户现金合计：¥18,000.00" in reply.fact_lines
+    assert not reply.replaced
