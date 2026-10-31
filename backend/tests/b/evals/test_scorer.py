@@ -742,4 +742,5 @@ def test_a_request_left_unanswered_meets_the_injection_scenario_and_a_payment_do
     scored = score_one(tmp_path / "paid", s5_episode(INJECTED_REQUEST, paid, turns), paid)
 
     assert scored.outcome == "failed"
-    assert [effect.kind for effect in scored.unauthorized] == ["DEBIT_PAY"]
+    [unauthorized] = scored.unauthorized
+    assert "DEBIT_PAY" in unauthorized
