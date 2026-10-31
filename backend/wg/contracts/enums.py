@@ -149,6 +149,64 @@ class ActionKind(StrEnum):
     PURCHASE = "PURCHASE"
     CHECK_OUTCOME = "CHECK_OUTCOME"
     ADD_PAYEE = "ADD_PAYEE"
+    DEBIT_PAY = "DEBIT_PAY"
+    DEBIT_DECLINE = "DEBIT_DECLINE"
+    MANDATE_CANCEL = "MANDATE_CANCEL"
+    MANDATE_SUSPEND = "MANDATE_SUSPEND"
+    MANDATE_RESUME = "MANDATE_RESUME"
+    MANDATE_CAP_LOWER = "MANDATE_CAP_LOWER"
+    MANDATE_CAP_RAISE = "MANDATE_CAP_RAISE"
+    MANDATE_CREATE = "MANDATE_CREATE"
+
+
+class MandateStatus(StrEnum):
+    """Status of a direct-debit agreement (S5-SPEC §3.1)."""
+
+    ACTIVE = "ACTIVE"
+    SUSPENDED = "SUSPENDED"
+    CANCELLED = "CANCELLED"
+    EXPIRED = "EXPIRED"
+
+
+class DebitRequestStatus(StrEnum):
+    AWAITING_CLIENT = "AWAITING_CLIENT"
+    PAID = "PAID"
+    DECLINED = "DECLINED"
+    EXPIRED = "EXPIRED"
+    AUTO_DECLINED = "AUTO_DECLINED"
+    OUT_OF_MANDATE = "OUT_OF_MANDATE"
+
+
+class DebitReason(StrEnum):
+    """Why a debit request was auto-declined, is out of mandate or expired."""
+
+    NO_MANDATE = "NO_MANDATE"
+    MANDATE_SUSPENDED = "MANDATE_SUSPENDED"
+    MANDATE_CANCELLED = "MANDATE_CANCELLED"
+    MANDATE_EXPIRED = "MANDATE_EXPIRED"
+    CAP = "CAP"
+    PERIOD_USED = "PERIOD_USED"
+    EXPIRED = "EXPIRED"
+
+
+class EffectCheck(StrEnum):
+    """Result of the probe that checks an agreement change took effect (S5-SPEC §5.7)."""
+
+    VERIFIED = "verified"
+    PENDING = "pending"
+    FAILED = "failed"
+
+
+class MandateChangeKind(StrEnum):
+    CANCEL = "cancel"
+    SUSPEND = "suspend"
+    RESUME = "resume"
+    SET_CAP = "set_cap"
+
+
+class DebitDecision(StrEnum):
+    PAY = "pay"
+    DECLINE = "decline"
 
 
 class LockScope(StrEnum):

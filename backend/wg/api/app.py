@@ -51,6 +51,9 @@ from wg.settings import REPO_ROOT, Settings
 
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
 
+# Optional feature sets this build serves; clients show their screens only when listed.
+FEATURES = ("s5",)
+
 API_PREFIXES = ("/v1", "/sim", "/healthz", "/docs", "/redoc", "/openapi.json")
 
 SECURITY_HEADERS = {
@@ -176,7 +179,12 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
 
     @app.get("/healthz")
     def healthz() -> dict[str, object]:
-        return {"status": "ok", "build": build_id, "demo": settings.demo_mode, "features": []}
+        return {
+            "status": "ok",
+            "build": build_id,
+            "demo": settings.demo_mode,
+            "features": list(FEATURES),
+        }
 
     app.add_middleware(DropResponse)
 

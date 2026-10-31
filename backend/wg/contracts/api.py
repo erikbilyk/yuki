@@ -13,7 +13,15 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Annotated, Literal
 
-from pydantic import AwareDatetime, BaseModel, Field, StrictBool, StringConstraints, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    Field,
+    StrictBool,
+    StrictInt,
+    StringConstraints,
+    model_validator,
+)
 
 from wg.contracts._base import ContractModel
 from wg.contracts.engines import (
@@ -35,9 +43,15 @@ from wg.contracts.enums import (
     Channel,
     CheckpointResult,
     CommitmentStatus,
+    DebitDecision,
+    DebitReason,
+    DebitRequestStatus,
     Disposition,
+    EffectCheck,
     Fault,
     LockScope,
+    MandateChangeKind,
+    MandateStatus,
     OperationStatus,
     PayeeBank,
     PlanKind,
@@ -63,10 +77,13 @@ from wg.contracts.ids import (
     ChallengeId,
     CommitmentId,
     CustomerId,
+    DebitRequestId,
     EventId,
     FundCode,
     LockId,
     LogicalActionId,
+    MandateRef,
+    MerchantId,
     OperationId,
     OperatorId,
     PayeeId,
@@ -99,6 +116,11 @@ TxnId = Annotated[str, StringConstraints(strict=True, min_length=1, max_length=8
 Remark = Annotated[str, StringConstraints(max_length=64)]
 CheckpointDay = Annotated[int, Field(strict=True, ge=1, le=8)]
 NonNegativeInt = Annotated[int, Field(strict=True, ge=0)]
+DebitDay = Annotated[int, Field(strict=True, ge=1, le=31)]
+# A CST calendar month, the period of a direct-debit request (S5-SPEC §5.1).
+PeriodKey = Annotated[str, StringConstraints(strict=True, pattern=r"^[0-9]{4}-(0[1-9]|1[0-2])$")]
+MerchantText = Annotated[str, StringConstraints(max_length=140)]
+SimText = Annotated[str, StringConstraints(min_length=1, max_length=64)]
 
 # Session (SPEC §6)
 
@@ -240,6 +262,11 @@ class ReceiptView(ContractModel):
     unpaid_after_fen: NonNegativeFen | None = None
     reason_code: ErrorCode | None = None
     created_at: AwareDatetime
+    # Direct-debit kinds only; effect_check only for the changes that are probed (S5-SPEC §5.7).
+    mandate_ref: MandateRef | None = None
+    request_id: DebitRequestId | None = None
+    merchant_display: Label | None = None
+    effect_check: EffectCheck | None = None
 
     @model_validator(mode="after")
     def _reason_only_when_rejected(self) -> ReceiptView:
@@ -337,6 +364,17 @@ class AccountAvailability(ContractModel):
     reconciled: StrictBool | None = None
 
 
+class SubscriptionPeriodState(ContractModel):
+    """A protected direct-debit period inside a cash snapshot (S5-SPEC §5.6)."""
+
+    mandate_ref: MandateRef
+    merchant_display: Label
+    period_key: PeriodKey
+    due_date: date
+    expected_fen: PositiveFen
+    status: Literal[BillStatus.SECURED, BillStatus.UNSECURED, BillStatus.OVERDUE]
+
+
 class CashDetails(ContractModel):
     """计算明细: the formula inputs, per-account availability, monthly estimate, quality."""
 
@@ -351,6 +389,7 @@ class CashDetails(ContractModel):
     monthly_estimate_fen: Fen
     bills: tuple[BillState, ...]
     quality: SnapshotQuality
+    subscriptions: tuple[SubscriptionPeriodState, ...] = ()
 
 
 class CashSnapshotView(CashFields):
@@ -1041,6 +1080,159 @@ class ReconcileResult(ContractModel):
     operations: tuple[OperationView, ...]
 
 
+# Direct-debit agreements (S5-SPEC §3.5)
+
+_REASONED_REQUEST_STATUSES = frozenset(
+    {
+        DebitRequestStatus.AUTO_DECLINED,
+        DebitRequestStatus.OUT_OF_MANDATE,
+        DebitRequestStatus.EXPIRED,
+    }
+)
+
+
+class MerchantView(ContractModel):
+    merchant_id: MerchantId
+    display_name: Label
+
+
+class MerchantsView(ContractModel):
+    """Verified merchants only."""
+
+    merchants: tuple[MerchantView, ...]
+
+
+class ProtectionPeriodView(ContractModel):
+    """`until` is when the protection ends, if known (cancelled agreement, declined request)."""
+
+    period_key: PeriodKey
+    due_date: date
+    expected_fen: PositiveFen
+    until: AwareDatetime | None = None
+
+
+class MandateView(ContractModel):
+    """One agreement; `expected_fen` is the current expected amount of a period."""
+
+    mandate_ref: MandateRef
+    merchant_id: MerchantId
+    merchant_display: Label
+    account_id: AccountId
+    status: MandateStatus
+    expected_fen: PositiveFen
+    cap_fen: PositiveFen
+    period: Literal["monthly"]
+    debit_day: DebitDay
+    next_debit_date: date | None = None
+    starts_on: date
+    expires_on: date
+    version: Revision
+    protection: tuple[ProtectionPeriodView, ...] = ()
+    pending_requests: Count
+
+
+class MandatesView(ContractModel):
+    """`monthly_total_fen` sums `expected_fen` of the ACTIVE agreements."""
+
+    as_of: AwareDatetime
+    monthly_total_fen: NonNegativeFen
+    mandates: tuple[MandateView, ...]
+
+
+class DebitRequestView(ContractModel):
+    """A merchant's debit request; `description_raw` is the merchant's untrusted text."""
+
+    request_id: DebitRequestId
+    mandate_ref: MandateRef
+    merchant_id: MerchantId
+    merchant_display: Label
+    amount_fen: PositiveFen
+    currency: Literal["CNY"]
+    period_key: PeriodKey
+    status: DebitRequestStatus
+    reason_code: DebitReason | None = None
+    received_at: AwareDatetime
+    respond_by: AwareDatetime
+    description_raw: MerchantText
+    payable: StrictBool
+    operation_id: OperationId | None = None
+
+    @model_validator(mode="after")
+    def _reason_and_payable_follow_status(self) -> DebitRequestView:
+        if (self.status in _REASONED_REQUEST_STATUSES) != (self.reason_code is not None):
+            raise ValueError(
+                "reason_code is set exactly for AUTO_DECLINED, OUT_OF_MANDATE and EXPIRED"
+            )
+        if self.payable and self.status is not DebitRequestStatus.AWAITING_CLIENT:
+            raise ValueError("only a request awaiting the customer can be payable")
+        return self
+
+
+class DebitRequestsQuery(ContractModel):
+    status: DebitRequestStatus | None = None
+    mandate_ref: MandateRef | None = None
+
+
+class DebitRequestsView(ContractModel):
+    """The customer's own requests, newest first; probes are never listed."""
+
+    requests: tuple[DebitRequestView, ...]
+
+
+class SubscriptionSpendQuery(ContractModel):
+    days: Annotated[int, Field(ge=1, le=90)] = 90
+
+
+class SubscriptionSpendRow(ContractModel):
+    mandate_ref: MandateRef
+    merchant_display: Label
+    paid_count: Count
+    paid_fen: NonNegativeFen
+    last_paid_on: date | None = None
+    last_amount_fen: PositiveFen | None = None
+
+
+class SubscriptionSpendView(ContractModel):
+    """Paid requests only."""
+
+    days: Annotated[int, Field(strict=True, ge=1, le=90)]
+    rows: tuple[SubscriptionSpendRow, ...]
+    total_fen: NonNegativeFen
+
+
+class MandateChangeRequest(ContractModel):
+    """`cap_fen` is given exactly when the change is `set_cap`."""
+
+    mandate_ref: MandateRef
+    change: MandateChangeKind
+    cap_fen: PositiveFen | None = None
+
+    @model_validator(mode="after")
+    def _cap_only_for_set_cap(self) -> MandateChangeRequest:
+        if (self.change is MandateChangeKind.SET_CAP) != (self.cap_fen is not None):
+            raise ValueError("cap_fen is given exactly when the change is set_cap")
+        return self
+
+
+class DebitDecisionRequest(ContractModel):
+    request_id: DebitRequestId
+    decision: DebitDecision
+
+
+class MandateCreateRequest(ContractModel):
+    merchant_id: MerchantId
+    expected_fen: PositiveFen
+    cap_fen: PositiveFen
+    debit_day: DebitDay
+    months: Annotated[int, Field(strict=True, ge=1, le=12)]
+
+    @model_validator(mode="after")
+    def _cap_covers_expected(self) -> MandateCreateRequest:
+        if self.cap_fen < self.expected_fen:
+            raise ValueError("cap_fen must not be below expected_fen")
+        return self
+
+
 # Simulator (demo mode, SPEC §12.7, §15.3)
 
 
@@ -1155,6 +1347,29 @@ class ExternalDebitRequest(ContractModel):
     account_id: AccountId
     amount_fen: PositiveFen
     merchant_raw: Label
+
+
+class SimDebitRequest(ContractModel):
+    """A merchant's debit request as the simulator receives it (S5-SPEC §5.2).
+
+    Plain strings and any integer on purpose: a malformed amount or currency must reach the
+    request check, which refuses and audits it as FORMAT_ERROR.
+    """
+
+    merchant_id: SimText
+    merchant_request_id: SimText
+    mandate_ref: SimText
+    amount_fen: StrictInt
+    currency: Annotated[str, StringConstraints(min_length=1, max_length=8)]
+    description_raw: MerchantText = ""
+
+
+class SimDebitResult(ContractModel):
+    request_id: DebitRequestId
+    status: DebitRequestStatus
+    reason_code: DebitReason | None = None
+    respond_by: AwareDatetime
+    duplicate: StrictBool
 
 
 class SimPostingResult(ContractModel):

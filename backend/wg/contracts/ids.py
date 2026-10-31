@@ -42,8 +42,8 @@ def new_id(prefix: IdPrefix) -> str:
     return f"{IdPrefix(prefix).value}{secrets.token_hex(8)}"
 
 
-def _prefixed(prefix: IdPrefix) -> StringConstraints:
-    return StringConstraints(strict=True, pattern=rf"^{prefix.value}[a-z0-9_]{{1,64}}$")
+def _prefixed(prefix: IdPrefix, max_suffix: int = 64) -> StringConstraints:
+    return StringConstraints(strict=True, pattern=rf"^{prefix.value}[a-z0-9_]{{1,{max_suffix}}}$")
 
 
 CustomerId = Annotated[str, _prefixed(IdPrefix.CUSTOMER)]
@@ -67,7 +67,8 @@ PurposeId = Annotated[str, _prefixed(IdPrefix.PURPOSE)]
 StatementId = Annotated[str, _prefixed(IdPrefix.STATEMENT)]
 LotId = Annotated[str, _prefixed(IdPrefix.LOT)]
 FeeScheduleId = Annotated[str, _prefixed(IdPrefix.FEE_SCHEDULE)]
-MandateRef = Annotated[str, _prefixed(IdPrefix.MANDATE)]
+# Commitment ids of protected subscription periods embed the suffix (S5-SPEC §5.6).
+MandateRef = Annotated[str, _prefixed(IdPrefix.MANDATE, max_suffix=40)]
 DebitRequestId = Annotated[str, _prefixed(IdPrefix.DEBIT_REQUEST)]
 MerchantId = Annotated[str, _prefixed(IdPrefix.MERCHANT)]
 CardId = Annotated[str, _prefixed(IdPrefix.CARD)]

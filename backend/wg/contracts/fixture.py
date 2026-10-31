@@ -7,10 +7,12 @@ Variant paths are dotted; a segment selects a mapping key or the list element wh
 
 from __future__ import annotations
 
+import calendar
 import copy
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Annotated, Any, Literal
+from zoneinfo import ZoneInfo
 
 import yaml
 from pydantic import (
@@ -25,7 +27,7 @@ from pydantic import (
 
 from wg.contracts._base import ContractModel
 from wg.contracts.engines import FeeTier, HoldingRow, PlanBounds
-from wg.contracts.enums import CommitmentStatus, PayeeBank, Recurrence, Role
+from wg.contracts.enums import CommitmentStatus, MandateStatus, PayeeBank, Recurrence, Role
 from wg.contracts.ids import (
     AccountId,
     CommitmentId,
@@ -33,6 +35,8 @@ from wg.contracts.ids import (
     FeeScheduleId,
     FundCode,
     LotId,
+    MandateRef,
+    MerchantId,
     OperatorId,
     PayeeId,
     PurposeId,
@@ -41,8 +45,11 @@ from wg.contracts.ids import (
 from wg.contracts.money import Fen, Nav, NonNegativeFen, Pct, PositiveFen, Rate, Shares, Weight
 
 _ELEMENT_KEYS = ("id", "source_txn_id")
+# Day offsets count from the epoch's calendar date in Asia/Shanghai, as the loader does.
+_SHANGHAI = ZoneInfo("Asia/Shanghai")
 
 NonNegativeDays = Annotated[int, Field(strict=True, ge=0)]
+DebitDay = Annotated[int, Field(strict=True, ge=1, le=31)]
 Period = Annotated[
     str, StringConstraints(pattern=r"^[0-9]{4}-[0-9]{2}-[0-9]{2}/[0-9]{4}-[0-9]{2}-[0-9]{2}$")
 ]
@@ -185,6 +192,44 @@ class FixturePlanConstants(ContractModel):
     bounds: PlanBounds
 
 
+class FixtureMerchant(ContractModel):
+    """A direct-debit merchant; only verified merchants are in the registry."""
+
+    id: MerchantId
+    display_name: str
+    aliases: tuple[str, ...]
+    settlement_account_ref: str
+    verified: StrictBool
+
+
+class FixtureMandate(ContractModel):
+    """A direct-debit agreement; its term is given as day offsets from the epoch."""
+
+    id: MandateRef
+    customer: CustomerId
+    account: AccountId
+    merchant: MerchantId
+    purpose_id: PurposeId
+    expected_fen: PositiveFen
+    cap_fen: PositiveFen
+    debit_day: DebitDay
+    starts_offset_days: StrictInt
+    expires_offset_days: StrictInt
+    status: Literal[MandateStatus.ACTIVE, MandateStatus.SUSPENDED]
+
+
+def plus_months(day: date, months: int) -> date:
+    """`day` moved by whole calendar months, overflowing into the next month as SQLite does.
+
+    SQLite's `date(d, '+12 months')` turns 2028-02-29 into 2029-03-01; the schema's term
+    check uses it, so the fixture check must agree.
+    """
+    index = day.year * 12 + day.month - 1 + months
+    year, month = divmod(index, 12)
+    last = calendar.monthrange(year, month + 1)[1]
+    return date(year, month + 1, min(day.day, last)) + timedelta(days=max(0, day.day - last))
+
+
 class FixtureVariant(ContractModel):
     set_values: dict[str, Any] = Field(default_factory=dict, alias="set")
     remove: dict[str, tuple[str, ...]] = Field(default_factory=dict)
@@ -210,6 +255,8 @@ class Fixture(ContractModel):
     lots: tuple[FixtureLot, ...]
     holdings_snapshots: tuple[FixtureHoldingsSnapshot, ...]
     plan_constants: FixturePlanConstants
+    merchants: tuple[FixtureMerchant, ...] = ()
+    mandates: tuple[FixtureMandate, ...] = ()
     variants: dict[str, FixtureVariant] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -226,6 +273,8 @@ class Fixture(ContractModel):
                 "products",
                 "fee_schedules",
                 "lots",
+                "merchants",
+                "mandates",
             )
         }
         groups["transactions"] = [
@@ -236,6 +285,16 @@ class Fixture(ContractModel):
         for name, ids in groups.items():
             if len(ids) != len(set(ids)):
                 raise ValueError(f"duplicate id in {name}")
+        return self
+
+    @model_validator(mode="after")
+    def _mandate_terms(self) -> Fixture:
+        epoch_date = self.epoch.astimezone(_SHANGHAI).date()
+        for mandate in self.mandates:
+            starts = epoch_date + timedelta(days=mandate.starts_offset_days)
+            expires = epoch_date + timedelta(days=mandate.expires_offset_days)
+            if not starts <= expires <= plus_months(starts, 12):
+                raise ValueError(f"mandate {mandate.id}: term must run 0 to 12 months")
         return self
 
 

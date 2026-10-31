@@ -3,7 +3,7 @@ import pytest
 from wg.contracts import enums
 from wg.contracts.enums import ACTION_TRANSITIONS, TERMINAL_ACTION_STATUSES, ActionStatus
 
-# Member lists as written in SPEC §8.1, §8.2, §7 and §12.7.
+# Member lists as written in SPEC §8.1, §8.2, §7 and §12.7, and S5-SPEC §3.1.
 SPEC_ENUMS = {
     enums.ActionStatus: "DRAFT AWAITING_APPROVAL AWAITING_STEPUP READY SUBMITTED SETTLED "
     "REJECTED CANCELLED UNKNOWN PAUSED SUPERSEDED",
@@ -18,7 +18,16 @@ SPEC_ENUMS = {
     enums.Provenance: "user_utterance server_record untrusted_text",
     enums.Disposition: "executed clarification infeasible unsupported cancelled no_action",
     enums.ActionKind: "TRANSFER PAY_BILL DESIGNATE_RESERVE CONFIRM_BILL RESOLVE_ITEM CANCEL_BILL "
-    "MARK_PAID_EXTERNAL REDEEM PURCHASE CHECK_OUTCOME ADD_PAYEE",
+    "MARK_PAID_EXTERNAL REDEEM PURCHASE CHECK_OUTCOME ADD_PAYEE DEBIT_PAY DEBIT_DECLINE "
+    "MANDATE_CANCEL MANDATE_SUSPEND MANDATE_RESUME MANDATE_CAP_LOWER MANDATE_CAP_RAISE "
+    "MANDATE_CREATE",
+    enums.MandateStatus: "ACTIVE SUSPENDED CANCELLED EXPIRED",
+    enums.DebitRequestStatus: "AWAITING_CLIENT PAID DECLINED EXPIRED AUTO_DECLINED OUT_OF_MANDATE",
+    enums.DebitReason: "NO_MANDATE MANDATE_SUSPENDED MANDATE_CANCELLED MANDATE_EXPIRED CAP "
+    "PERIOD_USED EXPIRED",
+    enums.EffectCheck: "verified pending failed",
+    enums.MandateChangeKind: "cancel suspend resume set_cap",
+    enums.DebitDecision: "pay decline",
     enums.LockScope: "plan customer global",
     enums.Role: "customer operator demo",
     enums.Channel: "web im",

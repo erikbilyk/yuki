@@ -40,6 +40,9 @@ MESSAGES_ZH: dict[ErrorCode, str] = {
     ErrorCode.UNTRUSTED_SOURCE: "收款人或金额来自外部文字，不能作为指令",
     ErrorCode.IDEMPOTENCY_MISMATCH: "同一操作的内容不一致，未执行",
     ErrorCode.UNKNOWN_ACTION_KIND: "暂不支持该操作",
+    ErrorCode.FORMAT_ERROR: "扣款请求格式不正确，未被受理",
+    ErrorCode.REQUEST_NOT_PAYABLE: "该扣款请求目前不能支付",
+    ErrorCode.MANDATE_CHANGED: "自动扣款协议已有变化，请重新查看",
 }
 
 CLASS_MESSAGES_ZH: dict[ErrorClass, str] = {

@@ -70,6 +70,16 @@ def test_mandate_ref_and_approval_id_never_cross_validate():
         TypeAdapter(ApprovalId).validate_python(mandate)
 
 
+def test_mandate_ref_suffix_fits_a_subscription_commitment_id():
+    # "cmt_sub_" + suffix + "_" + YYYYMM must stay within the 64-character id suffix.
+    longest = "mdt_" + "a" * 40
+    assert TypeAdapter(MandateRef).validate_python(longest) == longest
+    with pytest.raises(ValidationError):
+        TypeAdapter(MandateRef).validate_python(longest + "a")
+    commitment = "cmt_sub_" + "a" * 40 + "_202611"
+    assert TypeAdapter(ids.CommitmentId).validate_python(commitment) == commitment
+
+
 @pytest.mark.parametrize("value", ["apr_", "APR_x", "apr_X1", "apr-1", "xapr_1", " apr_1", 1])
 def test_malformed_ids_are_rejected(value):
     with pytest.raises(ValidationError):
