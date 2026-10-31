@@ -7,7 +7,8 @@
 # layer_gates: per-layer override of `gate` (for example the S variant of T7 gates at G2).
 # applicable:  always | never | feature:<name>, where <name> must appear in the
 #              `features` list of GET /healthz.
-# reason:      why a case is not applicable, or a note on how it is gated.
+# reason:      why a case is not applicable (required for `never`), or a short note such as
+#              why a case is not built.
 
 gates: [G1, G2, G3, G4]
 sets:
@@ -126,25 +127,25 @@ cases:
   T95: {priority: P1, set: S4, title: "Partial capture, reversal, repeated events", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
   T96: {priority: P1, set: S4, title: "Card status and last event diverge", gate: null, layers: [], applicable: "feature:s4", reason: "S4 unscheduled: not started"}
 
-  # S5 direct debits (conditional). Layers are decided when S5 starts; until then any layer counts.
-  T97: {priority: P1, set: S5, title: "List subscriptions and monthly total", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T98: {priority: P0, set: S5, title: "Request 25 under cap 30, customer pays", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T99: {priority: P0, set: S5, title: "Cap boundaries and invalid amounts", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T100: {priority: P0, set: S5, title: "Second request in a period; repeats", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T101: {priority: P0, set: S5, title: "Close the gym direct debit", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T102: {priority: P0, set: S5, title: "Requests after cancel, suspension or expiry", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T103: {priority: P0, set: S5, title: "Pay and cancel in parallel; stale card", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T104: {priority: P0, set: S5, title: "Agreement changes under a lock", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T105: {priority: P0, set: S5, title: "Lost response on payment and kill", gate: GS5, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T106: {priority: P1, set: S5, title: "Cap raise and resume with codes", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T107: {priority: P1, set: S5, title: "New agreement checks", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T108: {priority: P1, set: S5, title: "Request description asks for auto-confirm", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T109: {priority: P1, set: S5, title: "Usage and cancellation claims", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T110: {priority: P1, set: S5, title: "Agreements on the main fixture at T+3", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T111: {priority: P1, set: S5, title: "Unanswered request expires", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T112: {priority: P1, set: S5, title: "Agreement status and last event diverge", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T113: {priority: P2, set: S5, title: "Card subscription, refund, timed pause", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
-  T114: {priority: P2, set: S5, title: "Monthly transfer to mom", gate: null, layers: [], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  # S5 direct debits (conditional): S5-ACCEPTANCE §7.
+  T97: {priority: P1, set: S5, title: "List subscriptions and monthly total", gate: null, layers: [S, L], layer_gates: {L: null}, applicable: "feature:s5"}
+  T98: {priority: P0, set: S5, title: "Request 25 under cap 30, customer pays", gate: GS5, layers: [D, H], applicable: "feature:s5"}
+  T99: {priority: P0, set: S5, title: "Cap boundaries and invalid amounts", gate: GS5, layers: [D, H], applicable: "feature:s5"}
+  T100: {priority: P0, set: S5, title: "Second request in a period; repeats", gate: GS5, layers: [D, H], applicable: "feature:s5"}
+  T101: {priority: P0, set: S5, title: "Close the gym direct debit", gate: GS5, layers: [D, H, S, U, L], layer_gates: {S: null, U: null, L: null}, applicable: "feature:s5"}
+  T102: {priority: P0, set: S5, title: "Requests after cancel, suspension or expiry", gate: GS5, layers: [D, H], applicable: "feature:s5"}
+  T103: {priority: P0, set: S5, title: "Pay and cancel in parallel; stale card", gate: GS5, layers: [D, H], applicable: "feature:s5"}
+  T104: {priority: P0, set: S5, title: "Agreement changes under a lock", gate: GS5, layers: [D, H], applicable: "feature:s5"}
+  T105: {priority: P0, set: S5, title: "Lost response on payment and kill", gate: GS5, layers: [K], applicable: "feature:s5"}
+  T106: {priority: P1, set: S5, title: "Cap raise and resume with codes", gate: null, layers: [D, H], applicable: "feature:s5"}
+  T107: {priority: P1, set: S5, title: "New agreement checks", gate: null, layers: [D, H, S], applicable: "feature:s5"}
+  T108: {priority: P1, set: S5, title: "Request description asks for auto-confirm", gate: null, layers: [D, H, S, L], layer_gates: {L: null}, applicable: "feature:s5"}
+  T109: {priority: P1, set: S5, title: "Usage and cancellation claims", gate: null, layers: [S], applicable: "feature:s5"}
+  T110: {priority: P1, set: S5, title: "Agreements on the main fixture at T+3", gate: null, layers: [D], applicable: "feature:s5", reason: "Not built: a new agreement does not trigger plan continuation"}
+  T111: {priority: P1, set: S5, title: "Unanswered request expires", gate: null, layers: [D, H], applicable: "feature:s5"}
+  T112: {priority: P1, set: S5, title: "Agreement status and last event diverge", gate: null, layers: [D], applicable: "feature:s5"}
+  T113: {priority: P2, set: S5, title: "Card subscription, refund, timed pause", gate: null, layers: [S], applicable: "feature:s5"}
+  T114: {priority: P2, set: S5, title: "Monthly transfer to mom", gate: null, layers: [], applicable: "feature:s5", reason: "Not built: recurring transfers are out of scope"}
 
   # Regressions
   R1: {priority: null, set: R, title: "Bill events 800, 400, 400 and repeats", gate: G1, layers: [D]}
@@ -157,4 +158,4 @@ cases:
   R8: {priority: null, set: R, title: "Unit-of-work failure rules", gate: G3, layers: [D]}
   R9: {priority: null, set: R, title: "Restarts at every plan step", gate: G3, layers: [K]}
   R10: {priority: null, set: R, title: "Write-path scan and read-only connection", gate: G3, layers: [D], reason: "The scan gates G1 through scripts/check.sh; the test gates G3"}
-  R-S5-1: {priority: null, set: S5, title: "Cap raised with several CAP requests", gate: GS5, layers: [D], applicable: "feature:s5", reason: "S5 not started: designed, not implemented"}
+  R-S5-1: {priority: null, set: S5, title: "Cap raised with several CAP requests", gate: GS5, layers: [D], applicable: "feature:s5"}
