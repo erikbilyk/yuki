@@ -11,7 +11,7 @@ settlement and fee income accounts.
 A payment of a merchant's direct-debit request settles in the call that submits it, through
 clearing, and marks the request PAID (S5-SPEC §6.2). A change of a direct-debit agreement
 moves no money; the bank records it and applies it to the agreement and its pending
-requests in the same call.
+requests in the same call. A new agreement is recorded and stored in the same way.
 
 Two fault points live here (SPEC §12.7): `bank_ack_lost` fires after the order and its
 effect are recorded, and `settlement_reject` makes the bank refuse a payment at settlement.
@@ -23,7 +23,7 @@ import json
 import secrets
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any
@@ -343,6 +343,67 @@ def submit_mandate_change(uow: UnitOfWork, order: MandateChangeOrder, at: dateti
         operation_id=order.operation_id,
     )
     debit_requests.apply_changes(uow, pending, changes, AuditActor.CUSTOMER)
+    if faults.consume(uow, Fault.BANK_ACK_LOST):
+        raise AckLost(request)
+    return request
+
+
+@dataclass(frozen=True)
+class MandateCreateOrder:
+    """A new agreement as the customer confirmed it; the ids are minted by the caller."""
+
+    key: str
+    operation_id: str
+    customer_id: str
+    account_id: str
+    merchant_id: str
+    mandate_ref: str
+    purpose_id: str
+    expected_fen: int
+    cap_fen: int
+    debit_day: int
+    starts_on: date
+    expires_on: date
+
+
+def submit_mandate_creation(
+    uow: UnitOfWork, order: MandateCreateOrder, at: datetime
+) -> BankRequest:
+    """Record a new agreement once per key and store it ACTIVE; it settles in the same call.
+
+    No money moves. Raises AckLost, after all of these writes, when `bank_ack_lost` fires.
+    """
+    request = find_request(uow, order.key)
+    if request is not None:
+        return request
+    request = _insert_request(
+        uow,
+        order.key,
+        BankRequestStatus.EXECUTED,
+        {
+            "operation_id": order.operation_id,
+            "mandate_ref": order.mandate_ref,
+            "merchant_id": order.merchant_id,
+            "kind": ActionKind.MANDATE_CREATE.value,
+            "starts_on": order.starts_on.isoformat(),
+            "expires_on": order.expires_on.isoformat(),
+            "settled_at": to_db(at),
+        },
+    )
+    mandates.insert_mandate(
+        uow,
+        mandate_ref=order.mandate_ref,
+        customer_id=order.customer_id,
+        account_id=order.account_id,
+        merchant_id=order.merchant_id,
+        purpose_id=order.purpose_id,
+        expected_fen=order.expected_fen,
+        cap_fen=order.cap_fen,
+        debit_day=order.debit_day,
+        starts_on=order.starts_on,
+        expires_on=order.expires_on,
+        operation_id=order.operation_id,
+    )
     if faults.consume(uow, Fault.BANK_ACK_LOST):
         raise AckLost(request)
     return request

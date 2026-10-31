@@ -175,6 +175,56 @@ def merchant_display(reader: Reader, mandate_ref: str) -> str:
     return row["display_name"]
 
 
+def insert_mandate(
+    uow: UnitOfWork,
+    *,
+    mandate_ref: str,
+    customer_id: str,
+    account_id: str,
+    merchant_id: str,
+    purpose_id: str,
+    expected_fen: int,
+    cap_fen: int,
+    debit_day: int,
+    starts_on: date,
+    expires_on: date,
+    operation_id: str,
+) -> MandateRow:
+    """Store a new ACTIVE agreement with its first status event, in the caller's unit."""
+    uow.execute(
+        "INSERT INTO mandates (mandate_ref, customer_id, account_id, merchant_id, purpose_id,"
+        " expected_fen, cap_fen, debit_day, starts_on, expires_on, status, created_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            mandate_ref,
+            customer_id,
+            account_id,
+            merchant_id,
+            purpose_id,
+            expected_fen,
+            cap_fen,
+            debit_day,
+            starts_on.isoformat(),
+            expires_on.isoformat(),
+            MandateStatus.ACTIVE.value,
+            now_db(uow),
+        ),
+    )
+    append_mandate_event(
+        uow,
+        mandate_ref,
+        STATUS_FIELD,
+        old=None,
+        new=MandateStatus.ACTIVE.value,
+        actor=AuditActor.CUSTOMER,
+        reason="MANDATE_CREATE",
+        operation_id=operation_id,
+    )
+    created = find_mandate(uow, mandate_ref)
+    assert created is not None
+    return created
+
+
 def update_mandate(
     uow: UnitOfWork,
     mandate: MandateRow,
