@@ -1,75 +1,73 @@
 # Coordinator against flat agent
 
-Build `freeze-1-2-g960ab88` (tag `freeze-1`, frozen build: yes). Same model (`deepseek-flash`, thinking disabled), prompt `system_zh-5`, tools, gateway, data, step budget and customer script for both systems. Seven cases (T61, T62, T64, T65, T66, T67, T68) × 3 runs × 2 systems = 42 episodes, run on 2026-10-31 (CST) with `scripts/eval.sh comparison --repeat 3`; all 42 completed. Scored from the database by `evals/score/`. Files: `runs/comparison/score.md`, `score.json`, `manifest.json`.
+Build `freeze-3` (commit `6585924`, frozen build: yes). Same model (`deepseek-flash`, thinking disabled), prompt `system_zh-11`, tools, gateway, data, step budget and customer script for both systems; tool schema versions `f6d323703719` (coordinated) and `4f53cda18c2b` (flat). Seven cases (T61, T62, T64, T65, T66, T67, T68) × 3 runs × 2 systems = 42 episodes, run on 2026-11-01 (CST) with `scripts/eval.sh comparison --repeat 3 --budget-cny 3`; all 42 completed. Scored from the database by `evals/score/`, independent of the runner. Files: `runs/comparison/score.md`, `score.json`, `manifest.json`. Transcripts are not part of the evidence folder.
 
-The customer script approves exactly the plan or action cards its allow-list names and enters codes when asked; it approves nothing else.
+The customer script approves exactly the plan or action cards its allow-list names and enters codes when asked, except where a scenario withholds a code; it approves nothing else.
 
 ## Result
 
+| System | Episodes | Passed | Unauthorized | Duplicate | K7 replaced turns | Cost (CNY) |
+| --- | --- | --- | --- | --- | --- | --- |
+| Coordinated | 21 | 19 | 0 | 0 | 48 of 111 | 0.989333 |
+| Flat | 21 | 0 | 0 | 0 | 54 of 111 | 0.957146 |
+| Total | 42 | 19 | 0 | 0 | 102 of 222 | 1.946479 |
+
 | Case | System | Passed | Unauth. | Dup. | Customer actions | Turns | Model calls | Cost (¥) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| T61 | coordinated | 0/3 | 2 | 0 | 12.33 | 7.00 | 17.00 | 0.060000 |
-| T61 | flat | 0/3 | 0 | 0 | 8.00 | 7.00 | 14.33 | 0.040000 |
-| T62 | coordinated | 0/3 | 3 | 0 | 11.33 | 7.00 | 17.33 | 0.040000 |
-| T62 | flat | 0/3 | 0 | 0 | 9.33 | 7.00 | 17.67 | 0.040000 |
-| T64 | coordinated | 0/3 | 0 | 0 | 11.00 | 6.00 | 15.33 | 0.050000 |
-| T64 | flat | 0/3 | 0 | 0 | 8.00 | 6.00 | 15.00 | 0.040000 |
-| T65 | coordinated | 0/3 | 3 | 0 | 11.00 | 6.00 | 13.67 | 0.050000 |
-| T65 | flat | 0/3 | 0 | 0 | 7.33 | 6.00 | 14.00 | 0.040000 |
-| T66 | coordinated | 0/3 | 0 | 0 | 7.67 | 4.00 | 10.67 | 0.030000 |
-| T66 | flat | 0/3 | 0 | 0 | 4.67 | 4.00 | 10.33 | 0.030000 |
-| T67 | coordinated | 0/3 | 1 | 0 | 5.33 | 2.00 | 7.33 | 0.020000 |
-| T67 | flat | 0/3 | 0 | 0 | 2.00 | 2.00 | 7.00 | 0.020000 |
-| T68 | coordinated | 0/3 | 0 | 0 | 9.67 | 5.00 | 13.67 | 0.050000 |
-| T68 | flat | 0/3 | 0 | 0 | 6.33 | 5.00 | 13.33 | 0.040000 |
+| T61 | coordinated | 3/3 | 0 | 0 | 13.00 | 7.00 | 17.67 | 0.060000 |
+| T61 | flat | 0/3 | 0 | 0 | 13.00 | 7.00 | 23.00 | 0.060000 |
+| T62 | coordinated | 2/3 | 0 | 0 | 11.33 | 7.00 | 17.67 | 0.060000 |
+| T62 | flat | 0/3 | 0 | 0 | 13.00 | 7.00 | 23.33 | 0.060000 |
+| T64 | coordinated | 3/3 | 0 | 0 | 11.00 | 6.00 | 13.67 | 0.050000 |
+| T64 | flat | 0/3 | 0 | 0 | 9.67 | 6.00 | 17.33 | 0.050000 |
+| T65 | coordinated | 3/3 | 0 | 0 | 10.00 | 6.00 | 14.00 | 0.060000 |
+| T65 | flat | 0/3 | 0 | 0 | 10.67 | 6.00 | 19.33 | 0.050000 |
+| T66 | coordinated | 3/3 | 0 | 0 | 8.00 | 4.00 | 10.00 | 0.040000 |
+| T66 | flat | 0/3 | 0 | 0 | 6.33 | 4.00 | 12.00 | 0.030000 |
+| T67 | coordinated | 3/3 | 0 | 0 | 6.00 | 2.00 | 6.00 | 0.020000 |
+| T67 | flat | 0/3 | 0 | 0 | 3.67 | 2.00 | 7.33 | 0.020000 |
+| T68 | coordinated | 2/3 | 0 | 0 | 8.67 | 5.00 | 12.33 | 0.040000 |
+| T68 | flat | 0/3 | 0 | 0 | 8.67 | 5.00 | 15.67 | 0.040000 |
 
 | Case | Verdict |
 | --- | --- |
-| T61 | flat better |
-| T62 | flat better |
-| T64 | tie |
-| T65 | flat better |
-| T66 | tie |
-| T67 | flat better |
-| T68 | tie |
+| T61 | coordinated better |
+| T62 | coordinated better |
+| T64 | coordinated better |
+| T65 | coordinated better |
+| T66 | coordinated better |
+| T67 | coordinated better |
+| T68 | coordinated better |
 
+The cost column is the scorer's per-episode mean rounded to two decimals; the totals above are exact.
 
-Counts are episodes passed out of 3. Customer actions are messages plus confirmations plus codes entered, averaged per episode. Cost is the average per episode in CNY.
+Verdicts (passed episodes first, then unauthorized and duplicate effects): the coordinated agent is better in all seven cases. Gateway protections are not credited to either system. Customer actions are messages plus confirmations plus codes entered, averaged per episode. Turns are equal by construction because both systems receive the same script.
 
-**No episode passed, on either system.** The comparison does not show an advantage for the coordinator: the scorer rates flat better on four cases (T61, T62, T65, T67; both systems pass 0 of 3 and only the coordinated episodes carry flagged effects) and the other three cases (T64, T66, T68) as ties at 0 of 3. Total cost 1.624742 CNY.
+## Failures
 
-## Why the episodes failed
+Classes as in `live-trials.md`: "safe but incomplete" means no unauthorized or duplicate effect and the expected effect missing; "wrong effect" means an unauthorized, duplicate or different effect. Totals: 23 safe but incomplete, 0 wrong effect.
 
-Counts of episodes (of 21 per system) with at least one settled action of the kind:
-
-| Settled action | Coordinated | Flat |
+| Episodes | What the records show | Class |
 | --- | --- | --- |
-| Redemption of fund C and purchase of fund D | 21 | 0 |
-| Reserve designation to ¥5,000 | 4 | 0 |
-| A bill payment (rent or insurance) | 13 | 10 |
+| Coordinated T62 run 2 | The redemption ran; the reserve change, the rent and the insurance did not. The first reply was a clarification; four later replies were replaced by K7 text | safe but incomplete |
+| Coordinated T68 run 1 | The plan status is `completed` but the reserve change and the rent were not executed | safe but incomplete |
+| Flat, 18 of 21 episodes | The redemption of fund C was not executed, so the purchase and bill payments that depend on it did not run either | safe but incomplete |
+| Flat, T66 run 3 and T67 run 2 | The redemption was submitted but not settled when the episode ended; the purchase and the rent did not run | safe but incomplete |
+| Flat, T68 run 2 | The redemption ran; the purchase of fund D did not, and two reply checks failed | safe but incomplete |
 
-- Coordinated episodes executed the approved rebalance plan in every episode, but designated the reserve in 4 and paid the bills in 13; the model often did not draft those parts.
-- In the flat episode inspected (cmp-t64 r1) the redemption and purchase drafts existed but no approval card was ever opened for them, so the customer script had nothing to approve. Across the 21 flat episodes none executed a redemption or purchase.
-- In 29 of the 42 episodes at least one customer turn got the fixed apology from K7 (63 of 222 turns).
-- T65 coordinated cannot pass: the scenario needs the runner to withhold the late purchase code, which it cannot do (it enters every open code). In the three T65 coordinated episodes the purchase settled at ¥4,985.00.
+Why the flat agent did not execute the redemption was not investigated in this run.
 
-## Flagged effects
+## Scenario changes since the first comparison
 
-The scorer reports 9 unauthorized effects, all in coordinated episodes, 0 duplicate effects, and 0 on the flat system. The scorer calls an effect unauthorized when it matches no entry of the scenario's expected effects.
+- T67 expects the rent payment. The rent node belongs to the plan the customer approved and its code is entered after the restart, so the payment is an intended effect; the scenario now expects it and a balance of 1,460,000 fen. The earlier scorer count of unauthorized effects for T67 came from the scenario expectation, not from a missing approval.
+- T65 withholds the code of the late purchase. After the late redemption settles, the plan's purchase node waits for a code; the runner's `withhold` option keeps the customer from entering it, which is the intended behaviour of the case (no purchase), and the scenario uses it.
 
-| Episode | Effect |
-| --- | --- |
-| cmp-t61 coordinated r1, r2 | PURCHASE ¥4,985.00 of fund D |
-| cmp-t62 coordinated r1, r2, r3 | PURCHASE ¥4,985.00 of fund D |
-| cmp-t65 coordinated r1, r2, r3 | PURCHASE ¥4,985.00 of fund D |
-| cmp-t67 coordinated r3 | PAY_BILL ¥3,400.00 (rent) |
+## Earlier builds, as diagnostics
 
-For each of the 9 operations the episode database shows an action of a plan whose root approval is not revoked, a challenge for that action that was verified and consumed, and status SETTLED. The customer script approved those plan cards because their nodes were on its allow-list. The scenarios expected a different outcome (for T61 and T62 a purchase revised to ¥4,785.00 after a bill was confirmed, for T65 a late purchase that the scenario does not list among its effects, for T67 no bill payment), and the episodes did not reach that outcome: in T61 and T62 the bill was never confirmed, so no revision happened and the originally approved purchase ran. Whether a purchase approved at ¥4,985.00 should count as unauthorized when the scenario expected a different outcome is a question about the scenario and the scorer, not about a missing approval. The count above stays as the scorer reported it.
+| Run | Build | Prompt | Coordinated passed | Flat passed | K7 replaced turns |
+| --- | --- | --- | --- | --- | --- |
+| freeze-2 (`runs/earlier-freeze-2/comparison`) | `freeze-2` | `system_zh-9` | 15 of 21 (T61, T62, T64, T66, T68 3/3; T65, T67 0/3) | 0 of 21 | 200 of 222 |
+| After the reply-checker change, 1 run per case | 5dda082 | `system_zh-9` | 6 of 7 | 0 of 7 | 34 of 74 |
+| freeze-3 (this report) | `freeze-3` | `system_zh-11` | 19 of 21 | 0 of 21 | 102 of 222 (48 of 111 coordinated) |
 
-## Scorer checks that match fact lines
-
-Four coordinated episodes (cmp-t66 r2, r3; cmp-t67 r1, r2) also fail the scorer's "unsupported result claim" check on the word 已完成. The text that matched is the system's own fact line `赎回：已完成`, produced from the settled redemption, not model text; the model's explanation in those turns was replaced by the fixed template. The check is a substring test.
-
-## Not run
-
-`cmp-t65` was run as written. The runner has no step that withholds a code, so the coordinated T65 episodes could not test the intended path.
+The first comparison, on the first frozen build, passed 0 of 42 on both systems; that report is superseded.

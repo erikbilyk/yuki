@@ -1,12 +1,13 @@
 {
-  "build": "freeze-1-2-g960ab88",
-  "freeze_tag": "freeze-1",
+  "build": "freeze-3",
+  "freeze_tag": "freeze-3",
   "frozen": true,
-  "generated_at": "2026-10-30T18:06:42Z",
+  "generated_at": "2026-10-31T21:46:36Z",
   "environment": {
     "python": "3.12.16",
     "pytest": "9.2.0",
     "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "executable": "backend/.venv/bin/python",
     "llm_provider": "stub"
   },
   "fixture_hash": "11049f3d1e62dff51695cf20c14cb236a36b71e457d7b75f4338448bd2fcac04",
@@ -24,18 +25,20 @@
   "runs": [
     {
       "exit_status": 0,
-      "duration_s": 374.9
+      "duration_s": 700.6
     },
     {
       "exit_status": 0,
-      "duration_s": 374.5
+      "duration_s": 712.9
     },
     {
       "exit_status": 0,
-      "duration_s": 397.1
+      "duration_s": 709.8
     }
   ],
-  "features": [],
+  "features": [
+    "s5"
+  ],
   "features_error": [],
   "unknown_cases": [],
   "cases": {
@@ -3531,13 +3534,43 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
-      "external_layers": [],
-      "variants": {},
+      "layers": [
+        "S",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
+      "external_layers": [
+        "L"
+      ],
+      "variants": {
+        "S": {
+          "test_t97_an_amount_the_list_does_not_hold_is_replaced[agreement]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t97_an_amount_the_list_does_not_hold_is_replaced[total]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t97_the_list_is_read_in_scope_and_becomes_agreement_facts": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t97_the_question_creates_no_action_and_moves_no_money": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T98": {
@@ -3545,13 +3578,84 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
       "external_layers": [],
-      "variants": {},
+      "variants": {
+        "D": {
+          "test_t98_a_payment_counts_in_the_day_sum_after_a_transfer": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t98_a_payment_counts_in_the_day_sum_before_a_transfer": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t98_a_request_above_the_expected_amount_draws_on_headroom": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t98_a_second_payment_attempt_for_the_same_request_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t98_one_yuan_over_the_day_limit_makes_the_payment_red": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t98_the_customer_pays_a_request_at_the_expected_amount": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t98_a_payment_counts_in_the_day_sum_after_a_transfer": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t98_a_payment_counts_in_the_day_sum_before_a_transfer": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t98_a_request_above_the_expected_amount_draws_on_headroom": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t98_a_second_payment_attempt_for_the_same_request_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t98_one_yuan_over_the_day_limit_makes_the_payment_red": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t98_the_customer_pays_a_request_at_the_expected_amount": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T99": {
@@ -3559,13 +3663,94 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
       "external_layers": [],
-      "variants": {},
+      "variants": {
+        "D": {
+          "test_t99_a_non_positive_amount_is_refused_audited_and_not_stored[negative]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t99_a_non_positive_amount_is_refused_audited_and_not_stored[zero]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t99_a_request_above_the_cap_cannot_be_drafted_for_payment_or_decline": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t99_a_request_at_the_cap_can_be_drafted_for_payment": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t99_a_request_at_the_cap_is_accepted_and_one_fen_above_is_not": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t99_the_order_of_the_two_requests_does_not_matter": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t99_the_transfer_route_has_no_merchant_or_request_field": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t99_a_non_positive_amount_is_refused_audited_and_not_stored[negative]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t99_a_non_positive_amount_is_refused_audited_and_not_stored[zero]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t99_a_request_above_the_cap_cannot_be_drafted_for_payment_or_decline": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t99_a_request_at_the_cap_can_be_drafted_for_payment": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t99_a_request_at_the_cap_is_accepted_and_one_fen_above_is_not": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t99_the_order_of_the_two_requests_does_not_matter": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t99_the_transfer_route_has_no_merchant_or_request_field": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T100": {
@@ -3573,13 +3758,144 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
       "external_layers": [],
-      "variants": {},
+      "variants": {
+        "D": {
+          "test_t100_a_declined_period_takes_no_other_request": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_a_fourth_request_in_a_period_is_period_used_or_above_the_cap": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_a_paid_period_takes_no_other_request": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_a_repeated_merchant_request_id_returns_the_original": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_a_second_request_while_the_first_waits_is_period_used": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_of_two_parallel_requests_exactly_one_waits": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_requests_either_side_of_midnight_fall_into_two_periods": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_splitting_4500_does_not_get_two_requests_through[big-first]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_splitting_4500_does_not_get_two_requests_through[small-first]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_stored_rows_equal_the_distinct_merchant_request_ids": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_the_same_request_sent_in_parallel_is_stored_once": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_three_stored_requests_close_the_period_even_if_none_waits": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t100_a_declined_period_takes_no_other_request": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_a_fourth_request_in_a_period_is_period_used_or_above_the_cap": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_a_paid_period_takes_no_other_request": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_a_repeated_merchant_request_id_returns_the_original": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_a_second_request_while_the_first_waits_is_period_used": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_of_two_parallel_requests_exactly_one_waits": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_requests_either_side_of_midnight_fall_into_two_periods": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_splitting_4500_does_not_get_two_requests_through[big-first]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_splitting_4500_does_not_get_two_requests_through[small-first]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_stored_rows_equal_the_distinct_merchant_request_ids": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_the_same_request_sent_in_parallel_is_stored_once": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t100_three_stored_requests_close_the_period_even_if_none_waits": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T101": {
@@ -3587,13 +3903,118 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
-      "external_layers": [],
-      "variants": {},
+      "layers": [
+        "D",
+        "H",
+        "S",
+        "U",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed",
+        "S": "passed"
+      },
+      "external_layers": [
+        "U",
+        "L"
+      ],
+      "variants": {
+        "D": {
+          "test_t101_a_timed_out_check_stays_pending_and_is_retried": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t101_a_waiting_request_is_declined_with_the_agreement": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t101_closing_the_gym_agreement_settles_and_is_verified": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t101_protection_stays_until_the_debit_day_has_passed": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t101_a_timed_out_check_stays_pending_and_is_retried": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t101_a_waiting_request_is_declined_with_the_agreement": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t101_closing_the_gym_agreement_settles_and_is_verified": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t101_protection_stays_until_the_debit_day_has_passed": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "S": {
+          "test_t101_a_cancelled_subscription_is_never_reported_even_after_a_verified_check[noun]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t101_a_cancelled_subscription_is_never_reported_even_after_a_verified_check[unsubscribed]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t101_a_cancelled_subscription_is_never_reported_even_after_a_verified_check[verb]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t101_a_cancelled_subscription_is_never_reported_even_after_a_verified_check[with-closing]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t101_a_draft_closes_nothing_and_the_reply_may_not_say_it_did": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t101_a_plain_description_of_the_draft_stands": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t101_the_chat_closing_leaves_the_same_rows_as_the_guided_form": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t101_the_closing_is_stated_after_the_verified_check": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t101_while_the_check_is_pending_the_closing_is_not_stated[probe_timeout]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T102": {
@@ -3601,13 +4022,94 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
       "external_layers": [],
-      "variants": {},
+      "variants": {
+        "D": {
+          "test_t102_a_request_a_minute_before_the_expiry_is_still_accepted": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t102_a_request_after_the_agreement_expired_is_declined": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t102_a_request_after_the_cancel_is_declined": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t102_a_request_waiting_at_the_expiry_is_declined_with_it": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t102_a_request_while_the_agreement_is_suspended_is_declined": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t102_a_suspend_declines_waiting_requests_and_later_ones": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t102_one_clock_advance_past_the_expiry_stops_at_the_expiry_instant": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t102_a_request_a_minute_before_the_expiry_is_still_accepted": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t102_a_request_after_the_agreement_expired_is_declined": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t102_a_request_after_the_cancel_is_declined": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t102_a_request_waiting_at_the_expiry_is_declined_with_it": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t102_a_request_while_the_agreement_is_suspended_is_declined": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t102_a_suspend_declines_waiting_requests_and_later_ones": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t102_one_clock_advance_past_the_expiry_stops_at_the_expiry_instant": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T103": {
@@ -3615,13 +4117,104 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
       "external_layers": [],
-      "variants": {},
+      "variants": {
+        "D": {
+          "test_t103_a_cap_that_still_covers_the_request_changes_the_card_not_the_request": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t103_a_changed_agreement_refuses_a_stale_card_even_when_the_request_is_waiting": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t103_answering_a_request_closes_the_card_of_the_other_answer": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t103_lowering_the_cap_below_the_request_closes_the_payment_card": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[1]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[2]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[3]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[4]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t103_a_cap_that_still_covers_the_request_changes_the_card_not_the_request": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t103_a_changed_agreement_refuses_a_stale_card_even_when_the_request_is_waiting": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t103_answering_a_request_closes_the_card_of_the_other_answer": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t103_lowering_the_cap_below_the_request_closes_the_payment_card": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[1]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[2]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[3]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[4]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T104": {
@@ -3629,13 +4222,84 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
       "external_layers": [],
-      "variants": {},
+      "variants": {
+        "D": {
+          "test_t104_a_new_agreement_is_refused_or_not_built": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t104_closing_lowering_suspending_and_declining_still_work": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t104_paying_is_refused_at_the_draft_and_at_an_open_card": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t104_raising_a_cap_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t104_reads_and_reconciliation_keep_working_under_the_lock": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t104_resuming_a_suspended_agreement_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t104_a_new_agreement_is_refused_or_not_built": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t104_closing_lowering_suspending_and_declining_still_work": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t104_paying_is_refused_at_the_draft_and_at_an_open_card": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t104_raising_a_cap_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t104_reads_and_reconciliation_keep_working_under_the_lock": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t104_resuming_a_suspended_agreement_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T105": {
@@ -3643,13 +4307,45 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "layers": [
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "K": "passed"
+      },
       "external_layers": [],
-      "variants": {},
+      "variants": {
+        "K": {
+          "test_t105_a_lost_bank_acknowledgement_is_settled_by_reconciliation": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t105_lost_response_on_the_payment_and_restart[crash_after_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t105_lost_response_on_the_payment_and_restart[crash_before_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t105_lost_response_on_the_payment_and_restart[pause_after_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t105_lost_response_on_the_payment_and_restart[pause_before_commit]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T106": {
@@ -3657,13 +4353,114 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
       "external_layers": [],
-      "variants": {},
+      "variants": {
+        "D": {
+          "test_t106_a_customer_session_cannot_call_the_merchant_simulator": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_a_user_confirmed_field_gives_no_authority[raise]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_a_user_confirmed_field_gives_no_authority[resume]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_an_expired_code_is_refused_and_a_new_code_works[raise]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_an_expired_code_is_refused_and_a_new_code_works[resume]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_the_change_runs_only_after_the_correct_code[raise]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_the_change_runs_only_after_the_correct_code[resume]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_the_code_of_another_challenge_is_refused[raise]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_the_code_of_another_challenge_is_refused[resume]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t106_a_customer_session_cannot_call_the_merchant_simulator": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_a_user_confirmed_field_gives_no_authority[raise]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_a_user_confirmed_field_gives_no_authority[resume]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_an_expired_code_is_refused_and_a_new_code_works[raise]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_an_expired_code_is_refused_and_a_new_code_works[resume]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_the_change_runs_only_after_the_correct_code[raise]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_the_change_runs_only_after_the_correct_code[resume]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_the_code_of_another_challenge_is_refused[raise]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t106_the_code_of_another_challenge_is_refused[resume]": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T107": {
@@ -3671,13 +4468,96 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "implemented",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed",
+        "S": "missing"
+      },
       "external_layers": [],
-      "variants": {},
+      "variants": {
+        "D": {
+          "test_t107_a_draft_alone_creates_no_agreement_and_no_protection": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t107_a_registry_merchant_gets_a_red_card_and_an_active_agreement": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t107_a_term_over_twelve_months_is_refused[13]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t107_a_term_over_twelve_months_is_refused[24]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t107_an_unknown_merchant_is_not_found": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t107_an_unverified_merchant_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t107_the_registry_lists_music_and_not_the_unverified_merchant": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t107_a_draft_alone_creates_no_agreement_and_no_protection": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t107_a_registry_merchant_gets_a_red_card_and_an_active_agreement": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t107_a_term_over_twelve_months_is_refused[13]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t107_a_term_over_twelve_months_is_refused[24]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t107_an_unknown_merchant_is_not_found": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t107_an_unverified_merchant_is_refused": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t107_the_registry_lists_music_and_not_the_unverified_merchant": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T108": {
@@ -3685,13 +4565,101 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
-      "external_layers": [],
-      "variants": {},
+      "layers": [
+        "D",
+        "H",
+        "S",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed",
+        "S": "passed"
+      },
+      "external_layers": [
+        "L"
+      ],
+      "variants": {
+        "D": {
+          "test_t108_nothing_happens_by_itself_until_the_request_expires": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t108_text_naming_an_account_or_an_amount_changes_neither": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t108_the_legitimate_request_is_paid_only_after_the_customers_confirm": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t108_the_text_is_stored_unchanged_and_creates_no_action": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t108_nothing_happens_by_itself_until_the_request_expires": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t108_text_naming_an_account_or_an_amount_changes_neither": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t108_the_legitimate_request_is_paid_only_after_the_customers_confirm": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t108_the_text_is_stored_unchanged_and_creates_no_action": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "S": {
+          "test_t108_a_decision_quoted_from_the_merchants_text_is_refused[part-of-remark]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t108_a_decision_quoted_from_the_merchants_text_is_refused[pay-word-not-said]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t108_a_decision_quoted_from_the_merchants_text_is_refused[whole-remark]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t108_the_customers_message_without_a_pay_word_is_not_a_decision": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t108_the_decline_needs_the_customers_decline_word_too": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t108_the_legitimate_request_is_drafted_on_the_customers_words_and_paid_on_confirm": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T109": {
@@ -3699,13 +4667,65 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
       "external_layers": [],
-      "variants": {},
+      "variants": {
+        "S": {
+          "test_t109_a_cancelled_subscription_is_always_replaced[\\u5065\\u8eab\\u623f\\u7684\\u8ba2\\u9605\\u5df2\\u53d6\\u6d88\\u3002]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t109_a_cancelled_subscription_is_always_replaced[\\u60a8\\u7684\\u8ba2\\u9605\\u5df2\\u7ecf\\u88ab\\u53d6\\u6d88\\u4e86\\uff0c\\u4e0d\\u4f1a\\u518d\\u6263\\u6b3e\\u3002]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t109_a_figure_about_usage_or_a_debit_that_did_not_happen_is_replaced[debit-never-made]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t109_a_figure_about_usage_or_a_debit_that_did_not_happen_is_replaced[usage-figure]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t109_after_a_verified_closing_the_closing_stands_and_the_cancelling_does_not": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t109_an_honest_answer_about_cancelling_stands": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t109_closing_is_not_claimed_while_no_check_exists[\\u4e09\\u9879\\u81ea\\u52a8\\u6263\\u6b3e\\u90fd\\u5df2\\u505c\\u6b62\\u3002]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t109_closing_is_not_claimed_while_no_check_exists[\\u5065\\u8eab\\u623f\\u7684\\u81ea\\u52a8\\u6263\\u6b3e\\u5df2\\u5173\\u95ed\\u3002]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t109_the_bank_holds_no_usage_so_no_usage_fact_exists": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T110": {
@@ -3713,11 +4733,15 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": "Not built: a new agreement does not trigger plan continuation",
+      "status": "specified",
+      "layer_results": {
+        "D": "missing"
+      },
       "external_layers": [],
       "variants": {},
       "messages": []
@@ -3727,13 +4751,74 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed",
+        "H": "passed"
+      },
       "external_layers": [],
-      "variants": {},
+      "variants": {
+        "D": {
+          "test_t111_a_card_open_at_the_reply_time_cannot_be_confirmed": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t111_a_declined_request_keeps_its_period_and_protection_until_the_reply_time": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t111_an_expired_request_can_neither_be_paid_nor_declined": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t111_an_unanswered_request_expires_at_its_reply_time": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t111_the_expiry_is_recorded_at_the_reply_time_after_a_long_jump": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        },
+        "H": {
+          "test_t111_a_card_open_at_the_reply_time_cannot_be_confirmed": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t111_a_declined_request_keeps_its_period_and_protection_until_the_reply_time": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t111_an_expired_request_can_neither_be_paid_nor_declined": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t111_an_unanswered_request_expires_at_its_reply_time": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t111_the_expiry_is_recorded_at_the_reply_time_after_a_long_jump": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T112": {
@@ -3741,13 +4826,60 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
       "external_layers": [],
-      "variants": {},
+      "variants": {
+        "D": {
+          "test_t112_a_change_draft_fails_even_when_it_reduces_risk[cancel]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t112_a_change_draft_fails_even_when_it_reduces_risk[suspend]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t112_a_decision_draft_fails[decline]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t112_a_decision_draft_fails[pay]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t112_a_merchant_request_naming_the_agreement_fails_and_locks[CANCELLED]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t112_a_merchant_request_naming_the_agreement_fails_and_locks[EXPIRED]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t112_a_merchant_request_naming_the_agreement_fails_and_locks[SUSPENDED]": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t112_reads_and_operator_reconciliation_keep_working": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T113": {
@@ -3755,13 +4887,35 @@
       "set": "S5",
       "priority": "P2",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "S": "passed"
+      },
       "external_layers": [],
-      "variants": {},
+      "variants": {
+        "S": {
+          "test_t113_a_new_card_subscription_and_a_refund_have_no_tool_and_no_draft": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t113_a_refund_is_not_reported_as_made": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_t113_the_pause_is_one_suspend_draft_and_does_not_resume_by_itself": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     },
     "T114": {
@@ -3770,9 +4924,9 @@
       "priority": "P2",
       "gate": null,
       "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "applicable": true,
+      "reason": "Not built: recurring transfers are out of scope",
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -4156,12 +5310,42 @@
       "layers": [
         "D"
       ],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
-      "layer_results": {},
+      "applicable": true,
+      "reason": null,
+      "status": "reproducible",
+      "layer_results": {
+        "D": "passed"
+      },
       "external_layers": [],
-      "variants": {},
+      "variants": {
+        "D": {
+          "test_rs51_a_paid_period_and_a_late_request_together": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_rs51_a_period_with_a_paid_request_promotes_nothing": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_rs51_a_request_past_its_reply_time_is_left_alone": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_rs51_each_period_promotes_its_own_earliest_request": [
+            "passed",
+            "passed",
+            "passed"
+          ],
+          "test_rs51_the_earliest_eligible_request_is_promoted_and_nothing_is_paid": [
+            "passed",
+            "passed",
+            "passed"
+          ]
+        }
+      },
       "messages": []
     }
   },
@@ -4215,11 +5399,11 @@
       "S5": {
         "cases": 19,
         "p0": 8,
-        "applicable": 0,
-        "not_applicable": 19,
-        "implemented": 0,
-        "passed": 0,
-        "reproducible": 0
+        "applicable": 19,
+        "not_applicable": 0,
+        "implemented": 17,
+        "passed": 16,
+        "reproducible": 16
       },
       "R": {
         "cases": 10,
@@ -4270,18 +5454,18 @@
           "T60/U"
         ],
         "result": "passed"
+      },
+      "GS5": {
+        "gate": "GS5",
+        "required": 16,
+        "passed": 16,
+        "failed": [],
+        "missing": [],
+        "external_not_run": [],
+        "result": "passed"
       }
     }
   },
   "gate_verdict": null,
-  "failed_tests": [],
-  "release": {
-    "tag": "freeze-1",
-    "frozen_check": "git diff --quiet freeze-1 -- backend frontend (exit 0 before and after every block)",
-    "repeat_runs_report": "reports/acceptance-freeze-1-2-g960ab88-20261030T180642Z.json",
-    "earlier_repeat_report_with_error": "reports/acceptance-freeze-1-2-g960ab88-20261030T173333Z.json",
-    "s3_repeat_report": "reports/acceptance-freeze-1-2-g960ab88-20261030T183908Z.json",
-    "g3_report": "reports/acceptance-freeze-1-2-g960ab88-20261030T191355Z.json",
-    "g3_verdict": "passed 97/97"
-  }
+  "failed_tests": []
 }

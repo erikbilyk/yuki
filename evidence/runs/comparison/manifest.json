@@ -1,5 +1,5 @@
 {
-  "run_id": "a18-comparison",
+  "run_id": "ae-comparison",
   "mode": "comparison",
   "repeat": 3,
   "scenarios_dir": "evals/scenarios",
@@ -10,11 +10,11 @@
     "WG_LLM_BASE_URL": "https://api.deepseek.com"
   },
   "build": {
-    "commit": "960ab887da152850c666d556daa3a35b680b55fe",
+    "commit": "65859246d16a939f63335cdfa7f307d50afac759",
     "dirty": false
   },
-  "budget_cny": null,
-  "started_at": "2026-10-30T18:44:18+00:00",
+  "budget_cny": "3",
+  "started_at": "2026-10-31T22:11:59+00:00",
   "episodes": [
     {
       "scenario_id": "cmp-t61",
@@ -22,7 +22,7 @@
       "episode_id": "cmp-t61.coordinated.r1",
       "status": "completed",
       "turns": 7,
-      "cost_cny": "0.076651",
+      "cost_cny": "0.060368",
       "file": "episodes/cmp-t61.coordinated.r1.json"
     },
     {
@@ -31,7 +31,7 @@
       "episode_id": "cmp-t61.flat.r1",
       "status": "completed",
       "turns": 7,
-      "cost_cny": "0.047282",
+      "cost_cny": "0.057646",
       "file": "episodes/cmp-t61.flat.r1.json"
     },
     {
@@ -40,7 +40,7 @@
       "episode_id": "cmp-t62.coordinated.r1",
       "status": "completed",
       "turns": 7,
-      "cost_cny": "0.047547",
+      "cost_cny": "0.059383",
       "file": "episodes/cmp-t62.coordinated.r1.json"
     },
     {
@@ -49,7 +49,7 @@
       "episode_id": "cmp-t62.flat.r1",
       "status": "completed",
       "turns": 7,
-      "cost_cny": "0.045521",
+      "cost_cny": "0.057575",
       "file": "episodes/cmp-t62.flat.r1.json"
     },
     {
@@ -58,7 +58,7 @@
       "episode_id": "cmp-t64.coordinated.r1",
       "status": "completed",
       "turns": 6,
-      "cost_cny": "0.046579",
+      "cost_cny": "0.066271",
       "file": "episodes/cmp-t64.coordinated.r1.json"
     },
     {
@@ -67,7 +67,7 @@
       "episode_id": "cmp-t64.flat.r1",
       "status": "completed",
       "turns": 6,
-      "cost_cny": "0.050481",
+      "cost_cny": "0.047467",
       "file": "episodes/cmp-t64.flat.r1.json"
     },
     {
@@ -76,7 +76,7 @@
       "episode_id": "cmp-t65.coordinated.r1",
       "status": "completed",
       "turns": 6,
-      "cost_cny": "0.072341",
+      "cost_cny": "0.070809",
       "file": "episodes/cmp-t65.coordinated.r1.json"
     },
     {
@@ -85,7 +85,7 @@
       "episode_id": "cmp-t65.flat.r1",
       "status": "completed",
       "turns": 6,
-      "cost_cny": "0.036793",
+      "cost_cny": "0.054762",
       "file": "episodes/cmp-t65.flat.r1.json"
     },
     {
@@ -94,7 +94,7 @@
       "episode_id": "cmp-t66.coordinated.r1",
       "status": "completed",
       "turns": 4,
-      "cost_cny": "0.033829",
+      "cost_cny": "0.035084",
       "file": "episodes/cmp-t66.coordinated.r1.json"
     },
     {
@@ -103,7 +103,7 @@
       "episode_id": "cmp-t66.flat.r1",
       "status": "completed",
       "turns": 4,
-      "cost_cny": "0.024453",
+      "cost_cny": "0.035668",
       "file": "episodes/cmp-t66.flat.r1.json"
     },
     {
@@ -112,7 +112,7 @@
       "episode_id": "cmp-t67.coordinated.r1",
       "status": "completed",
       "turns": 2,
-      "cost_cny": "0.027698",
+      "cost_cny": "0.020527",
       "file": "episodes/cmp-t67.coordinated.r1.json"
     },
     {
@@ -121,7 +121,7 @@
       "episode_id": "cmp-t67.flat.r1",
       "status": "completed",
       "turns": 2,
-      "cost_cny": "0.025526",
+      "cost_cny": "0.024923",
       "file": "episodes/cmp-t67.flat.r1.json"
     },
     {
@@ -130,7 +130,7 @@
       "episode_id": "cmp-t68.coordinated.r1",
       "status": "completed",
       "turns": 5,
-      "cost_cny": "0.045848",
+      "cost_cny": "0.054786",
       "file": "episodes/cmp-t68.coordinated.r1.json"
     },
     {
@@ -139,7 +139,7 @@
       "episode_id": "cmp-t68.flat.r1",
       "status": "completed",
       "turns": 5,
-      "cost_cny": "0.044993",
+      "cost_cny": "0.043888",
       "file": "episodes/cmp-t68.flat.r1.json"
     },
     {
@@ -148,7 +148,7 @@
       "episode_id": "cmp-t61.coordinated.r2",
       "status": "completed",
       "turns": 7,
-      "cost_cny": "0.045415",
+      "cost_cny": "0.049755",
       "file": "episodes/cmp-t61.coordinated.r2.json"
     },
     {
@@ -157,7 +157,7 @@
       "episode_id": "cmp-t61.flat.r2",
       "status": "completed",
       "turns": 7,
-      "cost_cny": "0.029666",
+      "cost_cny": "0.057446",
       "file": "episodes/cmp-t61.flat.r2.json"
     },
     {
@@ -166,7 +166,7 @@
       "episode_id": "cmp-t62.coordinated.r2",
       "status": "completed",
       "turns": 7,
-      "cost_cny": "0.039970",
+      "cost_cny": "0.051008",
       "file": "episodes/cmp-t62.coordinated.r2.json"
     },
     {
@@ -175,7 +175,7 @@
       "episode_id": "cmp-t62.flat.r2",
       "status": "completed",
       "turns": 7,
-      "cost_cny": "0.049569",
+      "cost_cny": "0.059115",
       "file": "episodes/cmp-t62.flat.r2.json"
     },
     {
@@ -184,7 +184,7 @@
       "episode_id": "cmp-t64.coordinated.r2",
       "status": "completed",
       "turns": 6,
-      "cost_cny": "0.045106",
+      "cost_cny": "0.050741",
       "file": "episodes/cmp-t64.coordinated.r2.json"
     },
     {
@@ -193,7 +193,7 @@
       "episode_id": "cmp-t64.flat.r2",
       "status": "completed",
       "turns": 6,
-      "cost_cny": "0.038727",
+      "cost_cny": "0.042135",
       "file": "episodes/cmp-t64.flat.r2.json"
     },
     {
@@ -202,7 +202,7 @@
       "episode_id": "cmp-t65.coordinated.r2",
       "status": "completed",
       "turns": 6,
-      "cost_cny": "0.022169",
+      "cost_cny": "0.057596",
       "file": "episodes/cmp-t65.coordinated.r2.json"
     },
     {
@@ -211,7 +211,7 @@
       "episode_id": "cmp-t65.flat.r2",
       "status": "completed",
       "turns": 6,
-      "cost_cny": "0.028481",
+      "cost_cny": "0.052156",
       "file": "episodes/cmp-t65.flat.r2.json"
     },
     {
@@ -220,7 +220,7 @@
       "episode_id": "cmp-t66.coordinated.r2",
       "status": "completed",
       "turns": 4,
-      "cost_cny": "0.031965",
+      "cost_cny": "0.034630",
       "file": "episodes/cmp-t66.coordinated.r2.json"
     },
     {
@@ -229,7 +229,7 @@
       "episode_id": "cmp-t66.flat.r2",
       "status": "completed",
       "turns": 4,
-      "cost_cny": "0.023976",
+      "cost_cny": "0.033798",
       "file": "episodes/cmp-t66.flat.r2.json"
     },
     {
@@ -238,7 +238,7 @@
       "episode_id": "cmp-t67.coordinated.r2",
       "status": "completed",
       "turns": 2,
-      "cost_cny": "0.026934",
+      "cost_cny": "0.021697",
       "file": "episodes/cmp-t67.coordinated.r2.json"
     },
     {
@@ -247,7 +247,7 @@
       "episode_id": "cmp-t67.flat.r2",
       "status": "completed",
       "turns": 2,
-      "cost_cny": "0.022346",
+      "cost_cny": "0.024615",
       "file": "episodes/cmp-t67.flat.r2.json"
     },
     {
@@ -256,7 +256,7 @@
       "episode_id": "cmp-t68.coordinated.r2",
       "status": "completed",
       "turns": 5,
-      "cost_cny": "0.044453",
+      "cost_cny": "0.040728",
       "file": "episodes/cmp-t68.coordinated.r2.json"
     },
     {
@@ -265,7 +265,7 @@
       "episode_id": "cmp-t68.flat.r2",
       "status": "completed",
       "turns": 5,
-      "cost_cny": "0.034412",
+      "cost_cny": "0.044532",
       "file": "episodes/cmp-t68.flat.r2.json"
     },
     {
@@ -274,7 +274,7 @@
       "episode_id": "cmp-t61.coordinated.r3",
       "status": "completed",
       "turns": 7,
-      "cost_cny": "0.045344",
+      "cost_cny": "0.058961",
       "file": "episodes/cmp-t61.coordinated.r3.json"
     },
     {
@@ -283,7 +283,7 @@
       "episode_id": "cmp-t61.flat.r3",
       "status": "completed",
       "turns": 7,
-      "cost_cny": "0.034043",
+      "cost_cny": "0.059177",
       "file": "episodes/cmp-t61.flat.r3.json"
     },
     {
@@ -292,7 +292,7 @@
       "episode_id": "cmp-t62.coordinated.r3",
       "status": "completed",
       "turns": 7,
-      "cost_cny": "0.046723",
+      "cost_cny": "0.059680",
       "file": "episodes/cmp-t62.coordinated.r3.json"
     },
     {
@@ -301,7 +301,7 @@
       "episode_id": "cmp-t62.flat.r3",
       "status": "completed",
       "turns": 7,
-      "cost_cny": "0.034442",
+      "cost_cny": "0.059795",
       "file": "episodes/cmp-t62.flat.r3.json"
     },
     {
@@ -310,7 +310,7 @@
       "episode_id": "cmp-t64.coordinated.r3",
       "status": "completed",
       "turns": 6,
-      "cost_cny": "0.046672",
+      "cost_cny": "0.045681",
       "file": "episodes/cmp-t64.coordinated.r3.json"
     },
     {
@@ -319,7 +319,7 @@
       "episode_id": "cmp-t64.flat.r3",
       "status": "completed",
       "turns": 6,
-      "cost_cny": "0.035460",
+      "cost_cny": "0.047874",
       "file": "episodes/cmp-t64.flat.r3.json"
     },
     {
@@ -328,7 +328,7 @@
       "episode_id": "cmp-t65.coordinated.r3",
       "status": "completed",
       "turns": 6,
-      "cost_cny": "0.041275",
+      "cost_cny": "0.054928",
       "file": "episodes/cmp-t65.coordinated.r3.json"
     },
     {
@@ -337,7 +337,7 @@
       "episode_id": "cmp-t65.flat.r3",
       "status": "completed",
       "turns": 6,
-      "cost_cny": "0.041072",
+      "cost_cny": "0.052593",
       "file": "episodes/cmp-t65.flat.r3.json"
     },
     {
@@ -346,7 +346,7 @@
       "episode_id": "cmp-t66.coordinated.r3",
       "status": "completed",
       "turns": 4,
-      "cost_cny": "0.031283",
+      "cost_cny": "0.035846",
       "file": "episodes/cmp-t66.coordinated.r3.json"
     },
     {
@@ -355,7 +355,7 @@
       "episode_id": "cmp-t66.flat.r3",
       "status": "completed",
       "turns": 4,
-      "cost_cny": "0.034592",
+      "cost_cny": "0.034312",
       "file": "episodes/cmp-t66.flat.r3.json"
     },
     {
@@ -364,7 +364,7 @@
       "episode_id": "cmp-t67.coordinated.r3",
       "status": "completed",
       "turns": 2,
-      "cost_cny": "0.020078",
+      "cost_cny": "0.021447",
       "file": "episodes/cmp-t67.coordinated.r3.json"
     },
     {
@@ -373,7 +373,7 @@
       "episode_id": "cmp-t67.flat.r3",
       "status": "completed",
       "turns": 2,
-      "cost_cny": "0.023663",
+      "cost_cny": "0.023622",
       "file": "episodes/cmp-t67.flat.r3.json"
     },
     {
@@ -382,7 +382,7 @@
       "episode_id": "cmp-t68.coordinated.r3",
       "status": "completed",
       "turns": 5,
-      "cost_cny": "0.044800",
+      "cost_cny": "0.039407",
       "file": "episodes/cmp-t68.coordinated.r3.json"
     },
     {
@@ -391,10 +391,10 @@
       "episode_id": "cmp-t68.flat.r3",
       "status": "completed",
       "turns": 5,
-      "cost_cny": "0.036564",
+      "cost_cny": "0.044047",
       "file": "episodes/cmp-t68.flat.r3.json"
     }
   ],
-  "cost_cny": "1.624742",
-  "finished_at": "2026-10-30T19:03:48+00:00"
+  "cost_cny": "1.946479",
+  "finished_at": "2026-10-31T22:35:07+00:00"
 }
