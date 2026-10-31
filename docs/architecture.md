@@ -20,9 +20,9 @@ Package layout under `backend/wg/`:
 | --- | --- |
 | `contracts/` | Shared types, enums, error codes, DTOs, the route table, tool schemas, engine protocols |
 | `k6/` | Schema and migrations, the only read-write connection, write repositories, gateway, bank simulator, fault injection, fixture loader |
-| `core/` | K1 session, K2 context filter, K3 policy, K4 approval, K5 coordinator, K7 verification, K8 audit |
-| `packs/` | Action packs: transfer (also bill payment), bills, funds |
-| `services/` | In-process facade used by routes and tool handlers |
+| `core/` | K1 session, K2 context filter, K3 policy, K4 approval, K5 coordinator, K7 verification, K8 audit; `mandate_rules.py` (pure direct-debit rules) and `k5_mandates.py` (sweep and probes) |
+| `packs/` | Action packs: transfer (also bill payment), bills, funds, direct debits (payment of a merchant request, decline, agreement changes, new agreement) |
+| `services/` | In-process facade used by routes and tool handlers; `mandates.py` for agreements, requests and their drafts |
 | `api/` | FastAPI application and routes |
 | `agent/` | Model adapter, tool registry, agent loop, prompts, chat turn |
 | `numeric/` | Pure functions: cash snapshot, exposure, candidate search, fees, stress, purchase revision |
@@ -123,6 +123,26 @@ On start, before the first request, the coordinator: reconciles every submitted 
 
 A customer creates a six-digit pairing code in the web app; sending `绑定 <code>` in Feishu binds the sender. Inbound messages go through the same chat turn with the channel set to `im`, which exposes read and draft tools. Replies contain facts and a link to the trusted web card. Duplicate deliveries are dropped by message ID, and approvals and codes are refused in IM. The adapter authenticates to the backend with `WG_CHANNEL_SECRET`.
 
+### 4.6 Merchant debit requests
+
+A merchant debit request reaches the system only through `receive_debit_request` in `wg/k6/debit_requests.py`; in the prototype the simulator route `POST /sim/debit-requests` (demo mode) calls it. The system never pulls money on a request by itself.
+
+1. One unit of work checks the format (positive integer fen, currency `CNY`; a bad request is refused with `FORMAT_ERROR` and audited, not stored). A repeated `(merchant_id, merchant_request_id)` returns the stored request.
+2. The decision follows an allow-list, in this order, and the first failing check decides: the merchant is a verified registry merchant and the reference names its agreement (else `AUTO_DECLINED NO_MANDATE`); the agreement is `ACTIVE` (else `AUTO_DECLINED` with the agreement's status); the agreement has not expired (decided by comparing the clock with the end date, not by the stored status); the amount is within the cap (else `OUT_OF_MANDATE CAP`); the month has no accepted request and fewer than three stored requests (else `OUT_OF_MANDATE PERIOD_USED`). Otherwise the request is `AWAITING_CLIENT`.
+3. Every stored request gets a month key (China Standard Time) and a reply deadline of 72 simulated hours. The merchant's text is stored unchanged, labelled untrusted, and never read as an instruction.
+4. Nothing else happens: no action, no hold, no notification. The customer pays or declines from the request list. `DEBIT_PAY` is a payment action with its own pack: it is counted in the daily sum and tiered like a transfer, re-checks the request, the agreement version, the cap and the funds at approval and at submission, and settles in the submitting unit (customer account debited, clearing account credited, request set to `PAID` with the operation). `DEBIT_DECLINE` sets the request to `DECLINED` without an operation. Both carry the agreement version, so a card drawn before a change is refused (`MANDATE_CHANGED`, `REQUEST_NOT_PAYABLE`) and shows as expired.
+5. Agreement changes (`MANDATE_CANCEL`, `MANDATE_SUSPEND`, `MANDATE_RESUME`, `MANDATE_CAP_LOWER`, `MANDATE_CAP_RAISE`, and `MANDATE_CREATE` for a new agreement) are money-less operations through the gateway: no reservation and no ledger entry, one settled operation with a receipt, one append-only `mandate_events` row per changed field. Cancelling, suspending, lowering the cap and declining are risk-reducing and pass a lock; paying, resuming, raising the cap and creating do not. Resuming, raising the cap and creating need a code.
+
+Protection of coming periods. Subscription periods are derived, not stored: from the agreements, the requests and the clock, `mandate_rules.protected_periods` lists the periods that must stay funded (a waiting request, a declined request until its reply deadline, the current and next month while the agreement is active or suspended and the date is within 30 days, and the nearest date after a cancellation). `k6/cash_inputs.py` passes them to the unchanged cash engine as extra commitment inputs with ids `cmt_sub_<agreement>_<YYYYMM>`. They are not rows of `commitments`, do not move `commitments_version` and do not appear in the bill list; the cash snapshot reports them in `details.subscriptions`. Cancelling, suspending or declining therefore never frees money at once: the reserve falls at the reply deadline, after the period's date (cancel) or at month end. Plan continuation does not react to them (T110 is not built); the gateway's headroom checks do see them.
+
+Sweep. `k5_mandates.sweep` runs at each clock step, at start-up and after every confirm and verify of a customer, each item in its own unit: unanswered requests past their deadline become `EXPIRED`; agreements past their end date become `EXPIRED` and their waiting requests `AUTO_DECLINED`; payment, decline and change actions that an agreement change or a closed request made stale are cancelled; effect probes are sent for settled changes. The deadlines and end dates are due instants of the clock walk, so one long clock advance visits them in order.
+
+Probes. After a settled cancel, suspend or cap lowering the sweep sends a request marked `probe` (the agreement's expected amount, or the new cap plus one fen) through the same `receive_debit_request`. A refusal appends a `verified` effect event; an accepted probe appends `failed` and locks the customer as an integrity incident; a simulated timeout appends `pending` and the next sweep retries, unless a later change of the same agreement has overtaken the operation. Probe rows are excluded from every list, count, total, protection and payment path. The receipt stays settled and unchanged; the effect check is read from the newest event.
+
+Integrity. `check_mandate_invariant` compares the newest `status` and `cap_fen` events of an agreement with the agreement row. A difference is an `INTEGRITY_VIOLATION` (`mandate_event_mismatch`) that locks the customer; reads and reconciliation keep working.
+
+Chat. Five tools under the intent `subscriptions.manage` read agreements, requests and spend, and draft a change or a pay or decline decision. A draft needs a quote of the customer's words naming the agreement and the decision; a quote taken from a request's text is `UNTRUSTED_SOURCE`. K7 holds facts for agreement status, cap, expected amount, monthly total, request status, reason and deadline, and the effect check; an explanation may say the debit authorisation is closed only with a verified effect check, and "订阅已取消" (subscription cancelled) is always replaced, because the service contract is not touched.
+
 ## 5. Policy and authority
 
 | Tier | Requirement | Examples |
@@ -132,7 +152,9 @@ A customer creates a six-digit pairing code in the web app; sending `绑定 <cod
 | RED | Trusted confirm and code | Daily total above ¥1,000, reserve decrease, fund redemption and purchase |
 | FORBIDDEN | Refused | Single transfer above ¥50,000, daily total above ¥100,000, writes under a lock |
 
-- The daily sum counts transfers and bill payments submitted that day (China Standard Time) with status submitted, settled or unknown. The gateway recomputes the tier inside the submitting transaction and returns the action to step-up if it rose.
+Direct-debit actions: `DEBIT_PAY` is tiered from the daily sum like a transfer; decline, cancel, suspend and cap lowering are YELLOW; resume, cap raise and a new agreement are RED. A cap above ¥50,000 is refused (`SINGLE_LIMIT_EXCEEDED`).
+
+- The daily sum counts transfers, bill payments and direct-debit payments submitted that day (China Standard Time) with status submitted, settled or unknown. The gateway recomputes the tier inside the submitting transaction and returns the action to step-up if it rose.
 - Read scopes map each declared intent to the data sources a tool may read. The intent comes from the model, so the registry is a data-minimization control and a metric; the authorization boundary is customer ownership, enforced from the session. A foreign or missing object returns the same `404` body.
 - K8 counts unexpected failures per plan. Three in a row lock the plan; integrity violations lock the plan or customer. Under a lock, reads, reconciliation, audit and settlement of accepted operations continue; new writes are refused except risk-reducing ones. Only an operator can unlock, with a reason, and unlocking creates no approval.
 - Roles are `customer`, `operator` and `demo`, each with its own HttpOnly, SameSite=Strict cookie. State-changing human routes require the `X-CSRF-Token` of the role. The Feishu route requires `X-Channel-Secret`.
@@ -140,7 +162,8 @@ A customer creates a six-digit pairing code in the web app; sending `绑定 <cod
 ## 6. Data
 
 - Money is integer fen in storage, Python and JSON, with field names ending in `_fen`. Shares, NAV, weights and percentages are `Decimal`, stored as text and serialized as strings. Times are ISO 8601 text in Asia/Shanghai.
-- Main tables: customers, sessions, accounts, payees, plans, actions (with revisions), approvals, challenges, operations and their events, reservations, ledger entries, receipts, bank requests, domain events, audit log, locks, breaker state, failure records, the simulated clock, faults, chat messages, cards, and the S2 and S3 tables (transactions, commitments, cash snapshots, products, positions, lots, holdings snapshots, calc results). The schema is in `backend/wg/k6/schema/` (six migrations).
+- Main tables: customers, sessions, accounts, payees, plans, actions (with revisions), approvals, challenges, operations and their events, reservations, ledger entries, receipts, bank requests, domain events, audit log, locks, breaker state, failure records, the simulated clock, faults, chat messages, cards, the S2 and S3 tables (transactions, commitments, cash snapshots, products, positions, lots, holdings snapshots, calc results) and the direct-debit tables (`merchants`, `mandates`, `mandate_events`, `debit_requests`, `effect_verification_events`). The schema is in `backend/wg/k6/schema/` (seven migrations).
+- Migration 7 rebuilds `actions` to widen the check on the action kinds. SQLite cannot widen a check in place, and dropping a parent table with foreign keys on fails, so a migration whose first line is `-- foreign_keys: off` runs in its own mode: foreign keys off outside any transaction, `BEGIN IMMEDIATE`, the statements, `PRAGMA foreign_key_check` (any row aborts and rolls back), the schema version row, `COMMIT`, then foreign keys on again and a check that they read 1. Only migration 7 uses it. The migration test builds a populated schema-6 database and checks that rows, foreign keys and indexes survive and that a code issued before the migration still verifies.
 - Ledger entries for every operation sum to zero; an account's balance equals the sum of its entries; a bill's unpaid amount equals its amount minus its settled payments. A violation is an integrity failure.
 - Cash snapshots and calc results are immutable and addressable by ID. Every number in a reply or on a card cites one, or a receipt.
 
@@ -156,7 +179,7 @@ Pure functions in `wg/numeric/`, with types in `wg/contracts/engines.py`.
 
 ## 7. Model boundary
 
-- The model gets read and draft tools only. Approve, verify, submit, settle, unlock and the simulator controls are not tools and are refused to any caller that is not a human session with the right role.
+- The model gets read and draft tools only (32 tools). Approve, verify, submit, settle, unlock and the simulator controls are not tools and are refused to any caller that is not a human session with the right role.
 - The model never receives account numbers, codes, hashes, session tokens or raw imports. Tool results are filtered of those keys and every string is masked.
 - Every model call appends a metadata record to `var/llm_calls.jsonl`: requested and returned model, thinking mode, prompt and tool-schema versions, build ID, latency, token usage and estimated cost. No message text is stored. A spend guard stops new calls when the recorded total reaches `WG_LLM_SPEND_CAP_CNY`.
 - The adapter ignores proxy variables in the environment and uses `WG_OUTBOUND_PROXY` only when set.
