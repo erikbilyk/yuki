@@ -17,16 +17,18 @@ from wg.contracts.tools import (
     tool_schemas,
 )
 
-# SPEC §18.2 core tools.
+# SPEC §18.2 core tools and the direct-debit tools of S5-SPEC §8.1.
 SPEC_READ = (
     "get_accounts get_balance search_payees get_transfer_history get_operation_status "
     "get_cash_snapshot get_bills get_spending get_transactions get_unresolved "
     "get_portfolio_exposure get_positions search_rebalance_candidates estimate_redemption_fee "
-    "run_stress get_plan_status"
+    "run_stress get_plan_status "
+    "list_mandates get_debit_requests get_subscription_spend"
 ).split()
 SPEC_DRAFT = (
     "draft_transfer request_approval cancel_action propose_bill propose_reserve_change "
-    "propose_resolution pay_bill mark_paid_external cancel_bill draft_rebalance_plan compose_plan"
+    "propose_resolution pay_bill mark_paid_external cancel_bill draft_rebalance_plan compose_plan "
+    "draft_mandate_change draft_debit_decision"
 ).split()
 
 # A minimal valid argument object per tool.
@@ -87,6 +89,21 @@ VALID_ARGS = {
         "draft_ids": ["act_redeem", "act_buy"],
         "depends_on": {"act_buy": ["act_redeem"]},
     },
+    "list_mandates": {"intent": "subscriptions.manage"},
+    "get_debit_requests": {"intent": "subscriptions.manage", "status": "AWAITING_CLIENT"},
+    "get_subscription_spend": {"intent": "subscriptions.manage", "days": 90},
+    "draft_mandate_change": {
+        "intent": "subscriptions.manage",
+        "mandate_ref": "mdt_video",
+        "merchant_quote": "视频会员",
+        "change": "cancel",
+    },
+    "draft_debit_decision": {
+        "intent": "subscriptions.manage",
+        "request_id": "req_1",
+        "decision": "pay",
+        "decision_quote": "付款",
+    },
 }
 
 FORBIDDEN_WORDS = ("approve", "confirm", "verify", "submit", "settle", "unlock", "sim")
@@ -118,7 +135,7 @@ def test_every_tool_requires_an_intent(tool):
     with pytest.raises(ValidationError):
         tool.arguments.model_validate(args)
     with pytest.raises(ValidationError):
-        tool.arguments.model_validate({**args, "intent": "subscriptions.manage"})
+        tool.arguments.model_validate({**args, "intent": "subscriptions.cancel"})
 
 
 @pytest.mark.parametrize("tool", TOOLS, ids=lambda tool: tool.name)
@@ -207,6 +224,21 @@ def test_read_scopes_cover_every_tool():
         assert DataSource.TRANSFER_HISTORY not in READ_SCOPES[intent]
         assert DataSource.TRANSACTIONS not in READ_SCOPES[intent]
         assert DataSource.POSITIONS not in READ_SCOPES[intent]
+
+
+def test_the_subscription_intent_reads_agreements_and_nothing_else():
+    new = {DataSource.MANDATES, DataSource.DEBIT_REQUESTS, DataSource.SUBSCRIPTION_SPEND}
+    scope = READ_SCOPES[Intent.SUBSCRIPTIONS_MANAGE]
+    assert scope == new | {DataSource.OPERATIONS}
+    for other in set(Intent) - {Intent.SUBSCRIPTIONS_MANAGE}:
+        assert not new & READ_SCOPES[other], other
+    assert not scope & {
+        DataSource.TRANSFER_HISTORY,
+        DataSource.TRANSACTIONS,
+        DataSource.POSITIONS,
+        DataSource.PAYEES,
+        DataSource.ACCOUNTS,
+    }
 
 
 def test_schemas_per_channel_serialize():

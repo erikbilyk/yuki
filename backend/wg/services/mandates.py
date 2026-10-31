@@ -104,6 +104,16 @@ class MandateService:
             mandates=tuple(views),
         )
 
+    def agreement_names(self, customer_id: str) -> dict[str, tuple[str, ...]]:
+        """Each agreement's merchant names (registry name, then aliases), for K2 to match quotes."""
+        names: dict[str, tuple[str, ...]] = {}
+        with self.db.read() as conn:
+            for mandate in mandates.customer_mandates(conn, customer_id):
+                merchant = mandates.find_merchant(conn, mandate.merchant_id)
+                if merchant is not None:
+                    names[mandate.mandate_ref] = (merchant.display_name, *merchant.aliases)
+        return names
+
     def merchants(self) -> MerchantsView:
         with self.db.read() as conn:
             rows = mandates.verified_merchants(conn)

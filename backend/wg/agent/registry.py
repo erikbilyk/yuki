@@ -21,8 +21,12 @@ from wg.contracts.api import (
     BillsQuery,
     CandidatesRequest,
     CandidatesView,
+    DebitDecisionRequest,
+    DebitRequestsQuery,
     ExposureQuery,
+    MandateChangeRequest,
     SpendingQuery,
+    SubscriptionSpendQuery,
     TransactionsQuery,
 )
 from wg.contracts.engines import Candidate
@@ -30,6 +34,7 @@ from wg.contracts.enums import (
     ActionKind,
     AuditActor,
     Channel,
+    DebitDecision,
     PlanMode,
     PlanStatus,
     Provenance,
@@ -44,6 +49,8 @@ from wg.contracts.tools import (
     Capability,
     ComposePlanArgs,
     DataSource,
+    DraftDebitDecisionArgs,
+    DraftMandateChangeArgs,
     DraftTransferArgs,
     GetPlanStatusArgs,
     PayBillArgs,
@@ -56,7 +63,12 @@ from wg.contracts.tools import (
     ToolSpec,
     tool_schemas,
 )
-from wg.core.k2_context import Utterance, limit_is_strict, model_payload
+from wg.core.k2_context import (
+    Utterance,
+    decision_quote_states,
+    limit_is_strict,
+    model_payload,
+)
 from wg.core.k3_policy import EXTRA_READ_EVENT, check_read_scope
 from wg.k6 import audit
 from wg.k6.db import Database
@@ -64,6 +76,7 @@ from wg.services.actions import ActionService, PayBillDraft, Slot, TransferDraft
 from wg.services.cash import CashService
 from wg.services.compose import PlanComposer
 from wg.services.funds import FundsService
+from wg.services.mandates import MandateService
 from wg.services.plans import PlanService
 from wg.services.reads import ReadService
 
@@ -120,6 +133,7 @@ class Services:
     plans: PlanService
     actions: ActionService
     composer: PlanComposer
+    mandates: MandateService
 
     @classmethod
     def from_state(cls, state: Any) -> Services:
@@ -131,6 +145,7 @@ class Services:
             plans=state.plans,
             actions=state.actions,
             composer=state.composer,
+            mandates=state.mandates,
         )
 
 
@@ -239,6 +254,15 @@ class ToolRegistry:
                 c.customer_id, a.calc_result_id, a.with_bounds, AuditActor.AGENT, c.mode
             ),
             "compose_plan": self._compose_plan,
+            "list_mandates": lambda c, a: services.mandates.mandates(c.customer_id),
+            "get_debit_requests": lambda c, a: services.mandates.debit_requests(
+                c.customer_id, DebitRequestsQuery(status=a.status, mandate_ref=a.mandate_ref)
+            ),
+            "get_subscription_spend": lambda c, a: services.mandates.subscription_spend(
+                c.customer_id, SubscriptionSpendQuery(days=a.days)
+            ),
+            "draft_mandate_change": self._draft_mandate_change,
+            "draft_debit_decision": self._draft_debit_decision,
         }
         missing = {tool.name for tool in TOOLS} - set(self._handlers)
         if missing:
@@ -545,6 +569,75 @@ class ToolRegistry:
             )
         request = ComposePlanRequest(draft_ids=args.draft_ids, depends_on=args.depends_on)
         return self.services.composer.compose(context.customer_id, request, AuditActor.AGENT)
+
+    def _draft_mandate_change(
+        self, context: ToolContext, args: DraftMandateChangeArgs
+    ) -> BaseModel:
+        """K2: the quote names the agreement; a new cap is checked like an amount."""
+        slots: list[QuotedSlot] = [
+            (
+                "mandate_ref",
+                args.merchant_quote,
+                lambda u: self._check_agreement(context, args.mandate_ref, args.merchant_quote),
+            )
+        ]
+        if args.cap_fen is not None and args.cap_quote is not None:
+            cap_fen, cap_quote = args.cap_fen, args.cap_quote
+            slots.append(
+                ("cap_fen", cap_quote, lambda u: u.check_amount("cap_fen", cap_quote, cap_fen))
+            )
+        self._check_slots(context, "draft_mandate_change", Utterance.of(context.utterance), slots)
+        body = MandateChangeRequest(
+            mandate_ref=args.mandate_ref, change=args.change, cap_fen=args.cap_fen
+        )
+        return self.services.mandates.draft_mandate_change(
+            context.customer_id, body, AuditActor.AGENT
+        )
+
+    def _draft_debit_decision(
+        self, context: ToolContext, args: DraftDebitDecisionArgs
+    ) -> BaseModel:
+        """K2: only the customer's own words pay or decline; the request's text never does."""
+        slots: list[QuotedSlot] = [
+            (
+                "decision",
+                args.decision_quote,
+                lambda u: _check_decision(args.decision, args.decision_quote),
+            )
+        ]
+        if args.merchant_quote is not None:
+            merchant_quote = args.merchant_quote
+            slots.append(
+                (
+                    "mandate_ref",
+                    merchant_quote,
+                    lambda u: self._check_agreement(
+                        context, self._request_mandate(context, args.request_id), merchant_quote
+                    ),
+                )
+            )
+        self._check_slots(context, "draft_debit_decision", Utterance.of(context.utterance), slots)
+        body = DebitDecisionRequest(request_id=args.request_id, decision=args.decision)
+        return self.services.mandates.draft_debit_decision(
+            context.customer_id, body, AuditActor.AGENT
+        )
+
+    def _request_mandate(self, context: ToolContext, request_id: str) -> str:
+        return self.services.mandates.debit_request(context.customer_id, request_id).mandate_ref
+
+    def _check_agreement(self, context: ToolContext, mandate_ref: str, quote: str) -> None:
+        """The customer's words must name exactly one agreement, and it must be the model's."""
+        names = self.services.mandates.agreement_names(context.customer_id)
+        named = [ref for ref, known in names.items() if any(_names(quote, n) for n in known)]
+        if len(named) != 1:
+            raise WgError(ErrorCode.AMBIGUOUS_PAYEE, {"matches": len(named)})
+        if named[0] != mandate_ref:
+            raise WgError(ErrorCode.PAYEE_MISMATCH, {})
+
+
+def _check_decision(decision: DebitDecision, quote: str) -> None:
+    if not decision_quote_states(decision, quote):
+        raise WgError(ErrorCode.MISSING_SLOT, {})
 
 
 def _names(quote: str, name: str) -> bool:
