@@ -1,0 +1,14 @@
+# A model that reads the debit requests and drafts a decision; the quotes are set per case.
+- tool_calls:
+    - name: get_debit_requests
+      arguments:
+        intent: subscriptions.manage
+- tool_calls:
+    - name: draft_debit_decision
+      arguments:
+        intent: subscriptions.manage
+        request_id: ${request_id}
+        decision: ${decision}
+        decision_quote: ${decision_quote}
+        merchant_quote: ${merchant_quote}
+- text: ${reply}

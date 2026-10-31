@@ -1,0 +1,7 @@
+# A model that lists the customer's direct-debit agreements and then explains them; the
+# explanation is set per case.
+- tool_calls:
+    - name: list_mandates
+      arguments:
+        intent: subscriptions.manage
+- text: ${reply}

@@ -1,0 +1,2 @@
+# A model that answers without calling a tool; the reply is set per case.
+- text: ${reply}

@@ -1,0 +1,9 @@
+# A model that drafts closing the gym agreement from the customer's own words.
+- tool_calls:
+    - name: draft_mandate_change
+      arguments:
+        intent: subscriptions.manage
+        mandate_ref: mdt_fitness
+        merchant_quote: 健身房
+        change: cancel
+- text: ${reply}
