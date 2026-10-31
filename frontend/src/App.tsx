@@ -7,12 +7,15 @@ import { ChatPanel } from "./ChatPanel.tsx";
 import { DemoPanel } from "./DemoPanel.tsx";
 import { GuidedForms } from "./GuidedForms.tsx";
 import { Login } from "./Login.tsx";
+import { MandatesPanel } from "./MandatesPanel.tsx";
 import { PlanPanel } from "./PlanPanel.tsx";
 import { SmsPanel } from "./SmsPanel.tsx";
 import { S } from "./strings.ts";
 import type { SessionEntry } from "./types.ts";
 
 const MAX_TRACKED_CARDS = 5;
+// The direct-debit screens render only when /healthz lists this feature.
+const DIRECT_DEBIT_FEATURE = "s5";
 const CARD_PATH = /^\/cards\/([A-Za-z0-9_-]+)\/?$/;
 
 function storageKey(subject: string): string {
@@ -31,13 +34,20 @@ function loadTracked(subject: string): string[] {
 export function App() {
   const [session, setSession] = useState<SessionEntry | null | undefined>(undefined);
   const [demo, setDemo] = useState(false);
+  const [s5, setS5] = useState(false);
 
   useEffect(() => {
     setSessionExpiredHandler(() => setSession(null));
     api
       .health()
-      .then((health) => setDemo(health.demo))
-      .catch(() => setDemo(false));
+      .then((health) => {
+        setDemo(health.demo);
+        setS5(health.features.includes(DIRECT_DEBIT_FEATURE));
+      })
+      .catch(() => {
+        setDemo(false);
+        setS5(false);
+      });
     api
       .session()
       .then((view) => {
@@ -54,10 +64,10 @@ export function App() {
   if (session === null) {
     return <Login onLogin={setSession} />;
   }
-  return <Workspace key={session.subject_id} session={session} demo={demo} onLogout={() => setSession(null)} />;
+  return <Workspace key={session.subject_id} session={session} demo={demo} s5={s5} onLogout={() => setSession(null)} />;
 }
 
-function Workspace({ session, demo, onLogout }: { session: SessionEntry; demo: boolean; onLogout: () => void }) {
+function Workspace({ session, demo, s5, onLogout }: { session: SessionEntry; demo: boolean; s5: boolean; onLogout: () => void }) {
   const subject = session.subject_id;
   const [refreshKey, setRefreshKey] = useState(0);
   const [auditMode, setAuditMode] = useState(false);
@@ -112,6 +122,7 @@ function Workspace({ session, demo, onLogout }: { session: SessionEntry; demo: b
           <ChatPanel onCards={addCards} onChange={bump} />
           <aside className="side">
             <CashPanel refreshKey={refreshKey} />
+            {s5 && <MandatesPanel refreshKey={refreshKey} onChange={bump} onCard={(id) => addCards([id])} />}
             {cards.length > 0 && (
               <div className="tray" aria-label={S.card.title}>
                 <h2>{S.card.title}</h2>
@@ -123,7 +134,7 @@ function Workspace({ session, demo, onLogout }: { session: SessionEntry; demo: b
             <PlanPanel refreshKey={refreshKey} onChange={bump} onCard={(id) => addCards([id])} />
             <SmsPanel refreshKey={refreshKey} />
             <GuidedForms onCard={(id) => addCards([id])} />
-            {demo && <DemoPanel refreshKey={refreshKey} onChange={bump} />}
+            {demo && <DemoPanel refreshKey={refreshKey} onChange={bump} s5={s5} />}
           </aside>
         </main>
       )}

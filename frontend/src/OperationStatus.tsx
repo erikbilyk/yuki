@@ -9,14 +9,31 @@ import { S } from "./strings.ts";
 import type { OperationView, ReceiptView } from "./types.ts";
 
 const POLL_MS = 2000;
+const EFFECT_POLL_MS = 1500;
+const EFFECT_POLL_MAX = 10;
+
+function effectText(receipt: ReceiptView): string | null {
+  switch (receipt.effect_check) {
+    case "pending":
+      return S.receipt.effectCheck.pending;
+    case "failed":
+      return S.receipt.effectCheck.failed;
+    case "verified":
+      return S.receipt.effectCheck.verified[receipt.kind] ?? null;
+    default:
+      return null;
+  }
+}
 
 function Receipt({ receipt }: { receipt: ReceiptView }) {
   const settled = receipt.status === "SETTLED";
+  const effect = effectText(receipt);
   const rows: [string, ReactNode][] = [];
   if (receipt.amount_fen !== null) rows.push([S.receipt.amount, <Money fen={receipt.amount_fen} />]);
   if (receipt.fee_fen !== null) rows.push([S.receipt.fee, <Money fen={receipt.fee_fen} />]);
   if (receipt.net_fen !== null) rows.push([S.receipt.net, <Money fen={receipt.net_fen} />]);
   if (receipt.payee_display) rows.push([S.receipt.payee, receipt.payee_display]);
+  if (receipt.merchant_display) rows.push([S.receipt.merchant, receipt.merchant_display]);
   if (receipt.unpaid_after_fen !== null) rows.push([S.receipt.unpaidAfter, <Money fen={receipt.unpaid_after_fen} />]);
   if (receipt.reason_code) rows.push([S.receipt.reason, S.errors.byCode[receipt.reason_code] ?? receipt.reason_code]);
   rows.push([S.receipt.time, formatTime(receipt.created_at)]);
@@ -33,6 +50,11 @@ function Receipt({ receipt }: { receipt: ReceiptView }) {
           </div>
         ))}
       </dl>
+      {effect && (
+        <p className={`effect-check effect-${receipt.effect_check}`} data-testid="effect-check" data-result={receipt.effect_check}>
+          {effect}
+        </p>
+      )}
     </div>
   );
 }
@@ -48,6 +70,7 @@ export function OperationStatus({ initial, onChange }: Props) {
   const [receipt, setReceipt] = useState<ReceiptView | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [undoing, setUndoing] = useState(false);
+  const [effectPolls, setEffectPolls] = useState(0);
 
   const final = operation.status === "SETTLED" || operation.status === "REJECTED";
 
@@ -74,6 +97,22 @@ export function OperationStatus({ initial, onChange }: Props) {
       .then(setReceipt)
       .catch((e: unknown) => setMessage(errorText(e)));
   }, [final, operation.operation_id]);
+
+  // A change is checked by a probe after it settles; ask again for a bounded time while the result is pending.
+  useEffect(() => {
+    if (receipt?.effect_check !== "pending" || effectPolls >= EFFECT_POLL_MAX) return;
+    const timer = window.setTimeout(() => {
+      api
+        .receipt(operation.operation_id)
+        .then((next) => {
+          setReceipt(next);
+          if (next.effect_check !== "pending") onChange();
+        })
+        .catch((e: unknown) => setMessage(errorText(e)))
+        .finally(() => setEffectPolls((n) => n + 1));
+    }, EFFECT_POLL_MS);
+    return () => window.clearTimeout(timer);
+  }, [receipt, effectPolls, operation.operation_id, onChange]);
 
   const undo = async () => {
     setUndoing(true);
