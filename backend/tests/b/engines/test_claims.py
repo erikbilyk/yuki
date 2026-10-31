@@ -379,3 +379,121 @@ def test_an_unsupported_amount_in_the_same_reply_is_still_reported(
 ) -> None:
     result = check_claims(PLAN_REPLY.replace(old, new), PLAN_FACTS)
     assert [(v.reason, v.text) for v in result.violations] == [(reason, claim)]
+
+
+# Direct debits (S5-SPEC §8.3). The concepts are named by their string values, and the tests
+# that build facts of them are skipped on a build whose contracts do not list them.
+
+_CONCEPTS = {concept.value for concept in FactConcept}
+needs_direct_debits = pytest.mark.skipif(
+    not {"effect_check", "debit_request_status", "subscription_paid"} <= _CONCEPTS,
+    reason="the build has no direct-debit fact concepts",
+)
+
+CLOSED_WORDS = ["自动扣款已关闭", "已关闭自动扣款", "自动扣款已停止", "已停止自动扣款"]
+CANCELLED_WORDS = ["订阅已取消", "已取消订阅", "订阅已经取消", "已取消了订阅", "已退订"]
+
+
+def concept(value: str) -> FactConcept:
+    return FactConcept(value)
+
+
+def check(subject: str, value: str, merchant: str) -> StatusFact:
+    return status(f"f_chk_{subject}", concept("effect_check"), value, subject, merchant)
+
+
+@pytest.mark.parametrize("word", CANCELLED_WORDS)
+def test_a_cancelled_subscription_is_never_supported(word: str) -> None:
+    assert reasons(f"健身房的{word}。", block()) == [Reason.STATUS_UNSUPPORTED]
+    assert reasons(f"健身房的{word}。", block(*RENT)) == [Reason.STATUS_UNSUPPORTED]
+
+
+@needs_direct_debits
+@pytest.mark.parametrize("word", CANCELLED_WORDS)
+def test_a_verified_closing_does_not_make_the_subscription_cancelled(word: str) -> None:
+    facts = block(check("mdt_fitness", "verified", "模拟健身会所"))
+    assert reasons(f"健身房的{word}。", facts) == [Reason.STATUS_UNSUPPORTED]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "订阅没有取消，只是关闭授权的申请已准备好。",
+        "我无法替您取消订阅，请联系商户。",
+        "不会取消订阅，也没有退订。",
+        "自动扣款还没有关闭，请先确认卡片。",
+        "关闭自动扣款需要您在卡片上确认。",
+    ],
+)
+def test_words_that_deny_or_ask_are_not_claims_of_cancelling_or_closing(text: str) -> None:
+    assert reasons(text, block()) == []
+
+
+@pytest.mark.parametrize("word", CLOSED_WORDS)
+def test_closing_without_any_fact_is_unsupported(word: str) -> None:
+    assert reasons(f"健身房的{word}。", block()) == [Reason.STATUS_UNSUPPORTED]
+
+
+@needs_direct_debits
+@pytest.mark.parametrize("word", CLOSED_WORDS)
+def test_closing_needs_a_verified_check(word: str) -> None:
+    text = f"健身房的{word}。"
+    assert reasons(text, block(check("mdt_fitness", "verified", "模拟健身会所"))) == []
+    for value in ("pending", "failed"):
+        assert reasons(text, block(check("mdt_fitness", value, "模拟健身会所"))) == [
+            Reason.STATUS_UNSUPPORTED
+        ]
+
+
+@needs_direct_debits
+def test_a_closing_is_checked_for_the_agreement_the_clause_names() -> None:
+    both = block(
+        check("mdt_fitness", "verified", "模拟健身会所"),
+        check("mdt_cloud", "pending", "模拟云盘"),
+    )
+    assert reasons("模拟健身会所的自动扣款已关闭。", both) == []
+    assert reasons("模拟云盘的自动扣款已关闭。", both) == [Reason.STATUS_UNSUPPORTED]
+
+
+@needs_direct_debits
+def test_a_verified_check_does_not_back_a_paid_word() -> None:
+    facts = block(check("mdt_fitness", "verified", "模拟健身会所"))
+    assert reasons("健身房已扣款。", facts) == [Reason.STATUS_UNSUPPORTED]
+
+
+@pytest.mark.parametrize("word", ["已扣款", "扣款成功"])
+def test_debit_words_need_a_settled_receipt(word: str) -> None:
+    settled = status("f_ok", FactConcept.RECEIPT_STATUS, "SETTLED", "opn_1", "云盘扣款回执")
+    submitted = status("f_sub", FactConcept.RECEIPT_STATUS, "SUBMITTED", "opn_1", "云盘扣款回执")
+    assert reasons(f"云盘{word}。", block(settled)) == []
+    assert reasons(f"云盘{word}。", block(submitted)) == [Reason.STATUS_UNSUPPORTED]
+    assert reasons(f"云盘{word}。", block()) == [Reason.STATUS_UNSUPPORTED]
+
+
+@needs_direct_debits
+def test_a_paid_request_and_recorded_spend_back_the_debit_word() -> None:
+    paid = status("f_req", concept("debit_request_status"), "PAID", "req_1", "模拟云盘")
+    waiting = status(
+        "f_req", concept("debit_request_status"), "AWAITING_CLIENT", "req_1", "模拟云盘"
+    )
+    assert reasons("云盘的请求已扣款。", block(paid)) == []
+    assert reasons("云盘的请求已扣款。", block(waiting)) == [Reason.STATUS_UNSUPPORTED]
+    spend = money(
+        "f_spend", concept("subscription_paid"), 2500, "mdt_cloud", "模拟云盘近30天已扣款"
+    )
+    none = money("f_none", concept("subscription_paid"), 0, "mdt_cloud", "模拟云盘近30天已扣款")
+    assert reasons("近30天已扣款。", block(spend)) == []
+    assert reasons("近30天已扣款。", block(none)) == [Reason.STATUS_UNSUPPORTED]
+    assert reasons("近30天已扣款。", block()) == [Reason.STATUS_UNSUPPORTED]
+
+
+@needs_direct_debits
+def test_the_period_used_reason_may_say_the_period_was_debited() -> None:
+    reason = status("f_why", concept("debit_request_reason"), "PERIOD_USED", "req_2", "模拟云盘")
+    assert reasons("这笔请求被拒绝，因为本期已扣款。", block(reason)) == []
+    assert reasons("这笔请求被拒绝，因为本期已扣款。", block()) == [Reason.STATUS_UNSUPPORTED]
+
+
+def test_the_claims_of_earlier_status_words_are_unchanged_by_the_debit_words() -> None:
+    result = check_claims("房租已支付。", block(*RENT))
+    assert result.passed and result.claims_checked == 1

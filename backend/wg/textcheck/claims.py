@@ -47,22 +47,49 @@ _NEW_BILL_RE = re.compile(r"新账单|新增账单|新的账单")
 _COUNT_RE = re.compile(r"(?<![\d.])(\d+|[零〇一二两三四五六七八九十]{1,3})\s*(?:笔|单)")
 
 
+POSITIVE_AMOUNT = None
+
+# (concept, value) pairs; a concept is a FactConcept or, for concepts that older builds lack,
+# its string value. The value None means a money fact above zero.
+Accepted = tuple[tuple[str, str | None], ...]
+
+
 @dataclass(frozen=True)
 class StatusRule:
-    """A status word and the fact that must exist before the text may use it."""
+    """A status word and the facts, any one of which lets the text use it."""
 
     pattern: re.Pattern[str]
-    concept: FactConcept
-    value: str
+    accepts: Accepted
 
 
 _STATUS_RULES: tuple[StatusRule, ...] = (
-    StatusRule(re.compile(r"已支付|已付款|已转账|已到账"), FactConcept.RECEIPT_STATUS, "SETTLED"),
-    StatusRule(re.compile(r"已保障|已预留"), FactConcept.BILL_STATUS, "secured"),
     StatusRule(
-        re.compile(r"目标已达成|已达成目标|已达标"), FactConcept.CHECKPOINT_RESULT, "passed"
+        re.compile(r"已支付|已付款|已转账|已到账"), ((FactConcept.RECEIPT_STATUS, "SETTLED"),)
     ),
-    StatusRule(re.compile(r"计划已(?:经)?完成|已完成计划"), FactConcept.PLAN_STATUS, "completed"),
+    StatusRule(re.compile(r"已保障|已预留"), ((FactConcept.BILL_STATUS, "secured"),)),
+    StatusRule(
+        re.compile(r"目标已达成|已达成目标|已达标"), ((FactConcept.CHECKPOINT_RESULT, "passed"),)
+    ),
+    StatusRule(
+        re.compile(r"计划已(?:经)?完成|已完成计划"), ((FactConcept.PLAN_STATUS, "completed"),)
+    ),
+    # Direct debits (S5-SPEC §8.3). Closing an agreement is claimed only once the bank has
+    # refused a new debit attempt; the debit authorisation is not the service contract, so a
+    # cancelled subscription is never a fact the bank holds.
+    StatusRule(
+        re.compile(r"自动扣款已(?:经)?(?:关闭|停止)|已(?:经)?(?:关闭|停止)自动扣款"),
+        (("effect_check", "verified"),),
+    ),
+    StatusRule(re.compile(r"订阅已(?:经)?取消|已(?:经)?取消(?:了)?订阅|已(?:经)?退订"), ()),
+    StatusRule(
+        re.compile(r"已扣款|扣款成功"),
+        (
+            (FactConcept.RECEIPT_STATUS, "SETTLED"),
+            ("debit_request_status", "PAID"),
+            ("debit_request_reason", "PERIOD_USED"),
+            ("subscription_paid", POSITIVE_AMOUNT),
+        ),
+    ),
 )
 
 
@@ -89,6 +116,17 @@ def _clauses(text: str) -> list[tuple[int, int]]:
         start = match.end()
     spans.append((start, len(text)))
     return spans
+
+
+def _backs(fact: Fact, accepts: Accepted) -> bool | None:
+    """None when the fact is not of an accepted concept; else whether its value supports."""
+    for concept, value in accepts:
+        if fact.concept != concept:
+            continue
+        if value is POSITIVE_AMOUNT:
+            return isinstance(fact, MoneyFact) and fact.value > 0
+        return isinstance(fact, StatusFact) and fact.value == value
+    return None
 
 
 def _round_half_up(value: Decimal, places: int) -> Decimal:
@@ -243,24 +281,22 @@ class _Checker:
     def _status_support(self, rule: StatusRule, clause: tuple[int, int]) -> tuple[bool, str | None]:
         """Whether a fact supports the status word, and the fact it was compared with."""
         candidates = [
-            f for f in self._facts if isinstance(f, StatusFact) and f.concept == rule.concept
+            (fact, backs)
+            for fact in self._facts
+            if (backs := _backs(fact, rule.accepts)) is not None
         ]
         mentioned = self._subjects_named(clause)
-        wrong = next(
-            (f for f in candidates if f.subject in mentioned and f.value != rule.value), None
-        )
+        wrong = next((f for f, backs in candidates if f.subject in mentioned and not backs), None)
         if wrong is not None:
             return False, wrong.fact_id
-        backed = {f.subject for f in candidates}
+        backed = {f.subject for f, _ in candidates}
         unbacked = sorted(s for s in mentioned if s not in backed)
         if unbacked:
             fact = next(f for f in self._facts if f.subject == unbacked[0])
             return False, fact.fact_id
-        if mentioned:
+        if mentioned or any(backs for _, backs in candidates):
             return True, None
-        if any(f.value == rule.value for f in candidates):
-            return True, None
-        return False, candidates[0].fact_id if candidates else None
+        return False, candidates[0][0].fact_id if candidates else None
 
     def _subjects_named(self, clause: tuple[int, int]) -> set[str]:
         """Subjects the clause refers to by a label of one of their facts or as the new bill."""
