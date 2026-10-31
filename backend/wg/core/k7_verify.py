@@ -211,6 +211,7 @@ OUTCOME_WORDS = (
     "做不到",
     "办不到",
 )
+FEE_WORDS = ("手续费", "赎回费", "费用", "费率")
 _NO_FACTS = FactBlock(facts=())
 _SENTENCE_END_RE = re.compile(r"[。！？!?；;\n]")
 # Parsed as the claim checker parses percents, so a reply's percent and a customer's compare.
@@ -830,7 +831,12 @@ def restates_customer(
     stated: frozenset[StatedValue],
     reply_values: dict[tuple[int, int], StatedValue],
 ) -> bool:
-    """Whether a flagged claim only repeats a value the customer wrote (SPEC §17, K7-1)."""
+    """Whether a flagged claim only repeats a value the customer wrote (SPEC §17, K7-1).
+
+    The value must come with the comparator the customer wrote next to it (none for none), so
+    a limit is never restated as a plain figure. A limit is required against a fact of another
+    value, and in a sentence about a fee, where a plain figure would state the fee itself.
+    """
     if violation.reason is _R.UNSUPPORTED:
         needs_comparator = False
     elif violation.reason in COMPARATOR_REASONS:
@@ -840,11 +846,12 @@ def restates_customer(
     claim = reply_values.get((violation.start, violation.end))
     if claim is None or claim.kind is not violation.claim_kind:
         return False
-    if _states_account(_sentence_of(text, violation.start)):
+    sentence = _sentence_of(text, violation.start)
+    if _states_account(sentence):
         return False
-    if needs_comparator:
+    if needs_comparator or any(word in sentence for word in FEE_WORDS):
         return claim.comparator is not None and claim in stated
-    return any(s.kind is claim.kind and s.value == claim.value for s in stated)
+    return claim in stated
 
 
 def remaining_violations(

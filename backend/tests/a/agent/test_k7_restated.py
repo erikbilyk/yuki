@@ -226,6 +226,18 @@ def test_a_fee_or_percent_against_its_fact_needs_the_customer_comparator(
     assert left(explanation, [FEE_15, SHARE_45], T35_REQUEST) == remaining
 
 
+@pytest.mark.parametrize(
+    ("explanation", "customer"),
+    [
+        ("手续费500元，请问要继续吗？", "给妈妈转500"),
+        ("您当前消费电子占比40%，请问要调整吗？", "把消费电子降到40%以下"),
+        ("请问要转不超过500元吗？", "给妈妈转500"),
+    ],
+)
+def test_a_customer_value_given_another_meaning_is_replaced(explanation: str, customer: str):
+    assert [reason for _, reason in left(explanation, [], customer)] == ["unsupported"]
+
+
 def test_a_comparator_the_customer_did_not_write_is_not_enough():
     assert left("手续费不超过20元。", [FEE_15], "手续费20元左右") == [("20元", "value_mismatch")]
 
