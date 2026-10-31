@@ -1,9 +1,9 @@
-import { formatFen, formatPct } from "./money.ts";
+import { formatFen, formatFenExact, formatPct } from "./money.ts";
 import { S } from "./strings.ts";
 import type { PercentQuality } from "./types.ts";
 
-export function Money({ fen }: { fen: number }) {
-  return <span className="money">{formatFen(fen)}</span>;
+export function Money({ fen, exact = false }: { fen: number; exact?: boolean }) {
+  return <span className="money">{exact ? formatFenExact(fen) : formatFen(fen)}</span>;
 }
 
 export function Percent({ value, quality }: { value: string; quality: PercentQuality }) {

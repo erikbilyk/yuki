@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { api } from "./api.ts";
+import { openCard } from "./drafts.ts";
 import { errorText } from "./errors.ts";
 import { parseYuanToFen } from "./money.ts";
 import { S } from "./strings.ts";
@@ -12,12 +13,6 @@ interface Props {
 
 function reasonText(code: string): string {
   return S.errors.byCode[code] ?? S.errors.unknown;
-}
-
-/** Fill the draft route's form fields, then ask for the trusted card; nothing executes here. */
-async function openCard(draft: DraftResult): Promise<string> {
-  const requested = await api.requestApproval(draft.logical_action_id);
-  return requested.card_id;
 }
 
 export function GuidedForms({ onCard }: Props) {
