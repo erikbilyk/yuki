@@ -218,6 +218,42 @@ def test_effect_events_append_and_the_newest_wins(agreement: Database):
     must_fail(db, "UPDATE effect_verification_events SET result = 'failed'", match="append-only")
 
 
+def test_a_change_overtaken_by_a_later_one_is_not_probed_again(agreement: Database):
+    db = agreement
+
+    def settled(operation_id: str, kind: str) -> None:
+        run(
+            db,
+            "INSERT INTO operations (operation_id, idempotency_key, request_hash, kind, status,"
+            " submitted_at, created_at) VALUES (?, ?, 'h', ?, 'SETTLED', 't', 't')",
+            (operation_id, operation_id, kind),
+        )
+
+    def append(uow, operation_id: str, old: str, new: str) -> None:
+        mandates.append_mandate_event(
+            uow,
+            "mdt_video",
+            mandates.STATUS_FIELD,
+            old=old,
+            new=new,
+            actor=AuditActor.CUSTOMER,
+            reason="x",
+            operation_id=operation_id,
+        )
+
+    def unverified() -> list[str]:
+        with db.read() as conn:
+            return mandates.unverified_changes(conn, ["MANDATE_SUSPEND", "MANDATE_CANCEL"])
+
+    settled("opn_1", "MANDATE_SUSPEND")
+    db.run_in_uow(lambda uow: append(uow, "opn_1", "ACTIVE", "SUSPENDED"), "suspend")
+    assert unverified() == ["opn_1"]
+
+    settled("opn_2", "MANDATE_CANCEL")
+    db.run_in_uow(lambda uow: append(uow, "opn_2", "SUSPENDED", "CANCELLED"), "cancel")
+    assert unverified() == ["opn_2"]
+
+
 # Schema 7 constraints
 
 

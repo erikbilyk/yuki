@@ -380,13 +380,21 @@ def newest_effect_event(reader: Reader, operation_id: str) -> EffectEventRow | N
 def unverified_changes(
     reader: Reader, kinds: Collection[str], customer_id: str | None = None
 ) -> list[str]:
-    """SETTLED change operations of `kinds` whose newest effect check is missing or pending."""
+    """SETTLED change operations of `kinds` whose newest effect check is missing or pending.
+
+    A change that a later event of the same agreement has overtaken is left out: a probe sent
+    now would test the agreement as it stands, not the change.
+    """
     marks = ", ".join("?" for _ in kinds)
     sql = (
         f"SELECT o.operation_id FROM operations o WHERE o.kind IN ({marks})"
         " AND o.status = 'SETTLED' AND COALESCE((SELECT e.result"
         "  FROM effect_verification_events e WHERE e.operation_id = o.operation_id"
         "  ORDER BY e.event_id DESC LIMIT 1), 'pending') = 'pending'"
+        " AND NOT EXISTS (SELECT 1 FROM mandate_events own JOIN mandate_events later"
+        "  ON later.mandate_ref = own.mandate_ref AND later.event_id > own.event_id"
+        "  WHERE own.operation_id = o.operation_id"
+        "  AND COALESCE(later.operation_id, '') <> o.operation_id)"
         + (" AND o.customer_id = ?" if customer_id is not None else "")
         + " ORDER BY o.rowid"
     )
