@@ -12,7 +12,7 @@ from wg.contracts.api import (
 from wg.contracts.enums import ActionKind
 from wg.contracts.errors import ErrorCode
 from wg.core.k1_session import payee_handle
-from wg.k6 import accounts, actions, operations
+from wg.k6 import accounts, actions, mandates, operations
 from wg.k6.accounts import AccountRow, PayeeRow
 from wg.k6.db import Reader
 from wg.k6.operations import OperationRow, ReceiptRow
@@ -44,6 +44,7 @@ def operation_view(reader: Reader, operation: OperationRow) -> OperationView:
 
 def receipt_view(reader: Reader, operation: OperationRow, receipt: ReceiptRow) -> ReceiptView:
     assert operation.logical_action_id is not None and operation.revision is not None
+    mandate_ref = receipt.effect.get("mandate_ref")
     return ReceiptView(
         receipt_id=receipt.receipt_id,
         operation_id=operation.operation_id,
@@ -63,6 +64,9 @@ def receipt_view(reader: Reader, operation: OperationRow, receipt: ReceiptRow) -
         unpaid_after_fen=receipt.effect.get("unpaid_after_fen"),
         reason_code=_error_code(receipt.reason_code),
         created_at=receipt.created_at,
+        mandate_ref=mandate_ref,
+        request_id=receipt.effect.get("request_id"),
+        merchant_display=mandates.merchant_display(reader, mandate_ref) if mandate_ref else None,
     )
 
 

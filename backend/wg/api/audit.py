@@ -64,6 +64,7 @@ EVENT_TEXT: dict[str, str] = {
     "debit_request_received": "收到商户扣款请求",
     "debit_request_refused": "商户扣款请求格式不正确，未受理",
     "debit_request_repeat_mismatch": "商户重复请求的内容不一致",
+    "debit_request_paid": "扣款请求已支付",
 }
 
 

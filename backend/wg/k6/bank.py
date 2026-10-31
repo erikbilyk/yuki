@@ -8,6 +8,9 @@ payment at the next 09:00. Until then the gateway's reservation holds the money.
 order settles on its product's calendar (SPEC §15.3) against the simulator's fund
 settlement and fee income accounts.
 
+A payment of a merchant's direct-debit request settles in the call that submits it, through
+clearing, and marks the request PAID (S5-SPEC §6.2).
+
 Two fault points live here (SPEC §12.7): `bank_ack_lost` fires after the order and its
 effect are recorded, and `settlement_reject` makes the bank refuse a payment at settlement.
 """
@@ -32,7 +35,7 @@ from wg.contracts.enums import (
 )
 from wg.contracts.errors import ErrorCode, WgError
 from wg.core.hashes import sha256_hex
-from wg.k6 import accounts, audit, faults, operations
+from wg.k6 import accounts, audit, debit_requests, faults, operations
 from wg.k6.db import Reader, UnitOfWork
 from wg.k6.operations import OperationRow
 from wg.k6.simtime import from_db, now_db, to_db
@@ -67,6 +70,21 @@ class PaymentOrder:
     amount_fen: int
     payee_id: str
     settle_due_at: datetime
+
+
+@dataclass(frozen=True)
+class MerchantPaymentOrder:
+    """A payment of one merchant request; the settlement account comes from the registry."""
+
+    key: str
+    operation_id: str
+    account_id: str
+    amount_fen: int
+    merchant_id: str
+    settlement_account_ref: str
+    mandate_ref: str
+    request_id: str
+    period_key: str
 
 
 @dataclass(frozen=True)
@@ -217,6 +235,46 @@ def settle_payment(uow: UnitOfWork, key: str, at: datetime) -> BankRequest:
         return (Posting(str(effect["account_id"]), -amount), Posting(str(credit), amount))
 
     return _settle(uow, key, at, postings)
+
+
+def submit_merchant_payment(
+    uow: UnitOfWork, order: MerchantPaymentOrder, at: datetime
+) -> BankRequest:
+    """Pay a merchant request once per key: record the order, post it and mark the request PAID.
+
+    Raises AckLost, after all of these writes, when `bank_ack_lost` fires (T105).
+    """
+    request = find_request(uow, order.key)
+    if request is not None:
+        return request
+    request = _insert_request(
+        uow,
+        order.key,
+        BankRequestStatus.EXECUTED,
+        {
+            "operation_id": order.operation_id,
+            "account_id": order.account_id,
+            "amount_fen": order.amount_fen,
+            "merchant_id": order.merchant_id,
+            "settlement_account_ref": order.settlement_account_ref,
+            "mandate_ref": order.mandate_ref,
+            "request_id": order.request_id,
+            "period_key": order.period_key,
+            "accepted_at": to_db(at),
+            "settled_at": to_db(at),
+            "reason": None,
+        },
+    )
+    post_entries(
+        uow,
+        order.operation_id,
+        (Posting(order.account_id, -order.amount_fen), Posting(CLEARING_ACCOUNT, order.amount_fen)),
+        at,
+    )
+    debit_requests.mark_paid(uow, order.request_id, order.operation_id)
+    if faults.consume(uow, Fault.BANK_ACK_LOST):
+        raise AckLost(request)
+    return request
 
 
 def _credit_account(reader: Reader, payee_id: str) -> str | None:

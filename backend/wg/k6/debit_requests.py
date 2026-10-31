@@ -3,6 +3,9 @@
 A request is decided once, when it arrives, and stored with that outcome; nothing else
 happens then (no action, hold or notification). `description_raw` is the merchant's text,
 stored as received and never read as an instruction.
+
+Afterwards a request leaves AWAITING_CLIENT once, when it is paid (S5-SPEC §6.2); the
+change raises its version and is audited in the same unit of work.
 """
 
 from __future__ import annotations
@@ -261,6 +264,63 @@ def _audit_repeat_mismatch(
         )
 
 
+# Answers
+
+
+def mark_paid(uow: UnitOfWork, request_id: str, operation_id: str) -> DebitRequestRow:
+    """The bank paid the request through `operation_id`."""
+    return _close(
+        uow,
+        request_id,
+        DebitRequestStatus.PAID,
+        None,
+        operation_id=operation_id,
+        actor=AuditActor.SYSTEM,
+        event="debit_request_paid",
+    )
+
+
+def _close(
+    uow: UnitOfWork,
+    request_id: str,
+    status: DebitRequestStatus,
+    reason: DebitReason | None,
+    *,
+    actor: AuditActor,
+    event: str,
+    operation_id: str | None = None,
+) -> DebitRequestRow:
+    """Move a request out of AWAITING_CLIENT; one that already left it is not payable."""
+    cursor = uow.execute(
+        "UPDATE debit_requests SET status = ?, reason_code = ?, operation_id = ?,"
+        " version = version + 1 WHERE request_id = ? AND status = ?",
+        (
+            status.value,
+            reason.value if reason else None,
+            operation_id,
+            request_id,
+            DebitRequestStatus.AWAITING_CLIENT.value,
+        ),
+    )
+    if cursor.rowcount != 1:
+        raise WgError(
+            ErrorCode.REQUEST_NOT_PAYABLE,
+            {"reason": "request_not_awaiting", "request_id": request_id},
+        )
+    row = find_request(uow, request_id)
+    assert row is not None
+    audit.record(
+        uow,
+        actor,
+        event,
+        customer_id=row.customer_id,
+        ref=request_id,
+        decision=status.value,
+        reason=reason.value if reason else None,
+    )
+    return row
+
+
 # Reads
 
 
@@ -288,6 +348,18 @@ def period_statuses(reader: Reader, mandate_ref: str, key: str) -> list[DebitReq
         (mandate_ref, key),
     ).fetchall()
     return [DebitRequestStatus(row["status"]) for row in rows]
+
+
+def payment_operation_ids(reader: Reader, request_id: str) -> list[str]:
+    """Operations of DEBIT_PAY actions that pay this request, whatever their status."""
+    rows = reader.execute(
+        "SELECT o.operation_id FROM operations o JOIN actions a"
+        " ON a.logical_action_id = o.logical_action_id AND a.revision = o.revision"
+        " WHERE a.kind = 'DEBIT_PAY' AND json_extract(a.params_json, '$.request_id') = ?"
+        " ORDER BY o.rowid",
+        (request_id,),
+    ).fetchall()
+    return [row["operation_id"] for row in rows]
 
 
 def mandate_requests(reader: Reader, mandate_ref: str) -> list[DebitRequestRow]:
