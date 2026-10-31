@@ -638,6 +638,11 @@ class FactCollector:
         if mandate.status is MandateStatus.ACTIVE:
             label = f"{name}每月扣款金额"
             self._money(_C.MANDATE_EXPECTED, mandate.expected_fen, label, ref, subject=subject)
+            if mandate.next_debit_date is not None:
+                label = f"{name}下次扣款日"
+                self._add(
+                    DateFact, _C.DUE_DATE, mandate.next_debit_date, label, ref, subject=subject
+                )
 
     def _debit_request(self, request: DebitRequestView) -> None:
         name, ref, subject = request.merchant_display, request.request_id, request.request_id
