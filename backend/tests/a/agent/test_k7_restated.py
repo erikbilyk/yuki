@@ -178,7 +178,17 @@ def test_the_balance_stated_with_the_customer_number_is_replaced(agent: Agent):
 
 @pytest.mark.parametrize(
     "explanation",
-    ["您账上共有500元，可以转。", "转账后剩余500元。", "500元可用。", "这500元已到账。"],
+    [
+        "您账上共有500元，可以转。",
+        "转账后剩余500元。",
+        "500元可用。",
+        "这500元已到账。",
+        "已为您给妈妈转500元。",
+        "给妈妈转500元正在处理中。",
+        "转500元可以执行。",
+        "您的钱够转500元。",
+        "无法转500元。",
+    ],
 )
 def test_a_restated_amount_in_an_account_sentence_is_replaced(agent: Agent, explanation: str):
     assert reply_to(agent, "给妈妈转500", explanation).reply.replaced
@@ -207,7 +217,7 @@ def test_a_count_the_customer_wrote_is_never_waived(agent: Agent):
         ("手续费至少20元。", [("20元", "value_mismatch")]),
         ("占比会降到40%。", [("40%", "value_mismatch")]),
         ("占比会降到40%以上。", [("40%", "value_mismatch")]),
-        ("手续费为25元，不超过20元的要求无法满足。", [("25元", "value_mismatch")]),
+        ("手续费为25元，高于您要求的不超过20元。", [("25元", "value_mismatch")]),
     ],
 )
 def test_a_fee_or_percent_against_its_fact_needs_the_customer_comparator(

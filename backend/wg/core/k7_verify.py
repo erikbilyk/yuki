@@ -186,6 +186,31 @@ ACCOUNT_STATE_WORDS = (
     "持有",
     "市值",
 )
+# A sentence with one of these says what was done, is under way or is (not) possible; a value in
+# it is a claim about an outcome ("已为您买入4,785元", "买入4,785元可以执行").
+OUTCOME_WORDS = (
+    "已",
+    "处理中",
+    "执行中",
+    "进行中",
+    "成功",
+    "可执行",
+    "可以执行",
+    "能执行",
+    "可行",
+    "够",
+    "可以转",
+    "可以买",
+    "可以付",
+    "能转",
+    "能买",
+    "能付",
+    "不可能",
+    "无法",
+    "不能",
+    "做不到",
+    "办不到",
+)
 _NO_FACTS = FactBlock(facts=())
 _SENTENCE_END_RE = re.compile(r"[。！？!?；;\n]")
 # Parsed as the claim checker parses percents, so a reply's percent and a customer's compare.
@@ -791,8 +816,8 @@ def _sentence_of(text: str, position: int) -> str:
 
 
 def _states_account(sentence: str) -> bool:
-    """Whether the sentence speaks about the account's contents or about a status."""
-    if any(word in sentence for word in ACCOUNT_STATE_WORDS):
+    """Whether the sentence speaks about the account, an outcome or a status."""
+    if any(word in sentence for word in (*ACCOUNT_STATE_WORDS, *OUTCOME_WORDS)):
         return True
     return any(
         v.claim_kind is FactKind.STATUS for v in check_claims(sentence, _NO_FACTS).violations
