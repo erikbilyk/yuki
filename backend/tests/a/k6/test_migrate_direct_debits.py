@@ -25,6 +25,7 @@ from wg.contracts.api import (
     VerifyResult,
 )
 from wg.contracts.enums import ActionKind, ActionStatus
+from wg.k6 import cash_inputs
 from wg.k6.db import Database, NestedTransactionError, in_transaction, open_database
 from wg.k6.migrate import MigrationError, current_version, discover, migrate
 
@@ -141,9 +142,14 @@ def logged_in(client) -> Browser:
 
 
 def populate_schema_6(db_path: Path, schema_6: Path) -> dict[str, str]:
-    """A settled same-bank transfer, a RED transfer with an open challenge, a draft, a plan."""
+    """A settled same-bank transfer, a RED transfer with an open challenge, a draft, a plan.
+
+    The release build that leaves schema-6 databases reads no direct-debit table, so the
+    subscription periods of the cash inputs are left out while populating.
+    """
     with pytest.MonkeyPatch.context() as patch:
         patch.setattr(app_module, "migrate", lambda db: migrate(db, schema_6))
+        patch.setattr(cash_inputs, "_subscription_periods", lambda reader, customer_id, at: ())
         with make_client(db_path) as client:
             browser = logged_in(client)
             settled = confirm(browser, 50_000)

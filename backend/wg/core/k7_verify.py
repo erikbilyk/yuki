@@ -63,7 +63,7 @@ from wg.contracts.tools import (
     OperationStatusResult,
     PlanStatusResult,
 )
-from wg.core import k5_continuation
+from wg.core import k5_continuation, mandate_rules
 from wg.k6 import accounts, actions, audit, commitments, funds, plans
 from wg.k6.db import Database, Reader
 from wg.packs.labels import bill_label
@@ -273,6 +273,16 @@ class FactCollector:
                     bill.unpaid_fen,
                     bill.status.value,
                     due_date=bill.due_date,
+                    as_of=at,
+                )
+            for period in details.subscriptions:
+                self._bill(
+                    ref,
+                    mandate_rules.subscription_commitment_id(period.mandate_ref, period.period_key),
+                    f"{period.merchant_display}自动扣款",
+                    period.expected_fen,
+                    period.status.value,
+                    due_date=period.due_date,
                     as_of=at,
                 )
 

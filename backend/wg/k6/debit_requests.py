@@ -281,3 +281,13 @@ def period_statuses(reader: Reader, mandate_ref: str, key: str) -> list[DebitReq
         (mandate_ref, key),
     ).fetchall()
     return [DebitRequestStatus(row["status"]) for row in rows]
+
+
+def mandate_requests(reader: Reader, mandate_ref: str) -> list[DebitRequestRow]:
+    """The agreement's non-probe requests in arrival order."""
+    rows = reader.execute(
+        "SELECT * FROM debit_requests WHERE mandate_ref = ? AND probe = 0"
+        " ORDER BY received_at, rowid",
+        (mandate_ref,),
+    ).fetchall()
+    return [_request(row) for row in rows]

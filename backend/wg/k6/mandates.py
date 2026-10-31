@@ -160,6 +160,18 @@ def customer_mandates(reader: Reader, customer_id: str) -> list[MandateRow]:
     return [_mandate(row) for row in rows]
 
 
+def merchant_display(reader: Reader, mandate_ref: str) -> str:
+    """The registry name of the agreement's merchant."""
+    row = reader.execute(
+        "SELECT m.display_name FROM mandates a JOIN merchants m ON m.merchant_id = a.merchant_id"
+        " WHERE a.mandate_ref = ?",
+        (mandate_ref,),
+    ).fetchone()
+    if row is None:
+        raise WgError(ErrorCode.NOT_FOUND, {"mandate_ref": mandate_ref})
+    return row["display_name"]
+
+
 def update_mandate(
     uow: UnitOfWork,
     mandate: MandateRow,

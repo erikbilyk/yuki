@@ -9,6 +9,10 @@ Spending is outgoing lines except transfers between the customer's own accounts,
 and payments of purposes excluded from the allowance (matched through the commitment kind);
 income is incoming lines except own transfers and refunds. Lines with no category are
 unresolved.
+
+Protected direct-debit periods (S5-SPEC §5.6) are added as CONFIRMED commitments without a
+payee. They are derived here on every build, never stored, and so never move
+`commitments_version` or appear among the customer's bills.
 """
 
 from __future__ import annotations
@@ -24,7 +28,8 @@ from wg.contracts.engines import (
     UnresolvedInput,
 )
 from wg.contracts.enums import CommitmentStatus
-from wg.k6 import accounts, imports, operations
+from wg.core import mandate_rules
+from wg.k6 import accounts, debit_requests, imports, mandates, operations
 from wg.k6.categories import NOT_INCOME, NOT_SPENDING
 from wg.k6.db import Reader
 from wg.k6.reserves import reserve_target
@@ -39,6 +44,7 @@ def cash_inputs_from_db(reader: Reader, customer_id: str, at: datetime | None = 
     at = now(reader) if at is None else at
     month_start = at.astimezone(SHANGHAI).date().replace(day=1)
     commitments = _commitments(reader, customer_id)
+    protected = _subscription_periods(reader, customer_id, at)
     lines = _month_lines(reader, customer_id, month_start)
     excluded = _excluded_categories(reader, customer_id, at, commitments)
     spent = sum(
@@ -52,7 +58,7 @@ def cash_inputs_from_db(reader: Reader, customer_id: str, at: datetime | None = 
         reserve_fen=reserve_target(reader, customer_id),
         allowance_remaining_fen=max(0, _allowance_budget(reader, customer_id, at) - spent),
         margin_fen=_margin(reader, customer_id),
-        commitments=commitments,
+        commitments=commitments + protected,
         holds=tuple(
             HoldInput(operation_id=r.operation_id, purpose_id=r.purpose_id, amount_fen=r.amount_fen)
             for r in operations.active_reservations(reader, customer_id)
@@ -103,6 +109,28 @@ def _commitments(reader: Reader, customer_id: str) -> tuple[CommitmentInput, ...
         )
         for row in rows
     )
+
+
+def _subscription_periods(
+    reader: Reader, customer_id: str, at: datetime
+) -> tuple[CommitmentInput, ...]:
+    result = []
+    for mandate in mandates.customer_mandates(reader, customer_id):
+        requests = debit_requests.mandate_requests(reader, mandate.mandate_ref)
+        for period in mandate_rules.protected_periods(mandate, requests, at):
+            result.append(
+                CommitmentInput(
+                    commitment_id=mandate_rules.subscription_commitment_id(
+                        mandate.mandate_ref, period.period_key
+                    ),
+                    purpose_id=mandate.purpose_id,
+                    status=CommitmentStatus.CONFIRMED,
+                    amount_fen=period.expected_fen,
+                    unpaid_fen=period.expected_fen,
+                    due_date=period.due_date,
+                )
+            )
+    return tuple(sorted(result, key=lambda c: (c.due_date, c.commitment_id)))
 
 
 def _month_lines(
