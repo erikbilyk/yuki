@@ -16,6 +16,7 @@ from .common import assert_cash
 from .direct_debit import (
     AWAITING,
     CLOUD,
+    FITNESS,
     PAID,
     VIDEO,
     approve,
@@ -88,11 +89,15 @@ def test_t98_the_customer_pays_a_request_at_the_expected_amount(wg: WgClient) ->
 
     spend = subscription_spend(wg)
     assert spend["total_fen"] == 2_500
-    assert [
-        (r["mandate_ref"], r["paid_count"], r["paid_fen"], r["last_amount_fen"])
-        for r in spend["rows"]
-    ] == [(VIDEO, 1, 2_500, 2_500)]
-    assert date.fromisoformat(spend["rows"][0]["last_paid_on"]) == date(2026, 11, 2)
+    # One row per agreement, zero counts included; only the video row has a payment.
+    rows = {r["mandate_ref"]: r for r in spend["rows"]}
+    assert set(rows) == {CLOUD, FITNESS, VIDEO}
+    video = rows[VIDEO]
+    assert (video["paid_count"], video["paid_fen"], video["last_amount_fen"]) == (1, 2_500, 2_500)
+    assert date.fromisoformat(video["last_paid_on"]) == date(2026, 11, 2)
+    for ref in (CLOUD, FITNESS):
+        assert (rows[ref]["paid_count"], rows[ref]["paid_fen"]) == (0, 0)
+        assert rows[ref]["last_paid_on"] is None and rows[ref]["last_amount_fen"] is None
     # The customer's transfer history is not a list of merchant payments.
     assert wg.history().transfers == ()
 
