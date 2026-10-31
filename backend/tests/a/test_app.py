@@ -20,7 +20,7 @@ def test_healthz_reports_status_build_and_mode():
     body = make_client(demo=True).get("/healthz").json()
     assert body["status"] == "ok"
     assert body["demo"] is True
-    assert body["features"] == []
+    assert body["features"] == ["s5"]
     assert isinstance(body["build"], str) and body["build"]
 
 

@@ -158,6 +158,8 @@ def test_every_name_in_the_prompt_is_a_registered_tool_one_of_its_fields_or_a_re
     fields |= {"calc_result_id", "commitment_id", "logical_action_id"}
     # The refusal reason compose_plan returns in flat mode (asserted in test_flat_turns).
     fields |= {"flat_mode"}
+    # Result fields of the direct-debit tools that the prompt tells the model how to read.
+    fields |= {"description_raw", "effect_check"}
     named = identifiers(load_system_prompt().text)
     assert named & set(TOOLS_BY_NAME), "the prompt names no tool"
     assert named <= set(TOOLS_BY_NAME) | fields, named - set(TOOLS_BY_NAME) - fields

@@ -3,6 +3,9 @@
 Every figure comes from a stored snapshot or from statement rows. A read returns the
 customer's latest snapshot when nothing changed since it was built, and builds a new one
 otherwise (SPEC §13.3); the build is one unit of work and writes nothing else.
+
+Protected direct-debit periods count in B and headroom like bills, but the snapshot view
+lists them under `details.subscriptions`, not among the bills (S5-SPEC §5.6).
 """
 
 from __future__ import annotations
@@ -25,15 +28,18 @@ from wg.contracts.api import (
     SpendingQuery,
     SpendingRow,
     SpendingView,
+    SubscriptionPeriodState,
     TransactionsQuery,
     TransactionsView,
     TransactionView,
     UnresolvedItem,
     UnresolvedView,
 )
+from wg.contracts.engines import BillState
 from wg.contracts.enums import ActionKind, BillStatus
+from wg.core import mandate_rules
 from wg.core.k1_session import owned
-from wg.k6 import accounts, actions, commitments, imports, operations, snapshots
+from wg.k6 import accounts, actions, commitments, imports, mandates, operations, snapshots
 from wg.k6.categories import NOT_SPENDING
 from wg.k6.db import Database, Reader
 from wg.k6.simtime import SHANGHAI, now
@@ -67,10 +73,16 @@ class CashService:
     def snapshot(self, customer_id: str) -> CashSnapshotView:
         snapshot = self.current_snapshot(customer_id)
         values = snapshot.values
-        owed = [b for b in values.bills if b.status in _OWED_STATUSES]
+        bills = tuple(
+            b
+            for b in values.bills
+            if mandate_rules.parse_subscription_commitment_id(b.commitment_id) is None
+        )
+        owed = [b for b in bills if b.status in _OWED_STATUSES]
         with self.db.read() as conn:
             availability = tuple(_availability(conn, customer_id, values.quality.reconciled))
             next_operation = _next_operation(conn, customer_id)
+            subscriptions = tuple(_subscription_states(conn, values.bills))
         shortfall = values.shortfall_fen
         return CashSnapshotView(
             snapshot_id=snapshot.snapshot_id,
@@ -92,8 +104,9 @@ class CashService:
                 u_fen=values.u_fen,
                 accounts=availability,
                 monthly_estimate_fen=values.monthly_estimate_fen,
-                bills=values.bills,
+                bills=bills,
                 quality=values.quality,
+                subscriptions=subscriptions,
             ),
         )
 
@@ -231,6 +244,29 @@ def _availability(
         )
         for account in accounts.customer_accounts(reader, customer_id)
     ]
+
+
+def _subscription_states(
+    reader: Reader, states: tuple[BillState, ...]
+) -> list[SubscriptionPeriodState]:
+    """The protected direct-debit periods among the snapshot's bill states."""
+    result = []
+    for state in states:
+        parsed = mandate_rules.parse_subscription_commitment_id(state.commitment_id)
+        if parsed is None:
+            continue
+        mandate_ref, period_key = parsed
+        result.append(
+            SubscriptionPeriodState(
+                mandate_ref=mandate_ref,
+                merchant_display=mandates.merchant_display(reader, mandate_ref),
+                period_key=period_key,
+                due_date=state.due_date,
+                expected_fen=state.unpaid_fen,
+                status=state.status,
+            )
+        )
+    return result
 
 
 def _next_operation(reader: Reader, customer_id: str) -> NextOperationView | None:

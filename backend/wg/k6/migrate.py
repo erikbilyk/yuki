@@ -1,4 +1,9 @@
-"""Apply the SQL migrations in wg/k6/schema/ in order; each one runs in its own unit of work."""
+"""Apply the SQL migrations in wg/k6/schema/ in order; each one runs in its own unit of work.
+
+A migration whose first line is `-- foreign_keys: off` runs with foreign key enforcement
+off, so it can rebuild a table that other tables reference; it commits only when
+`PRAGMA foreign_key_check` finds no violation.
+"""
 
 from __future__ import annotations
 
@@ -17,12 +22,26 @@ SCHEMA_DIR = Path(__file__).resolve().parent / "schema"
 
 _FILE_NAME = re.compile(r"^(\d{4})_([a-z0-9_]+)\.sql$")
 
+FK_OFF_LINE = "-- foreign_keys: off"
+
+
+class MigrationError(RuntimeError):
+    """A migration left the database inconsistent and was rolled back."""
+
 
 @dataclass(frozen=True)
 class Migration:
     version: int
     name: str
     path: Path
+
+    @property
+    def script(self) -> str:
+        return self.path.read_text(encoding="utf-8")
+
+    @property
+    def foreign_keys_off(self) -> bool:
+        return self.script.split("\n", 1)[0].rstrip() == FK_OFF_LINE
 
 
 def discover(directory: Path = SCHEMA_DIR) -> list[Migration]:
@@ -73,8 +92,15 @@ def _ensure_version_table(uow: UnitOfWork) -> None:
 
 
 def _apply(uow: UnitOfWork, migration: Migration) -> None:
-    for statement in split_statements(migration.path.read_text(encoding="utf-8")):
+    for statement in split_statements(migration.script):
         uow.execute(statement)
+    if migration.foreign_keys_off:
+        violations = uow.execute("PRAGMA foreign_key_check").fetchall()
+        if violations:
+            tables = sorted({row[0] for row in violations})
+            raise MigrationError(
+                f"migration {migration.version:04d} breaks foreign keys in {', '.join(tables)}"
+            )
     # applied_at is wall-clock time: the simulated clock lives in a table this creates.
     uow.execute(
         "INSERT INTO schema_version (version, name, applied_at) VALUES (?, ?, ?)",
@@ -88,7 +114,10 @@ def migrate(db: Database, directory: Path = SCHEMA_DIR) -> int:
     with db.unit_of_work("schema_version") as uow:
         _ensure_version_table(uow)
     for migration in migrations:
-        with db.unit_of_work(f"migrate {migration.version:04d}") as uow:
+        unit = (
+            db.unit_of_work_without_foreign_keys if migration.foreign_keys_off else db.unit_of_work
+        )
+        with unit(f"migrate {migration.version:04d}") as uow:
             if current_version(uow) >= migration.version:
                 continue
             _apply(uow, migration)

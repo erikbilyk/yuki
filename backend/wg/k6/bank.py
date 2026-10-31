@@ -8,6 +8,11 @@ payment at the next 09:00. Until then the gateway's reservation holds the money.
 order settles on its product's calendar (SPEC §15.3) against the simulator's fund
 settlement and fee income accounts.
 
+A payment of a merchant's direct-debit request settles in the call that submits it, through
+clearing, and marks the request PAID (S5-SPEC §6.2). A change of a direct-debit agreement
+moves no money; the bank records it and applies it to the agreement and its pending
+requests in the same call. A new agreement is recorded and stored in the same way.
+
 Two fault points live here (SPEC §12.7): `bank_ack_lost` fires after the order and its
 effect are recorded, and `settlement_reject` makes the bank refuse a payment at settlement.
 """
@@ -18,12 +23,13 @@ import json
 import secrets
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
 from wg.contracts.enums import (
+    ActionKind,
     AuditActor,
     BankRequestStatus,
     Fault,
@@ -31,8 +37,9 @@ from wg.contracts.enums import (
     OperationStatus,
 )
 from wg.contracts.errors import ErrorCode, WgError
+from wg.core import mandate_rules
 from wg.core.hashes import sha256_hex
-from wg.k6 import accounts, audit, faults, operations
+from wg.k6 import accounts, audit, debit_requests, faults, mandates, operations
 from wg.k6.db import Reader, UnitOfWork
 from wg.k6.operations import OperationRow
 from wg.k6.simtime import from_db, now_db, to_db
@@ -67,6 +74,21 @@ class PaymentOrder:
     amount_fen: int
     payee_id: str
     settle_due_at: datetime
+
+
+@dataclass(frozen=True)
+class MerchantPaymentOrder:
+    """A payment of one merchant request; the settlement account comes from the registry."""
+
+    key: str
+    operation_id: str
+    account_id: str
+    amount_fen: int
+    merchant_id: str
+    settlement_account_ref: str
+    mandate_ref: str
+    request_id: str
+    period_key: str
 
 
 @dataclass(frozen=True)
@@ -217,6 +239,174 @@ def settle_payment(uow: UnitOfWork, key: str, at: datetime) -> BankRequest:
         return (Posting(str(effect["account_id"]), -amount), Posting(str(credit), amount))
 
     return _settle(uow, key, at, postings)
+
+
+def submit_merchant_payment(
+    uow: UnitOfWork, order: MerchantPaymentOrder, at: datetime
+) -> BankRequest:
+    """Pay a merchant request once per key: record the order, post it and mark the request PAID.
+
+    Raises AckLost, after all of these writes, when `bank_ack_lost` fires (T105).
+    """
+    request = find_request(uow, order.key)
+    if request is not None:
+        return request
+    request = _insert_request(
+        uow,
+        order.key,
+        BankRequestStatus.EXECUTED,
+        {
+            "operation_id": order.operation_id,
+            "account_id": order.account_id,
+            "amount_fen": order.amount_fen,
+            "merchant_id": order.merchant_id,
+            "settlement_account_ref": order.settlement_account_ref,
+            "mandate_ref": order.mandate_ref,
+            "request_id": order.request_id,
+            "period_key": order.period_key,
+            "accepted_at": to_db(at),
+            "settled_at": to_db(at),
+            "reason": None,
+        },
+    )
+    post_entries(
+        uow,
+        order.operation_id,
+        (Posting(order.account_id, -order.amount_fen), Posting(CLEARING_ACCOUNT, order.amount_fen)),
+        at,
+    )
+    debit_requests.mark_paid(uow, order.request_id, order.operation_id)
+    if faults.consume(uow, Fault.BANK_ACK_LOST):
+        raise AckLost(request)
+    return request
+
+
+@dataclass(frozen=True)
+class MandateChangeOrder:
+    """A change of one agreement's status or cap, as the customer confirmed it."""
+
+    key: str
+    operation_id: str
+    kind: ActionKind
+    mandate_ref: str
+    mandate_version: int
+    cap_fen: int | None = None
+
+
+def submit_mandate_change(uow: UnitOfWork, order: MandateChangeOrder, at: datetime) -> BankRequest:
+    """Record and apply an agreement change once per key; it settles in the same call.
+
+    The agreement changes at the version on the order, with its event carrying the
+    operation, and its pending requests follow S5-SPEC §5.3. No money moves. Raises
+    AckLost, after all of these writes, when `bank_ack_lost` fires.
+    """
+    request = find_request(uow, order.key)
+    if request is not None:
+        return request
+    mandate = mandates.find_mandate(uow, order.mandate_ref)
+    if mandate is None or mandate.version != order.mandate_version:
+        raise WgError(
+            ErrorCode.MANDATE_CHANGED, {"reason": "version", "mandate_ref": order.mandate_ref}
+        )
+    if order.kind in mandate_rules.CAP_KINDS:
+        assert order.cap_fen is not None
+        field, old, new = mandates.CAP_FIELD, mandate.cap_fen, order.cap_fen
+        status, cap_fen = None, order.cap_fen
+    else:
+        target = mandate_rules.CHANGE_TO[order.kind]
+        field, old, new = mandates.STATUS_FIELD, mandate.status.value, target.value
+        status, cap_fen = target, None
+    request = _insert_request(
+        uow,
+        order.key,
+        BankRequestStatus.EXECUTED,
+        {
+            "operation_id": order.operation_id,
+            "mandate_ref": order.mandate_ref,
+            "kind": order.kind.value,
+            "field": field,
+            "old": old,
+            "new": new,
+            "version_after": mandate.version + 1,
+            "settled_at": to_db(at),
+        },
+    )
+    pending = debit_requests.mandate_requests(uow, order.mandate_ref)
+    changes = mandate_rules.request_changes(order.kind, mandate, pending, at, cap_fen=order.cap_fen)
+    mandates.update_mandate(
+        uow,
+        mandate,
+        actor=AuditActor.CUSTOMER,
+        reason=order.kind.value,
+        status=status,
+        cap_fen=cap_fen,
+        operation_id=order.operation_id,
+    )
+    debit_requests.apply_changes(uow, pending, changes, AuditActor.CUSTOMER)
+    if faults.consume(uow, Fault.BANK_ACK_LOST):
+        raise AckLost(request)
+    return request
+
+
+@dataclass(frozen=True)
+class MandateCreateOrder:
+    """A new agreement as the customer confirmed it; the ids are minted by the caller."""
+
+    key: str
+    operation_id: str
+    customer_id: str
+    account_id: str
+    merchant_id: str
+    mandate_ref: str
+    purpose_id: str
+    expected_fen: int
+    cap_fen: int
+    debit_day: int
+    starts_on: date
+    expires_on: date
+
+
+def submit_mandate_creation(
+    uow: UnitOfWork, order: MandateCreateOrder, at: datetime
+) -> BankRequest:
+    """Record a new agreement once per key and store it ACTIVE; it settles in the same call.
+
+    No money moves. Raises AckLost, after all of these writes, when `bank_ack_lost` fires.
+    """
+    request = find_request(uow, order.key)
+    if request is not None:
+        return request
+    request = _insert_request(
+        uow,
+        order.key,
+        BankRequestStatus.EXECUTED,
+        {
+            "operation_id": order.operation_id,
+            "mandate_ref": order.mandate_ref,
+            "merchant_id": order.merchant_id,
+            "kind": ActionKind.MANDATE_CREATE.value,
+            "starts_on": order.starts_on.isoformat(),
+            "expires_on": order.expires_on.isoformat(),
+            "settled_at": to_db(at),
+        },
+    )
+    mandates.insert_mandate(
+        uow,
+        mandate_ref=order.mandate_ref,
+        customer_id=order.customer_id,
+        account_id=order.account_id,
+        merchant_id=order.merchant_id,
+        purpose_id=order.purpose_id,
+        expected_fen=order.expected_fen,
+        cap_fen=order.cap_fen,
+        debit_day=order.debit_day,
+        starts_on=order.starts_on,
+        expires_on=order.expires_on,
+        operation_id=order.operation_id,
+    )
+    if faults.consume(uow, Fault.BANK_ACK_LOST):
+        raise AckLost(request)
+    return request
 
 
 def _credit_account(reader: Reader, payee_id: str) -> str | None:

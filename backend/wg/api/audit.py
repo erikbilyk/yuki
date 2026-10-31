@@ -61,6 +61,17 @@ EVENT_TEXT: dict[str, str] = {
     "unlock_refused": "解除暂停未被接受",
     "operator_reconcile": "运营人员核实了执行结果",
     "sim_crash": "模拟服务中断",
+    "debit_request_received": "收到商户扣款请求",
+    "debit_request_refused": "商户扣款请求格式不正确，未受理",
+    "debit_request_repeat_mismatch": "商户重复请求的内容不一致",
+    "debit_request_updated": "扣款请求状态已更新",
+    "debit_request_paid": "扣款请求已支付",
+    "debit_request_declined": "已拒绝扣款请求",
+    "request_expired": "扣款请求已过回复期限",
+    "mandate_expired": "自动扣款协议已到期",
+    "probe_sent": "已发送核实请求",
+    "effect_verified": "已核实变更生效",
+    "effect_check_failed": "变更核实未通过",
 }
 
 

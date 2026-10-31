@@ -15,7 +15,7 @@ from typing import Any
 from wg.contracts.enums import ActionKind, AuditActor, LockScope, OperationStatus, Tier
 from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.tools import DataSource, Intent
-from wg.k6 import audit, locks
+from wg.k6 import audit, locks, mandates
 from wg.k6.db import Database, Reader, in_transaction
 from wg.k6.reserves import reserve_target
 from wg.k6.simtime import SHANGHAI, to_db
@@ -25,8 +25,10 @@ YELLOW_DAILY_LIMIT_FEN = 100_000
 SINGLE_TRANSFER_LIMIT_FEN = 5_000_000
 DAILY_TRANSFER_LIMIT_FEN = 10_000_000
 
-# Kinds whose amounts count toward the daily sum and its tiers (SPEC §10.2).
-DAILY_SUM_KINDS: frozenset[ActionKind] = frozenset({ActionKind.TRANSFER, ActionKind.PAY_BILL})
+# Kinds whose amounts count toward the daily sum and its tiers (SPEC §10.2, S5-SPEC §5.9).
+DAILY_SUM_KINDS: frozenset[ActionKind] = frozenset(
+    {ActionKind.TRANSFER, ActionKind.PAY_BILL, ActionKind.DEBIT_PAY}
+)
 _COUNTED_STATUSES = (OperationStatus.SUBMITTED, OperationStatus.SETTLED, OperationStatus.UNKNOWN)
 
 _FIXED_TIERS: dict[ActionKind, Tier] = {
@@ -38,9 +40,20 @@ _FIXED_TIERS: dict[ActionKind, Tier] = {
     ActionKind.MARK_PAID_EXTERNAL: Tier.RED,
     ActionKind.REDEEM: Tier.RED,
     ActionKind.PURCHASE: Tier.RED,
+    # Direct-debit agreements (S5-SPEC §5.9): what lowers exposure is YELLOW, what widens it RED.
+    ActionKind.DEBIT_DECLINE: Tier.YELLOW,
+    ActionKind.MANDATE_CANCEL: Tier.YELLOW,
+    ActionKind.MANDATE_SUSPEND: Tier.YELLOW,
+    ActionKind.MANDATE_CAP_LOWER: Tier.YELLOW,
+    ActionKind.MANDATE_RESUME: Tier.RED,
+    ActionKind.MANDATE_CAP_RAISE: Tier.RED,
+    ActionKind.MANDATE_CREATE: Tier.RED,
 }
 
 PLAN_APPROVAL_TIER = Tier.YELLOW
+_ALWAYS_RISK_REDUCING = frozenset(
+    {ActionKind.DEBIT_DECLINE, ActionKind.MANDATE_CANCEL, ActionKind.MANDATE_SUSPEND}
+)
 
 _TIER_ORDER = (Tier.GREEN, Tier.YELLOW, Tier.RED, Tier.FORBIDDEN)
 
@@ -65,7 +78,7 @@ def limit_refusal(amount_fen: int, day_sum_fen: int) -> ErrorCode | None:
 
 
 def transfer_tier_for(amount_fen: int, day_sum_fen: int) -> Tier:
-    """Tier of a TRANSFER or PAY_BILL from the day total including this amount."""
+    """Tier of a TRANSFER, PAY_BILL or DEBIT_PAY from the day total including this amount."""
     if amount_fen <= 0 or day_sum_fen < 0:
         raise ValueError("a transfer amount is positive and a day sum is not negative")
     if limit_refusal(amount_fen, day_sum_fen) is not None:
@@ -110,7 +123,7 @@ def day_bounds(day: date) -> tuple[datetime, datetime]:
 
 
 def daily_sum(reader: Reader, customer_id: str, day: date) -> int:
-    """Σ amount_fen of the customer's TRANSFER and PAY_BILL operations submitted on `day`.
+    """Σ amount_fen of the customer's operations of DAILY_SUM_KINDS submitted on `day`.
 
     Statuses SUBMITTED, SETTLED and UNKNOWN count, across all plans, each operation once.
     """
@@ -150,8 +163,19 @@ def _marks(values: list[str]) -> str:
 def is_risk_reducing(
     reader: Reader, customer_id: str, kind: ActionKind, params: Mapping[str, Any]
 ) -> bool:
-    """True for a write that only raises protection: a reserve increase (SPEC §16)."""
-    if ActionKind(kind) is not ActionKind.DESIGNATE_RESERVE:
+    """True for a write that only raises protection (SPEC §16, S5-SPEC §5.9).
+
+    A reserve increase; declining a merchant's request (no money moves and the period stays
+    protected until the request's deadline); closing or suspending an agreement, or lowering
+    its cap below the current one (merchants can then take less, never more).
+    """
+    kind = ActionKind(kind)
+    if kind in _ALWAYS_RISK_REDUCING:
+        return True
+    if kind is ActionKind.MANDATE_CAP_LOWER:
+        mandate = mandates.find_mandate(reader, str(params["mandate_ref"]))
+        return mandate is not None and int(params["cap_fen"]) < mandate.cap_fen
+    if kind is not ActionKind.DESIGNATE_RESERVE:
         return False
     return int(params["target_fen"]) >= reserve_target(reader, customer_id)
 

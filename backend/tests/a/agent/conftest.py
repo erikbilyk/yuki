@@ -15,7 +15,7 @@ from wg.contracts.enums import Channel
 from wg.settings import Settings
 
 from ..api.conftest import make_client, make_settings
-from .scripted import Agent, running_agent
+from .scripted import Agent, running_agent, running_s5_agent
 
 
 class ScriptedProvider:
@@ -89,3 +89,9 @@ def adapter_factory(llm_settings: Settings, tmp_path: Path):
 def agent(tmp_path: Path) -> Iterator[Agent]:
     """Scripted turns for cus_main on the base profile (`scripted.Agent`)."""
     yield from running_agent(tmp_path)
+
+
+@pytest.fixture
+def s5(tmp_path: Path) -> Iterator[Agent]:
+    """Scripted turns for cus_main on the direct-debit test profile."""
+    yield from running_s5_agent(tmp_path)

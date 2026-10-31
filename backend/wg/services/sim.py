@@ -20,6 +20,8 @@ from wg.contracts.api import (
     ImportResult,
     IncomingPaymentRequest,
     SimCommitmentResult,
+    SimDebitRequest,
+    SimDebitResult,
     SimPostingResult,
     SimResetRequest,
     SimResetResult,
@@ -37,6 +39,7 @@ from wg.k6 import (
     audit,
     bank,
     commitments,
+    debit_requests,
     faults,
     fixture,
     imports,
@@ -260,6 +263,31 @@ class SimService:
             return SimCommitmentResult(commitment_id=bill.commitment_id, status=bill.status)
 
         return self.db.run_in_uow(post, "sim ebill")
+
+    def debit_request(self, request: SimDebitRequest) -> SimDebitResult:
+        """A merchant asks to debit a customer under an agreement (S5-SPEC §5.2).
+
+        The request is only checked and stored; nothing is paid until the customer decides.
+        """
+        received = debit_requests.receive_debit_request(
+            self.db,
+            debit_requests.IncomingDebit(
+                merchant_id=request.merchant_id,
+                merchant_request_id=request.merchant_request_id,
+                mandate_ref=request.mandate_ref,
+                amount_fen=request.amount_fen,
+                currency=request.currency,
+                description_raw=request.description_raw,
+            ),
+        )
+        row = received.request
+        return SimDebitResult(
+            request_id=row.request_id,
+            status=row.status,
+            reason_code=row.reason_code,
+            respond_by=row.respond_by,
+            duplicate=received.duplicate,
+        )
 
     def sms(self, request: SimSmsRequest) -> SimSmsResult:
         """Untrusted SMS text. It creates no bill and sets no payee, amount or status.

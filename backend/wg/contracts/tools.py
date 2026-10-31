@@ -33,11 +33,13 @@ from wg.contracts.api import (
     Category,
     CheckpointDay,
     Count,
+    DebitRequestsView,
     DraftResult,
     ExposureBasis,
     ExposureView,
     FeeEstimateView,
     Label,
+    MandatesView,
     OperationView,
     PayeesView,
     PlanDraftResult,
@@ -50,21 +52,31 @@ from wg.contracts.api import (
     SpendingGroupBy,
     SpendingView,
     StressView,
+    SubscriptionSpendView,
     TransactionsView,
     TransferHistoryView,
     TxnId,
     UnresolvedView,
 )
 from wg.contracts.engines import CandidateKind, CandidateReason, ExposureGroup
-from wg.contracts.enums import ActionStatus, Channel, CommitmentStatus
+from wg.contracts.enums import (
+    ActionStatus,
+    Channel,
+    CommitmentStatus,
+    DebitDecision,
+    DebitRequestStatus,
+    MandateChangeKind,
+)
 from wg.contracts.errors import ErrorCode
 from wg.contracts.ids import (
     AccountId,
     CalcResultId,
     CashSnapshotId,
     CommitmentId,
+    DebitRequestId,
     FundCode,
     LogicalActionId,
+    MandateRef,
     OperationId,
     PayeeId,
     PlanId,
@@ -78,7 +90,7 @@ class Capability(StrEnum):
     DRAFT = "draft"
 
 
-# Declared intents (SPEC §10.3); the S4 and S5 intents join only if those are built.
+# Declared intents (SPEC §10.3, S5-SPEC §3.7); the S4 intents join only if S4 is built.
 class Intent(StrEnum):
     """The customer request this call serves; it limits the data the call may read."""
 
@@ -89,6 +101,7 @@ class Intent(StrEnum):
     BILLS_MANAGE = "bills.manage"
     FUNDS_REBALANCE = "funds.rebalance"
     PLAN_MANAGE = "plan.manage"
+    SUBSCRIPTIONS_MANAGE = "subscriptions.manage"
 
 
 class DataSource(StrEnum):
@@ -106,6 +119,9 @@ class DataSource(StrEnum):
     HOLDINGS = "holdings"
     CALC_RESULTS = "calc_results"
     PLANS = "plans"
+    MANDATES = "mandates"
+    DEBIT_REQUESTS = "debit_requests"
+    SUBSCRIPTION_SPEND = "subscription_spend"
 
 
 _D = DataSource
@@ -146,6 +162,10 @@ READ_SCOPES: Mapping[Intent, frozenset[DataSource]] = MappingProxyType(
         Intent.FUNDS_REBALANCE: _FUNDS_REBALANCE,
         # The union of cash.analyze and funds.rebalance plus the payees of listed bills.
         Intent.PLAN_MANAGE: _CASH_ANALYZE | _FUNDS_REBALANCE | {_D.PAYEES},
+        # Direct-debit agreements only: no history, positions or payees (S5-SPEC §3.7).
+        Intent.SUBSCRIPTIONS_MANAGE: frozenset(
+            {_D.MANDATES, _D.DEBIT_REQUESTS, _D.SUBSCRIPTION_SPEND, _D.OPERATIONS}
+        ),
     }
 )
 
@@ -411,6 +431,48 @@ class ComposePlanArgs(ToolArgs, ComposePlanRequest):
     pass
 
 
+# S5 tools (direct-debit agreements)
+
+
+class ListMandatesArgs(ToolArgs):
+    pass
+
+
+class GetDebitRequestsArgs(ToolArgs):
+    status: DebitRequestStatus | None = None
+    mandate_ref: MandateRef | None = None
+
+
+class GetSubscriptionSpendArgs(ToolArgs):
+    days: Days = 90
+
+
+class DraftMandateChangeArgs(ToolArgs):
+    """`merchant_quote` names the agreement in the customer's words; `cap_fen` only for set_cap."""
+
+    mandate_ref: MandateRef
+    merchant_quote: Quote
+    change: MandateChangeKind
+    cap_fen: PositiveFen | None = None
+    cap_quote: Quote | None = None
+
+    @model_validator(mode="after")
+    def _cap_only_for_set_cap(self) -> DraftMandateChangeArgs:
+        _paired(self.cap_fen, self.cap_quote, "cap_fen")
+        if (self.change is MandateChangeKind.SET_CAP) != (self.cap_fen is not None):
+            raise ValueError("cap_fen and cap_quote are given exactly when the change is set_cap")
+        return self
+
+
+class DraftDebitDecisionArgs(ToolArgs):
+    """`decision_quote` is the customer's own words that pay or decline; never merchant text."""
+
+    request_id: DebitRequestId
+    decision: DebitDecision
+    decision_quote: Quote
+    merchant_quote: Quote | None = None
+
+
 class ToolError(ContractModel):
     """Returned to the model instead of a result when a call is refused."""
 
@@ -662,6 +724,46 @@ TOOLS: tuple[ToolSpec, ...] = (
         ComposePlanArgs,
         PlanDraftResult,
         "Propose one plan from drafts and their dependencies; the server validates it.",
+    ),
+    _tool(
+        "list_mandates",
+        _READ,
+        {_D.MANDATES},
+        ListMandatesArgs,
+        MandatesView,
+        "The customer's direct-debit agreements: status, cap, expected amount, monthly total.",
+    ),
+    _tool(
+        "get_debit_requests",
+        _READ,
+        {_D.DEBIT_REQUESTS},
+        GetDebitRequestsArgs,
+        DebitRequestsView,
+        "Merchants' debit requests with status and reason codes; the description is merchant text.",
+    ),
+    _tool(
+        "get_subscription_spend",
+        _READ,
+        {_D.SUBSCRIPTION_SPEND},
+        GetSubscriptionSpendArgs,
+        SubscriptionSpendView,
+        "Direct debits paid in the last days (at most 90), per agreement.",
+    ),
+    _tool(
+        "draft_mandate_change",
+        _DRAFT,
+        {_D.MANDATES},
+        DraftMandateChangeArgs,
+        DraftResult,
+        "Draft closing, suspending or resuming an agreement, or a new cap. Changes nothing yet.",
+    ),
+    _tool(
+        "draft_debit_decision",
+        _DRAFT,
+        {_D.DEBIT_REQUESTS, _D.MANDATES},
+        DraftDebitDecisionArgs,
+        DraftResult,
+        "Draft paying or declining a merchant's request, on the customer's own words.",
     ),
 )
 

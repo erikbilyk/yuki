@@ -77,6 +77,17 @@ SIM_STEPS = [
         "post": "/sim/external-debit",
         "body": {"account_id": "acc_main", "amount_fen": 100, "merchant_raw": "SHOP 01"},
     },
+    {
+        "post": "/sim/debit-requests",
+        "body": {
+            "merchant_id": "mer_cloud",
+            "merchant_request_id": "r-1",
+            "mandate_ref": "mdt_cloud",
+            "amount_fen": 2500,
+            "currency": "CNY",
+            "description_raw": "本月会员费",
+        },
+    },
 ]
 
 
@@ -108,6 +119,11 @@ def test_sim_step_keeps_a_yaml_date_as_the_string_the_route_expects():
         {"post": "/sim/sms", "body": {"customer_id": "cus_main", "text": "x", "extra": 1}},
         {"post": "/sim/external-debit", "body": {"account_id": "acc_main", "amount_fen": 1.5}},
         {"post": "/sim/sms"},
+        {"post": "/sim/debit-requests", "body": {"merchant_id": "mer_cloud"}},
+        {
+            "post": "/sim/debit-requests",
+            "body": {**SIM_STEPS[4]["body"], "customer_id": "cus_main"},
+        },
         {"body": {}},
     ],
 )

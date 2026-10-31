@@ -9,10 +9,11 @@ from wg.contracts.api import (
     ReceiptView,
     TransferView,
 )
-from wg.contracts.enums import ActionKind
+from wg.contracts.enums import ActionKind, EffectCheck
 from wg.contracts.errors import ErrorCode
+from wg.core import mandate_rules
 from wg.core.k1_session import payee_handle
-from wg.k6 import accounts, actions, operations
+from wg.k6 import accounts, actions, mandates, operations
 from wg.k6.accounts import AccountRow, PayeeRow
 from wg.k6.db import Reader
 from wg.k6.operations import OperationRow, ReceiptRow
@@ -44,6 +45,7 @@ def operation_view(reader: Reader, operation: OperationRow) -> OperationView:
 
 def receipt_view(reader: Reader, operation: OperationRow, receipt: ReceiptRow) -> ReceiptView:
     assert operation.logical_action_id is not None and operation.revision is not None
+    mandate_ref = receipt.effect.get("mandate_ref")
     return ReceiptView(
         receipt_id=receipt.receipt_id,
         operation_id=operation.operation_id,
@@ -63,7 +65,19 @@ def receipt_view(reader: Reader, operation: OperationRow, receipt: ReceiptRow) -
         unpaid_after_fen=receipt.effect.get("unpaid_after_fen"),
         reason_code=_error_code(receipt.reason_code),
         created_at=receipt.created_at,
+        mandate_ref=mandate_ref,
+        request_id=receipt.effect.get("request_id"),
+        merchant_display=mandates.merchant_display(reader, mandate_ref) if mandate_ref else None,
+        effect_check=effect_check(reader, operation),
     )
+
+
+def effect_check(reader: Reader, operation: OperationRow) -> EffectCheck | None:
+    """The newest probe result of a probed change, pending until one is recorded (S5-SPEC §5.7)."""
+    if ActionKind(operation.action_kind) not in mandate_rules.PROBE_CHECKS:
+        return None
+    newest = mandates.newest_effect_event(reader, operation.operation_id)
+    return newest.result if newest else EffectCheck.PENDING
 
 
 def transfer_view(reader: Reader, operation: OperationRow) -> TransferView:

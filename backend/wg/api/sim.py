@@ -18,6 +18,8 @@ from wg.contracts.api import (
     IncomingPaymentRequest,
     RouteRole,
     SimCommitmentResult,
+    SimDebitRequest,
+    SimDebitResult,
     SimPostingResult,
     SimResetRequest,
     SimResetResult,
@@ -72,6 +74,12 @@ def sms(body: SimSmsRequest, request: Request) -> SimSmsResult:
 @router.post("/external-debit")
 def external_debit(body: ExternalDebitRequest, request: Request) -> SimPostingResult:
     return _service(request).external_debit(body)
+
+
+@router.post("/debit-requests")
+def debit_request(body: SimDebitRequest, request: Request) -> SimDebitResult:
+    """200 for a new request and for a repeat; a malformed amount or currency is 422."""
+    return _service(request).debit_request(body)
 
 
 @router.post("/agent-mode", status_code=status.HTTP_204_NO_CONTENT)

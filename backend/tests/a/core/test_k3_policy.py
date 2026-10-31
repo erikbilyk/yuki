@@ -97,6 +97,13 @@ def test_check_limits_refuses_with_the_limit_code(db: Database):
         (ActionKind.MARK_PAID_EXTERNAL, Tier.RED),
         (ActionKind.REDEEM, Tier.RED),
         (ActionKind.PURCHASE, Tier.RED),
+        (ActionKind.DEBIT_DECLINE, Tier.YELLOW),
+        (ActionKind.MANDATE_CANCEL, Tier.YELLOW),
+        (ActionKind.MANDATE_SUSPEND, Tier.YELLOW),
+        (ActionKind.MANDATE_CAP_LOWER, Tier.YELLOW),
+        (ActionKind.MANDATE_RESUME, Tier.RED),
+        (ActionKind.MANDATE_CAP_RAISE, Tier.RED),
+        (ActionKind.MANDATE_CREATE, Tier.RED),
     ],
 )
 def test_fixed_tiers(kind: ActionKind, tier: Tier):
@@ -108,6 +115,14 @@ def test_reserve_and_transfer_kinds_need_their_facts():
     assert k3_policy.tier_for(reserve, reserve_delta_fen=100_000) is Tier.YELLOW
     assert k3_policy.tier_for(reserve, reserve_delta_fen=-1) is Tier.RED
     assert k3_policy.tier_for(ActionKind.PAY_BILL, amount_fen=100_001) is Tier.RED
+    assert k3_policy.tier_for(ActionKind.DEBIT_PAY, amount_fen=2_500, day_sum_fen=97_500) is (
+        Tier.YELLOW
+    )
+    assert k3_policy.tier_for(ActionKind.DEBIT_PAY, amount_fen=2_500, day_sum_fen=99_000) is (
+        Tier.RED
+    )
+    with pytest.raises(ValueError):
+        k3_policy.tier_for(ActionKind.DEBIT_PAY)
     with pytest.raises(ValueError):
         k3_policy.tier_for(ActionKind.TRANSFER)
     with pytest.raises(ValueError):
@@ -147,6 +162,19 @@ def test_daily_sum_reads_shanghai_days_from_utc_instants(db: Database):
         assert k3_policy.daily_sum(conn, MAIN, DAY.date()) == 7
 
 
+@pytest.mark.parametrize(
+    ("earlier_fen", "tier"), [(97_500, Tier.YELLOW), (99_000, Tier.RED)], ids=["at", "over"]
+)
+def test_merchant_payments_and_transfers_share_the_day_sum(
+    db: Database, earlier_fen: int, tier: Tier
+):
+    add_operation(db, earlier_fen)
+    add_operation(db, 300, kind="DEBIT_PAY", status="UNKNOWN")
+    with db.read() as conn:
+        assert k3_policy.daily_sum(conn, MAIN, DAY.date()) == earlier_fen + 300
+        assert k3_policy.transfer_tier(conn, MAIN, 2_200, DAY) is tier
+
+
 # Locks (SPEC §16)
 
 
@@ -160,6 +188,13 @@ def test_writes_under_a_lock_are_refused_unless_risk_reducing(db: Database):
         assert refused.value.http_status == 423
         k3_policy.check_not_locked(conn, MAIN, None, risk_reducing=True)
         k3_policy.check_not_locked(conn, OTHER, None)
+
+
+def test_declining_a_merchant_request_reduces_risk_and_paying_does_not(db: Database):
+    with db.read() as conn:
+        decline = {"mandate_ref": "mdt_video", "request_id": "req_any"}
+        assert k3_policy.is_risk_reducing(conn, MAIN, ActionKind.DEBIT_DECLINE, decline)
+        assert not k3_policy.is_risk_reducing(conn, MAIN, ActionKind.DEBIT_PAY, decline)
 
 
 # Read scopes (SPEC §10.3)

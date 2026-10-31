@@ -22,6 +22,7 @@ from wg.api import (
     channels,
     chat,
     funds,
+    mandates,
     operator,
     plans,
     reads,
@@ -42,6 +43,7 @@ from wg.services.actions import ActionService
 from wg.services.cash import CashService
 from wg.services.compose import PlanComposer
 from wg.services.funds import FundsService
+from wg.services.mandates import MandateService
 from wg.services.operator import OperatorService
 from wg.services.plans import PlanService
 from wg.services.reads import ReadService
@@ -50,6 +52,9 @@ from wg.services.trusted import TrustedService
 from wg.settings import REPO_ROOT, Settings
 
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
+
+# Optional feature sets this build serves; clients show their screens only when listed.
+FEATURES = ("s5",)
 
 API_PREFIXES = ("/v1", "/sim", "/healthz", "/docs", "/redoc", "/openapi.json")
 
@@ -149,6 +154,7 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
     app.state.reads = ReadService(db)
     app.state.cash = cash_service = CashService(db)
     app.state.funds = FundsService(db)
+    app.state.mandates = MandateService(db, action_service)
     app.state.plans = PlanService(db, step_up, cash_service)
     app.state.composer = PlanComposer(db)
     app.state.trusted = TrustedService(db, step_up, action_service, coordinator)
@@ -176,7 +182,12 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
 
     @app.get("/healthz")
     def healthz() -> dict[str, object]:
-        return {"status": "ok", "build": build_id, "demo": settings.demo_mode, "features": []}
+        return {
+            "status": "ok",
+            "build": build_id,
+            "demo": settings.demo_mode,
+            "features": list(FEATURES),
+        }
 
     app.add_middleware(DropResponse)
 
@@ -184,6 +195,7 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
     app.include_router(reads.router)
     app.include_router(cash.router)
     app.include_router(funds.router)
+    app.include_router(mandates.router)
     app.include_router(plans.router)
     app.include_router(actions.router)
     app.include_router(trusted.router)

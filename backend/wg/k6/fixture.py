@@ -23,7 +23,7 @@ from wg.contracts.enums import AuditActor, OperationEventKind, OperationStatus
 from wg.contracts.fixture import Fixture, FixtureError, FixtureStatement, load_fixture
 from wg.contracts.ids import IdPrefix, new_id
 from wg.contracts.tools import READ_SCOPES
-from wg.k6 import audit, imports, sessions
+from wg.k6 import audit, imports, mandates, sessions
 from wg.k6.accounts import OWN_PAYEE_MASK, own_payee_id
 from wg.k6.categories import seed_categories
 from wg.k6.clock import start_clock
@@ -159,6 +159,7 @@ class _Loader:
         seed_categories(self.uow)
         self.statements()
         self.commitments()
+        self.direct_debits()
         self.funds()
         self.read_scopes()
         audit.record(
@@ -316,6 +317,52 @@ class _Loader:
                 ),
             )
 
+    def direct_debits(self) -> None:
+        """Merchants, then agreements with one initial status event each."""
+        check_direct_debit_references(self.fx)
+        for m in self.fx.merchants:
+            self.uow.execute(
+                "INSERT INTO merchants (merchant_id, display_name, aliases_json,"
+                " settlement_account_ref, verified, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    m.id,
+                    m.display_name,
+                    json.dumps(list(m.aliases), ensure_ascii=False),
+                    m.settlement_account_ref,
+                    int(m.verified),
+                    self.at,
+                ),
+            )
+        for d in self.fx.mandates:
+            self.uow.execute(
+                "INSERT INTO mandates (mandate_ref, customer_id, account_id, merchant_id,"
+                " purpose_id, expected_fen, cap_fen, debit_day, starts_on, expires_on, status,"
+                " created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    d.id,
+                    d.customer,
+                    d.account,
+                    d.merchant,
+                    d.purpose_id,
+                    d.expected_fen,
+                    d.cap_fen,
+                    d.debit_day,
+                    self.day(d.starts_offset_days),
+                    self.day(d.expires_offset_days),
+                    d.status.value,
+                    self.at,
+                ),
+            )
+            mandates.append_mandate_event(
+                self.uow,
+                d.id,
+                mandates.STATUS_FIELD,
+                old=None,
+                new=d.status.value,
+                actor=AuditActor.SYSTEM,
+                reason="fixture",
+            )
+
     def funds(self) -> None:
         for f in self.fx.fee_schedules:
             tiers = [tier.model_dump(mode="json") for tier in f.tiers]
@@ -400,6 +447,27 @@ class _Loader:
                 for intent, sources in READ_SCOPES.items()
             ],
         )
+
+
+def check_direct_debit_references(fx: Fixture) -> None:
+    """Each agreement names a customer, an account of that customer and a verified merchant."""
+    customers = {c.id for c in fx.customers}
+    owners = {a.id: a.customer for a in fx.accounts}
+    merchants = {m.id: m for m in fx.merchants}
+    purposes: set[str] = set()
+    for d in fx.mandates:
+        if d.customer not in customers:
+            raise FixtureError(f"mandate {d.id}: unknown customer {d.customer}")
+        if owners.get(d.account) != d.customer:
+            raise FixtureError(f"mandate {d.id}: account {d.account} is not {d.customer}'s")
+        merchant = merchants.get(d.merchant)
+        if merchant is None:
+            raise FixtureError(f"mandate {d.id}: unknown merchant {d.merchant}")
+        if not merchant.verified:
+            raise FixtureError(f"mandate {d.id}: merchant {d.merchant} is not verified")
+        if d.purpose_id in purposes:
+            raise FixtureError(f"mandate {d.id}: purpose {d.purpose_id} used twice")
+        purposes.add(d.purpose_id)
 
 
 def statement_of(s: FixtureStatement, epoch_date: date) -> imports.Statement:

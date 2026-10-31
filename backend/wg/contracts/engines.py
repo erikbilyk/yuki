@@ -53,7 +53,8 @@ class CommitmentInput(ContractModel):
     amount_fen: NonNegativeFen
     unpaid_fen: NonNegativeFen
     due_date: date
-    payee_id: PayeeId
+    # None for a protected subscription period, which pays a merchant, not a payee.
+    payee_id: PayeeId | None = None
 
 
 class HoldInput(ContractModel):

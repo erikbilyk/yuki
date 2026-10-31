@@ -27,13 +27,18 @@ from wg.contracts.api import (
     CancelResult,
     CashFields,
     CashSnapshotView,
+    DebitRequestsView,
+    DebitRequestView,
     DraftResult,
     ExposureView,
     FeeEstimateView,
+    MandatesView,
+    MandateView,
     PlanDraftResult,
     PlanView,
     PositionsView,
     StressView,
+    SubscriptionSpendView,
     TransferHistoryView,
     UnresolvedView,
 )
@@ -45,6 +50,10 @@ from wg.contracts.enums import (
     BillStatus,
     CheckpointResult,
     CommitmentStatus,
+    DebitReason,
+    DebitRequestStatus,
+    EffectCheck,
+    MandateStatus,
     OperationStatus,
     PlanStatus,
 )
@@ -68,10 +77,11 @@ from wg.contracts.tools import (
     OperationStatusResult,
     PlanStatusResult,
 )
-from wg.core import k5_continuation
+from wg.core import k5_continuation, mandate_rules
 from wg.core.k2_context import Utterance
-from wg.k6 import accounts, actions, audit, commitments, funds, plans
+from wg.k6 import accounts, actions, audit, commitments, funds, mandates, plans
 from wg.k6.db import Database, Reader
+from wg.k6.simtime import SHANGHAI
 from wg.packs.labels import bill_label
 from wg.textcheck.amounts import (
     GE,
@@ -116,6 +126,17 @@ KIND_TEXT: dict[ActionKind, str] = {
     ActionKind.PURCHASE: "买入",
     ActionKind.CHECK_OUTCOME: "结果检查",
     ActionKind.ADD_PAYEE: "新增收款人",
+    ActionKind.MANDATE_CREATE: "新增自动扣款",
+}
+# Direct-debit actions are named after the merchant of their agreement.
+MANDATE_KIND_TEXT: dict[ActionKind, str] = {
+    ActionKind.DEBIT_PAY: "扣款付款",
+    ActionKind.DEBIT_DECLINE: "拒绝扣款",
+    ActionKind.MANDATE_CANCEL: "关闭自动扣款",
+    ActionKind.MANDATE_SUSPEND: "暂停自动扣款",
+    ActionKind.MANDATE_RESUME: "恢复自动扣款",
+    ActionKind.MANDATE_CAP_LOWER: "调整扣款上限",
+    ActionKind.MANDATE_CAP_RAISE: "调整扣款上限",
 }
 
 # Status facts are labelled with the bare name of their subject, because the claim checker
@@ -153,6 +174,39 @@ STATUS_TEXT: dict[str, str] = {
     CommitmentStatus.CANCELLED: "已取消",
     CommitmentStatus.DISMISSED: "已忽略",
     FEASIBLE_WITH_APPROVAL: "可行，需要您重新确认",
+}
+
+# Words for the facts of direct-debit agreements. An agreement's status speaks of the debit
+# authorisation, never of the service contract, which the bank does not change.
+CONCEPT_STATUS_TEXT: dict[FactConcept, dict[str, str]] = {
+    FactConcept.MANDATE_STATUS: {
+        MandateStatus.ACTIVE: "扣款授权有效",
+        MandateStatus.SUSPENDED: "扣款授权已暂停",
+        MandateStatus.CANCELLED: "扣款授权已解除",
+        MandateStatus.EXPIRED: "扣款授权已到期",
+    },
+    FactConcept.DEBIT_REQUEST_STATUS: {
+        DebitRequestStatus.AWAITING_CLIENT: "等待您处理",
+        DebitRequestStatus.PAID: "已按您的确认扣款",
+        DebitRequestStatus.DECLINED: "已被您拒绝",
+        DebitRequestStatus.EXPIRED: "超过处理期限，已作废",
+        DebitRequestStatus.AUTO_DECLINED: "已被系统自动拒绝",
+        DebitRequestStatus.OUT_OF_MANDATE: "超出扣款授权，已被拒绝",
+    },
+    FactConcept.DEBIT_REQUEST_REASON: {
+        DebitReason.NO_MANDATE: "没有对应的扣款授权",
+        DebitReason.MANDATE_SUSPENDED: "扣款授权已暂停",
+        DebitReason.MANDATE_CANCELLED: "扣款授权已解除",
+        DebitReason.MANDATE_EXPIRED: "扣款授权已到期",
+        DebitReason.CAP: "超过扣款上限",
+        DebitReason.PERIOD_USED: "本期已扣款",
+        DebitReason.EXPIRED: "超过处理期限",
+    },
+    FactConcept.EFFECT_CHECK: {
+        EffectCheck.VERIFIED: "已核实，银行拒绝了新的扣款试探",
+        EffectCheck.PENDING: "已保存，正在核实",
+        EffectCheck.FAILED: "核实未通过，需要人工核实",
+    },
 }
 
 TEMPLATE_AWAITING = "已为您准备好确认卡片，请在卡片上核对后自行确认；上方数字以系统记录为准。"
@@ -349,6 +403,13 @@ class FactCollector:
             case PlanStatusResult():
                 for plan in result.plans:
                     self._plan(plan)
+            case MandatesView():
+                self._mandates(result)
+            case DebitRequestsView():
+                for request in result.requests:
+                    self._debit_request(request)
+            case SubscriptionSpendView():
+                self._subscription_spend(result)
 
     # Builders
 
@@ -385,6 +446,16 @@ class FactCollector:
                     bill.unpaid_fen,
                     bill.status.value,
                     due_date=bill.due_date,
+                    as_of=at,
+                )
+            for period in details.subscriptions:
+                self._bill(
+                    ref,
+                    mandate_rules.subscription_commitment_id(period.mandate_ref, period.period_key),
+                    f"{period.merchant_display}自动扣款",
+                    period.expected_fen,
+                    period.status.value,
+                    due_date=period.due_date,
                     as_of=at,
                 )
 
@@ -467,6 +538,14 @@ class FactCollector:
             ):
                 if value is not None:
                     self._money(fact_concept, value, f"{label}{suffix}", ref, subject=lid)
+            if receipt.effect_check is not None and receipt.mandate_ref is not None:
+                self._status(
+                    _C.EFFECT_CHECK,
+                    receipt.effect_check.value,
+                    receipt.merchant_display or "该商户",
+                    ref,
+                    receipt.mandate_ref,
+                )
             if receipt.unpaid_after_fen is not None and receipt.commitment_id is not None:
                 self._money(
                     _C.BILL_UNPAID,
@@ -492,6 +571,9 @@ class FactCollector:
         if isinstance(amount, int):
             concept = AMOUNT_CONCEPT.get(action.kind, _C.OPERATION_AMOUNT)
             self._money(concept, amount, f"{label}金额", lid, subject=lid)
+        cap = action.params.get("cap_fen")
+        if isinstance(cap, int):
+            self._money(_C.MANDATE_CAP, cap, f"{label}后的扣款上限", lid, subject=lid)
         target = action.params.get("target_fen")
         if action.kind is ActionKind.DESIGNATE_RESERVE and isinstance(target, int):
             self._money(_C.RESERVE_TARGET, target, "预留目标", lid, subject=lid)
@@ -537,6 +619,56 @@ class FactCollector:
             self._percent(_C.TARGET_MAX, checkpoint.target_max_pct, "目标上限", ref, as_of=at)
         if plan.cash is not None:
             self._cash(plan.cash)
+
+    def _mandates(self, view: MandatesView) -> None:
+        self._money(
+            _C.SUBSCRIPTION_MONTHLY_TOTAL,
+            view.monthly_total_fen,
+            "每月自动扣款合计",
+            "mandates",
+            as_of=view.as_of,
+        )
+        for mandate in view.mandates:
+            self._mandate(mandate, view.as_of)
+
+    def _mandate(self, mandate: MandateView, as_of: datetime) -> None:
+        name, ref, subject = mandate.merchant_display, mandate.mandate_ref, mandate.mandate_ref
+        self._status(_C.MANDATE_STATUS, mandate.status.value, name, ref, subject, as_of=as_of)
+        self._money(_C.MANDATE_CAP, mandate.cap_fen, f"{name}扣款上限", ref, subject=subject)
+        if mandate.status is MandateStatus.ACTIVE:
+            label = f"{name}每月扣款金额"
+            self._money(_C.MANDATE_EXPECTED, mandate.expected_fen, label, ref, subject=subject)
+
+    def _debit_request(self, request: DebitRequestView) -> None:
+        name, ref, subject = request.merchant_display, request.request_id, request.request_id
+        self._status(_C.DEBIT_REQUEST_STATUS, request.status.value, name, ref, subject)
+        self._money(
+            _C.DEBIT_REQUEST_AMOUNT, request.amount_fen, f"{name}扣款请求金额", ref, subject=subject
+        )
+        if request.reason_code is not None:
+            self._status(
+                _C.DEBIT_REQUEST_REASON, request.reason_code.value, f"{name}扣款请求", ref, subject
+            )
+        if request.status is DebitRequestStatus.AWAITING_CLIENT:
+            self._add(
+                DateFact,
+                _C.RESPOND_BY,
+                request.respond_by.astimezone(SHANGHAI).date(),
+                f"{name}扣款请求处理截止日",
+                ref,
+                subject=subject,
+            )
+
+    def _subscription_spend(self, view: SubscriptionSpendView) -> None:
+        ref = f"subscription_spend:{view.days}"
+        for row in view.rows:
+            name, subject = row.merchant_display, row.mandate_ref
+            label = f"{name}近{view.days}天已扣款"
+            self._money(_C.SUBSCRIPTION_PAID, row.paid_fen, label, ref, subject=subject)
+            if row.last_amount_fen is not None:
+                label = f"{name}最近一次扣款"
+                self._money(_C.SUBSCRIPTION_PAID, row.last_amount_fen, label, ref, subject=subject)
+        self._money(_C.SUBSCRIPTION_PAID, view.total_fen, f"近{view.days}天自动扣款合计", ref)
 
     def _paused_purchase(self, plan_id: str, logical_action_id: str) -> None:
         """The amount a purchase paused outside its bounds could buy with a new approval (T47)."""
@@ -612,6 +744,10 @@ class FactCollector:
         return bill_label(bill.kind) if bill else "账单"
 
     def _action_label(self, action: actions.ActionRow) -> str:
+        if action.kind in MANDATE_KIND_TEXT:
+            ref = action.params.get("mandate_ref")
+            merchant = mandates.merchant_display(self.reader, str(ref)) if ref else ""
+            return f"{merchant}{MANDATE_KIND_TEXT[action.kind]}"
         if action.kind is ActionKind.PAY_BILL:
             return f"{self._bill_name(str(action.params.get('commitment_id')))}账单付款"
         payee_id = action.params.get("payee_id")
@@ -717,7 +853,8 @@ def render_fact(fact: Fact) -> str:
         case DateFact():
             text = f"{fact.value.year}年{fact.value.month}月{fact.value.day}日"
         case _:
-            text = STATUS_TEXT.get(str(fact.value), "状态待核实")
+            table = CONCEPT_STATUS_TEXT.get(fact.concept, STATUS_TEXT)
+            text = table.get(str(fact.value), "状态待核实")
     return f"{fact.label}：{text}"
 
 

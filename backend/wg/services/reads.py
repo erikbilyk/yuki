@@ -16,15 +16,17 @@ from wg.contracts.api import (
     ReceiptView,
     TransferHistoryView,
 )
+from wg.contracts.enums import ActionKind
 from wg.contracts.tools import OperationStatusResult
 from wg.core.k1_session import not_found, owned
-from wg.core.k3_policy import DAILY_SUM_KINDS
 from wg.k6 import accounts, actions, operations
 from wg.k6.db import Database
 from wg.k6.simtime import now
 from wg.services.views import account_view, operation_view, payee_view, receipt_view, transfer_view
 
 MAX_HISTORY_DAYS = 90
+# The transfer history lists payments to payees; merchant debits have no payee (S5-SPEC §5.9).
+HISTORY_KINDS = (ActionKind.PAY_BILL, ActionKind.TRANSFER)
 
 
 def _owner(record: Any) -> str | None:
@@ -69,7 +71,7 @@ class ReadService:
             rows = operations.customer_operations(
                 conn,
                 customer_id,
-                kinds=sorted(DAILY_SUM_KINDS),
+                kinds=HISTORY_KINDS,
                 since=now(conn) - timedelta(days=days),
                 payee_id=payee_id,
             )

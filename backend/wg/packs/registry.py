@@ -10,9 +10,19 @@ from wg.contracts.errors import ErrorCode, WgError
 from wg.packs.base import ActionPack, Pack, StatePack
 from wg.packs.bills import BillsPack
 from wg.packs.funds import CheckpointPack, FundsPack
+from wg.packs.mandates import DebitDeclinePack, DebitPayPack, MandateChangePack, MandateCreatePack
 from wg.packs.transfer import TransferPack
 
-_PACKS: tuple[Pack, ...] = (TransferPack(), BillsPack(), FundsPack(), CheckpointPack())
+_PACKS: tuple[Pack, ...] = (
+    TransferPack(),
+    BillsPack(),
+    FundsPack(),
+    CheckpointPack(),
+    DebitPayPack(),
+    DebitDeclinePack(),
+    MandateChangePack(),
+    MandateCreatePack(),
+)
 
 PACKS: Mapping[ActionKind, Pack] = MappingProxyType(
     {kind: pack for pack in _PACKS for kind in pack.kinds}

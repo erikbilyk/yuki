@@ -31,7 +31,7 @@ def test_a_turn_without_tool_calls_returns_the_text(
     assert result.outcomes == () and result.model_calls == 1 and not result.limit_reached
     messages, tools = provider.calls[0]
     assert messages[0]["role"] == "system" and messages[-1] == {"role": "user", "content": "你好"}
-    assert len(tools) == 27
+    assert len(tools) == 32
 
 
 def test_tool_results_go_back_to_the_model_before_the_final_text(
@@ -143,7 +143,7 @@ def test_a_model_error_ends_the_turn(adapter_factory, registry: ToolRegistry, co
 
 def test_the_im_channel_sees_the_same_tools(registry: ToolRegistry):
     im = ToolContext(customer_id="cus_main", channel=Channel.IM)
-    assert len(registry.schemas(im)) == 27
+    assert len(registry.schemas(im)) == 32
 
 
 def test_the_system_message_ends_with_the_simulated_date(

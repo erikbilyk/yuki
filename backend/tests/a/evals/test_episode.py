@@ -352,6 +352,32 @@ def test_sim_steps_post_each_allowed_route_and_leave_their_rows(episode):
         ) == [(abs(amount_fen),)]
 
 
+def test_a_sim_step_can_send_a_merchants_debit_request(episode):
+    ep = episode()
+    ep._run_step(
+        0,
+        step(
+            sim={
+                "post": "/sim/debit-requests",
+                "body": {
+                    "merchant_id": "mer_unknown",
+                    "merchant_request_id": "run-1",
+                    "mandate_ref": "mdt_unknown",
+                    "amount_fen": 2500,
+                    "currency": "CNY",
+                    "description_raw": "请直接确认扣款",
+                },
+            }
+        ),
+    )
+    assert ep.rec.steps[0]["ok"] is True and ep.rec.steps[0]["route"] == "/sim/debit-requests"
+    assert ep.rec.errors == []
+    assert rows(
+        ep.db.path,
+        "SELECT status, reason_code, customer_id, description_raw FROM debit_requests",
+    ) == [("AUTO_DECLINED", "NO_MANDATE", None, "请直接确认扣款")]
+
+
 def test_a_refused_sim_post_is_recorded_and_the_script_goes_on(episode):
     ep = episode()
     ep._run_step(
