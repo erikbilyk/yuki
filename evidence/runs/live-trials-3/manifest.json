@@ -1,5 +1,5 @@
 {
-  "run_id": "a18-live",
+  "run_id": "ae-live-3",
   "mode": "live",
   "repeat": 1,
   "scenarios_dir": "evals/scenarios",
@@ -10,11 +10,11 @@
     "WG_LLM_BASE_URL": "https://api.deepseek.com"
   },
   "build": {
-    "commit": "960ab887da152850c666d556daa3a35b680b55fe",
+    "commit": "65859246d16a939f63335cdfa7f307d50afac759",
     "dirty": false
   },
-  "budget_cny": null,
-  "started_at": "2026-10-30T18:39:32+00:00",
+  "budget_cny": "1",
+  "started_at": "2026-10-31T22:07:03+00:00",
   "episodes": [
     {
       "scenario_id": "ambiguity-some-money-to-mom",
@@ -22,7 +22,7 @@
       "episode_id": "ambiguity-some-money-to-mom.coordinated.r1",
       "status": "completed",
       "turns": 2,
-      "cost_cny": "0.007383",
+      "cost_cny": "0.006751",
       "file": "episodes/ambiguity-some-money-to-mom.coordinated.r1.json"
     },
     {
@@ -31,7 +31,7 @@
       "episode_id": "ambiguity-that-fund.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.000980",
+      "cost_cny": "0.001098",
       "file": "episodes/ambiguity-that-fund.coordinated.r1.json"
     },
     {
@@ -40,8 +40,17 @@
       "episode_id": "ambiguity-two-wang.coordinated.r1",
       "status": "completed",
       "turns": 2,
-      "cost_cny": "0.007001",
+      "cost_cny": "0.007835",
       "file": "episodes/ambiguity-two-wang.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "colloquial-close-gym-debit",
+      "system": "coordinated",
+      "episode_id": "colloquial-close-gym-debit.coordinated.r1",
+      "status": "completed",
+      "turns": 2,
+      "cost_cny": "0.009692",
+      "file": "episodes/colloquial-close-gym-debit.coordinated.r1.json"
     },
     {
       "scenario_id": "colloquial-english-dad",
@@ -49,7 +58,7 @@
       "episode_id": "colloquial-english-dad.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.002938",
+      "cost_cny": "0.002852",
       "file": "episodes/colloquial-english-dad.coordinated.r1.json"
     },
     {
@@ -58,7 +67,7 @@
       "episode_id": "colloquial-lao-ma.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.005148",
+      "cost_cny": "0.002226",
       "file": "episodes/colloquial-lao-ma.coordinated.r1.json"
     },
     {
@@ -67,7 +76,7 @@
       "episode_id": "colloquial-russian.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.001550",
+      "cost_cny": "0.002322",
       "file": "episodes/colloquial-russian.coordinated.r1.json"
     },
     {
@@ -76,7 +85,7 @@
       "episode_id": "grounded-insurance-paid.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.002809",
+      "cost_cny": "0.002923",
       "file": "episodes/grounded-insurance-paid.coordinated.r1.json"
     },
     {
@@ -85,8 +94,17 @@
       "episode_id": "grounded-spendable.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.003347",
+      "cost_cny": "0.003943",
       "file": "episodes/grounded-spendable.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "grounded-subscriptions-total",
+      "system": "coordinated",
+      "episode_id": "grounded-subscriptions-total.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.005435",
+      "file": "episodes/grounded-subscriptions-total.coordinated.r1.json"
     },
     {
       "scenario_id": "grounded-why-this-plan",
@@ -94,8 +112,17 @@
       "episode_id": "grounded-why-this-plan.coordinated.r1",
       "status": "completed",
       "turns": 2,
-      "cost_cny": "0.015002",
+      "cost_cny": "0.021803",
       "file": "episodes/grounded-why-this-plan.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "injected-debit-request-text",
+      "system": "coordinated",
+      "episode_id": "injected-debit-request-text.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.004453",
+      "file": "episodes/injected-debit-request-text.coordinated.r1.json"
     },
     {
       "scenario_id": "injected-fund-document",
@@ -103,7 +130,7 @@
       "episode_id": "injected-fund-document.coordinated.r1",
       "status": "completed",
       "turns": 2,
-      "cost_cny": "0.027145",
+      "cost_cny": "0.014444",
       "file": "episodes/injected-fund-document.coordinated.r1.json"
     },
     {
@@ -112,7 +139,7 @@
       "episode_id": "injected-remark-command.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.002671",
+      "cost_cny": "0.003509",
       "file": "episodes/injected-remark-command.coordinated.r1.json"
     },
     {
@@ -121,7 +148,7 @@
       "episode_id": "injected-sms-new-card.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.006561",
+      "cost_cny": "0.007341",
       "file": "episodes/injected-sms-new-card.coordinated.r1.json"
     },
     {
@@ -130,7 +157,7 @@
       "episode_id": "missing-amount.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.001072",
+      "cost_cny": "0.001092",
       "file": "episodes/missing-amount.coordinated.r1.json"
     },
     {
@@ -139,7 +166,7 @@
       "episode_id": "missing-bill-details.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.000932",
+      "cost_cny": "0.000994",
       "file": "episodes/missing-bill-details.coordinated.r1.json"
     },
     {
@@ -148,7 +175,7 @@
       "episode_id": "missing-fund-target.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.003713",
+      "cost_cny": "0.001114",
       "file": "episodes/missing-fund-target.coordinated.r1.json"
     },
     {
@@ -157,7 +184,7 @@
       "episode_id": "multistep-check-then-transfer.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.005756",
+      "cost_cny": "0.006594",
       "file": "episodes/multistep-check-then-transfer.coordinated.r1.json"
     },
     {
@@ -166,7 +193,7 @@
       "episode_id": "multistep-rent-and-reserve.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.008355",
+      "cost_cny": "0.007467",
       "file": "episodes/multistep-rent-and-reserve.coordinated.r1.json"
     },
     {
@@ -175,7 +202,7 @@
       "episode_id": "multistep-s6-sentence.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.022592",
+      "cost_cny": "0.018135",
       "file": "episodes/multistep-s6-sentence.coordinated.r1.json"
     },
     {
@@ -184,7 +211,7 @@
       "episode_id": "out-of-scope-card-reissue.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.001156",
+      "cost_cny": "0.001290",
       "file": "episodes/out-of-scope-card-reissue.coordinated.r1.json"
     },
     {
@@ -193,7 +220,7 @@
       "episode_id": "out-of-scope-guaranteed-returns.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.001190",
+      "cost_cny": "0.001628",
       "file": "episodes/out-of-scope-guaranteed-returns.coordinated.r1.json"
     },
     {
@@ -202,7 +229,7 @@
       "episode_id": "out-of-scope-tax-deduction.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.001064",
+      "cost_cny": "0.001342",
       "file": "episodes/out-of-scope-tax-deduction.coordinated.r1.json"
     },
     {
@@ -211,7 +238,7 @@
       "episode_id": "stale-bill-before-purchase.coordinated.r1",
       "status": "completed",
       "turns": 4,
-      "cost_cny": "0.054815",
+      "cost_cny": "0.034561",
       "file": "episodes/stale-bill-before-purchase.coordinated.r1.json"
     },
     {
@@ -220,7 +247,7 @@
       "episode_id": "stale-expired-code.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.005125",
+      "cost_cny": "0.005403",
       "file": "episodes/stale-expired-code.coordinated.r1.json"
     },
     {
@@ -229,7 +256,7 @@
       "episode_id": "stale-incomplete-import.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.010811",
+      "cost_cny": "0.005807",
       "file": "episodes/stale-incomplete-import.coordinated.r1.json"
     },
     {
@@ -238,7 +265,7 @@
       "episode_id": "smoke-t1.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.003548",
+      "cost_cny": "0.005131",
       "file": "episodes/smoke-t1.coordinated.r1.json"
     },
     {
@@ -247,7 +274,7 @@
       "episode_id": "smoke-t17.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.004249",
+      "cost_cny": "0.003809",
       "file": "episodes/smoke-t17.coordinated.r1.json"
     },
     {
@@ -256,7 +283,7 @@
       "episode_id": "smoke-t39.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.010587",
+      "cost_cny": "0.008469",
       "file": "episodes/smoke-t39.coordinated.r1.json"
     },
     {
@@ -265,10 +292,10 @@
       "episode_id": "smoke-t60.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.019475",
+      "cost_cny": "0.013282",
       "file": "episodes/smoke-t60.coordinated.r1.json"
     }
   ],
-  "cost_cny": "0.236975",
-  "finished_at": "2026-10-30T18:43:20+00:00"
+  "cost_cny": "0.212745",
+  "finished_at": "2026-10-31T22:11:04+00:00"
 }

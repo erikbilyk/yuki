@@ -1,11 +1,11 @@
 # Acceptance report
 
-- Build: `freeze-1-2-g960ab88`; frozen build: yes (tag: freeze-1)
-- Generated (UTC): 2026-10-30T18:06:42Z; runs: 3
+- Build: `freeze-3`; frozen build: yes (tag: freeze-3)
+- Generated (UTC): 2026-10-31T21:46:36Z; runs: 3
 - Selection: gate -; only all; layers D, H, K, S
 - Environment: Python 3.12.16, pytest 9.2.0, Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39
 - Fixture hash: `11049f3d1e62dff51695cf20c14cb236a36b71e457d7b75f4338448bd2fcac04`
-- Features: none
+- Features: s5
 
 ## Totals by set
 
@@ -16,7 +16,7 @@
 | S3 | 21 | 12 | 21 | 21 | 21 | 21 | 0 |
 | S6 | 18 | 9 | 18 | 18 | 18 | 18 | 0 |
 | S4 | 19 | 9 | 0 | 0 | 0 | 0 | 19 |
-| S5 | 19 | 8 | 0 | 0 | 0 | 0 | 19 |
+| S5 | 19 | 8 | 19 | 17 | 16 | 16 | 0 |
 | R | 10 | 0 | 10 | 10 | 10 | 10 | 0 |
 
 ## Cases run
@@ -98,6 +98,23 @@
 | T75 | S6 | P1 | reproducible | S passed | 3 |
 | T76 | S6 | P0 | reproducible | D passed, H passed | 2 |
 | T77 | S6 | P1 | reproducible | D passed, K passed | 2 |
+| T97 | S5 | P1 | reproducible | S passed | 4 |
+| T98 | S5 | P0 | reproducible | D passed, H passed | 12 |
+| T99 | S5 | P0 | reproducible | D passed, H passed | 14 |
+| T100 | S5 | P0 | reproducible | D passed, H passed | 24 |
+| T101 | S5 | P0 | reproducible | D passed, H passed, S passed | 17 |
+| T102 | S5 | P0 | reproducible | D passed, H passed | 14 |
+| T103 | S5 | P0 | reproducible | D passed, H passed | 16 |
+| T104 | S5 | P0 | reproducible | D passed, H passed | 12 |
+| T105 | S5 | P0 | reproducible | K passed | 5 |
+| T106 | S5 | P1 | reproducible | D passed, H passed | 18 |
+| T107 | S5 | P1 | implemented | D passed, H passed, S missing | 14 |
+| T108 | S5 | P1 | reproducible | D passed, H passed, S passed | 14 |
+| T109 | S5 | P1 | reproducible | S passed | 9 |
+| T110 | S5 | P1 | specified | D missing | 0 |
+| T111 | S5 | P1 | reproducible | D passed, H passed | 10 |
+| T112 | S5 | P1 | reproducible | D passed | 8 |
+| T113 | S5 | P2 | reproducible | S passed | 3 |
 | R1 | R | - | reproducible | D passed | 1 |
 | R2 | R | - | reproducible | D passed | 2 |
 | R3 | R | - | reproducible | D passed, K passed | 3 |
@@ -108,10 +125,10 @@
 | R8 | R | - | reproducible | D passed | 4 |
 | R9 | R | - | reproducible | K passed | 2 |
 | R10 | R | - | reproducible | D passed | 5 |
+| R-S5-1 | S5 | - | reproducible | D passed | 5 |
 
 ## Not applicable
 
 - T14: ADD_PAYEE is not built (SPEC §25)
 - T24: Out of scope: no credit card in the fixture
 - T78–T96: S4 unscheduled: not started
-- T97–T114, R-S5-1: S5 not started: designed, not implemented

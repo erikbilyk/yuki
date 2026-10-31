@@ -1,8 +1,8 @@
 {
-  "build": "freeze-1-2-g960ab88",
-  "freeze_tag": "freeze-1",
+  "build": "freeze-3",
+  "freeze_tag": "freeze-3",
   "frozen": true,
-  "generated_at": "2026-10-30T18:39:08Z",
+  "generated_at": "2026-10-31T21:48:42Z",
   "environment": {
     "python": "3.12.16",
     "pytest": "9.2.0",
@@ -30,18 +30,20 @@
   "runs": [
     {
       "exit_status": 0,
-      "duration_s": 31.7
+      "duration_s": 34.3
     },
     {
       "exit_status": 0,
-      "duration_s": 31.9
+      "duration_s": 33.8
     },
     {
       "exit_status": 0,
-      "duration_s": 37.9
+      "duration_s": 34.1
     }
   ],
-  "features": [],
+  "features": [
+    "s5"
+  ],
   "features_error": [],
   "unknown_cases": [],
   "cases": {
@@ -1751,12 +1753,17 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "S",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
-      "external_layers": [],
+      "external_layers": [
+        "L"
+      ],
       "variants": {},
       "messages": []
     },
@@ -1765,10 +1772,13 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -1779,10 +1789,13 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -1793,10 +1806,13 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -1807,12 +1823,21 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "D",
+        "H",
+        "S",
+        "U",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
-      "external_layers": [],
+      "external_layers": [
+        "U",
+        "L"
+      ],
       "variants": {},
       "messages": []
     },
@@ -1821,10 +1846,13 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -1835,10 +1863,13 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -1849,10 +1880,13 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -1863,10 +1897,12 @@
       "set": "S5",
       "priority": "P0",
       "gate": "GS5",
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "K"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -1877,10 +1913,13 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -1891,10 +1930,14 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "D",
+        "H",
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -1905,12 +1948,19 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "D",
+        "H",
+        "S",
+        "L"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
-      "external_layers": [],
+      "external_layers": [
+        "L"
+      ],
       "variants": {},
       "messages": []
     },
@@ -1919,10 +1969,12 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -1933,10 +1985,12 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": "Not built: a new agreement does not trigger plan continuation",
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -1947,10 +2001,13 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "D",
+        "H"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -1961,10 +2018,12 @@
       "set": "S5",
       "priority": "P1",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "D"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -1975,10 +2034,12 @@
       "set": "S5",
       "priority": "P2",
       "gate": null,
-      "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "layers": [
+        "S"
+      ],
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -1990,9 +2051,9 @@
       "priority": "P2",
       "gate": null,
       "layers": [],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "applicable": true,
+      "reason": "Not built: recurring transfers are out of scope",
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -2168,9 +2229,9 @@
       "layers": [
         "D"
       ],
-      "applicable": false,
-      "reason": "S5 not started: designed, not implemented",
-      "status": "not applicable",
+      "applicable": true,
+      "reason": null,
+      "status": "not run",
       "layer_results": {},
       "external_layers": [],
       "variants": {},
@@ -2227,8 +2288,8 @@
       "S5": {
         "cases": 19,
         "p0": 8,
-        "applicable": 0,
-        "not_applicable": 19,
+        "applicable": 19,
+        "not_applicable": 0,
         "implemented": 0,
         "passed": 0,
         "reproducible": 0
@@ -2522,6 +2583,32 @@
           "T60/L",
           "T60/U"
         ],
+        "result": "failed"
+      },
+      "GS5": {
+        "gate": "GS5",
+        "required": 16,
+        "passed": 0,
+        "failed": [],
+        "missing": [
+          "R-S5-1/D",
+          "T100/D",
+          "T100/H",
+          "T101/D",
+          "T101/H",
+          "T102/D",
+          "T102/H",
+          "T103/D",
+          "T103/H",
+          "T104/D",
+          "T104/H",
+          "T105/K",
+          "T98/D",
+          "T98/H",
+          "T99/D",
+          "T99/H"
+        ],
+        "external_not_run": [],
         "result": "failed"
       }
     }

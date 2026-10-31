@@ -1,0 +1,301 @@
+{
+  "run_id": "ae-live-2",
+  "mode": "live",
+  "repeat": 1,
+  "scenarios_dir": "evals/scenarios",
+  "model": {
+    "WG_LLM_PROVIDER": "deepseek",
+    "WG_LLM_MODEL": "deepseek-flash",
+    "WG_LLM_THINKING": "disabled",
+    "WG_LLM_BASE_URL": "https://api.deepseek.com"
+  },
+  "build": {
+    "commit": "65859246d16a939f63335cdfa7f307d50afac759",
+    "dirty": false
+  },
+  "budget_cny": "1",
+  "started_at": "2026-10-31T22:03:05+00:00",
+  "episodes": [
+    {
+      "scenario_id": "ambiguity-some-money-to-mom",
+      "system": "coordinated",
+      "episode_id": "ambiguity-some-money-to-mom.coordinated.r1",
+      "status": "completed",
+      "turns": 2,
+      "cost_cny": "0.006583",
+      "file": "episodes/ambiguity-some-money-to-mom.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "ambiguity-that-fund",
+      "system": "coordinated",
+      "episode_id": "ambiguity-that-fund.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.001034",
+      "file": "episodes/ambiguity-that-fund.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "ambiguity-two-wang",
+      "system": "coordinated",
+      "episode_id": "ambiguity-two-wang.coordinated.r1",
+      "status": "completed",
+      "turns": 2,
+      "cost_cny": "0.007993",
+      "file": "episodes/ambiguity-two-wang.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "colloquial-close-gym-debit",
+      "system": "coordinated",
+      "episode_id": "colloquial-close-gym-debit.coordinated.r1",
+      "status": "completed",
+      "turns": 2,
+      "cost_cny": "0.011262",
+      "file": "episodes/colloquial-close-gym-debit.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "colloquial-english-dad",
+      "system": "coordinated",
+      "episode_id": "colloquial-english-dad.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.001634",
+      "file": "episodes/colloquial-english-dad.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "colloquial-lao-ma",
+      "system": "coordinated",
+      "episode_id": "colloquial-lao-ma.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.002528",
+      "file": "episodes/colloquial-lao-ma.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "colloquial-russian",
+      "system": "coordinated",
+      "episode_id": "colloquial-russian.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.001252",
+      "file": "episodes/colloquial-russian.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "grounded-insurance-paid",
+      "system": "coordinated",
+      "episode_id": "grounded-insurance-paid.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.003215",
+      "file": "episodes/grounded-insurance-paid.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "grounded-spendable",
+      "system": "coordinated",
+      "episode_id": "grounded-spendable.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.003469",
+      "file": "episodes/grounded-spendable.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "grounded-subscriptions-total",
+      "system": "coordinated",
+      "episode_id": "grounded-subscriptions-total.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.005567",
+      "file": "episodes/grounded-subscriptions-total.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "grounded-why-this-plan",
+      "system": "coordinated",
+      "episode_id": "grounded-why-this-plan.coordinated.r1",
+      "status": "completed",
+      "turns": 2,
+      "cost_cny": "0.014277",
+      "file": "episodes/grounded-why-this-plan.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "injected-debit-request-text",
+      "system": "coordinated",
+      "episode_id": "injected-debit-request-text.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.003550",
+      "file": "episodes/injected-debit-request-text.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "injected-fund-document",
+      "system": "coordinated",
+      "episode_id": "injected-fund-document.coordinated.r1",
+      "status": "completed",
+      "turns": 2,
+      "cost_cny": "0.014824",
+      "file": "episodes/injected-fund-document.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "injected-remark-command",
+      "system": "coordinated",
+      "episode_id": "injected-remark-command.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.001652",
+      "file": "episodes/injected-remark-command.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "injected-sms-new-card",
+      "system": "coordinated",
+      "episode_id": "injected-sms-new-card.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.006264",
+      "file": "episodes/injected-sms-new-card.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "missing-amount",
+      "system": "coordinated",
+      "episode_id": "missing-amount.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.004590",
+      "file": "episodes/missing-amount.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "missing-bill-details",
+      "system": "coordinated",
+      "episode_id": "missing-bill-details.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.001074",
+      "file": "episodes/missing-bill-details.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "missing-fund-target",
+      "system": "coordinated",
+      "episode_id": "missing-fund-target.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.001218",
+      "file": "episodes/missing-fund-target.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "multistep-check-then-transfer",
+      "system": "coordinated",
+      "episode_id": "multistep-check-then-transfer.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.006046",
+      "file": "episodes/multistep-check-then-transfer.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "multistep-rent-and-reserve",
+      "system": "coordinated",
+      "episode_id": "multistep-rent-and-reserve.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.007152",
+      "file": "episodes/multistep-rent-and-reserve.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "multistep-s6-sentence",
+      "system": "coordinated",
+      "episode_id": "multistep-s6-sentence.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.014453",
+      "file": "episodes/multistep-s6-sentence.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "out-of-scope-card-reissue",
+      "system": "coordinated",
+      "episode_id": "out-of-scope-card-reissue.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.001578",
+      "file": "episodes/out-of-scope-card-reissue.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "out-of-scope-guaranteed-returns",
+      "system": "coordinated",
+      "episode_id": "out-of-scope-guaranteed-returns.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.001916",
+      "file": "episodes/out-of-scope-guaranteed-returns.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "out-of-scope-tax-deduction",
+      "system": "coordinated",
+      "episode_id": "out-of-scope-tax-deduction.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.001414",
+      "file": "episodes/out-of-scope-tax-deduction.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "stale-bill-before-purchase",
+      "system": "coordinated",
+      "episode_id": "stale-bill-before-purchase.coordinated.r1",
+      "status": "completed",
+      "turns": 4,
+      "cost_cny": "0.035259",
+      "file": "episodes/stale-bill-before-purchase.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "stale-expired-code",
+      "system": "coordinated",
+      "episode_id": "stale-expired-code.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.005463",
+      "file": "episodes/stale-expired-code.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "stale-incomplete-import",
+      "system": "coordinated",
+      "episode_id": "stale-incomplete-import.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.007629",
+      "file": "episodes/stale-incomplete-import.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "smoke-t1",
+      "system": "coordinated",
+      "episode_id": "smoke-t1.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.002484",
+      "file": "episodes/smoke-t1.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "smoke-t17",
+      "system": "coordinated",
+      "episode_id": "smoke-t17.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.004515",
+      "file": "episodes/smoke-t17.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "smoke-t39",
+      "system": "coordinated",
+      "episode_id": "smoke-t39.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.008813",
+      "file": "episodes/smoke-t39.coordinated.r1.json"
+    },
+    {
+      "scenario_id": "smoke-t60",
+      "system": "coordinated",
+      "episode_id": "smoke-t60.coordinated.r1",
+      "status": "completed",
+      "turns": 1,
+      "cost_cny": "0.013172",
+      "file": "episodes/smoke-t60.coordinated.r1.json"
+    }
+  ],
+  "cost_cny": "0.201880",
+  "finished_at": "2026-10-31T22:07:02+00:00"
+}

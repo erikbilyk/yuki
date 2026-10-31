@@ -1,5 +1,5 @@
 {
-  "run_id": "a18-t60",
+  "run_id": "ae-t60",
   "mode": "live",
   "repeat": 3,
   "scenarios_dir": "evals/scenarios",
@@ -10,11 +10,11 @@
     "WG_LLM_BASE_URL": "https://api.deepseek.com"
   },
   "build": {
-    "commit": "960ab887da152850c666d556daa3a35b680b55fe",
+    "commit": "65859246d16a939f63335cdfa7f307d50afac759",
     "dirty": false
   },
-  "budget_cny": null,
-  "started_at": "2026-10-30T18:43:29+00:00",
+  "budget_cny": "0.3",
+  "started_at": "2026-10-31T22:11:26+00:00",
   "episodes": [
     {
       "scenario_id": "smoke-t60",
@@ -22,7 +22,7 @@
       "episode_id": "smoke-t60.coordinated.r1",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.013638",
+      "cost_cny": "0.013698",
       "file": "episodes/smoke-t60.coordinated.r1.json"
     },
     {
@@ -31,7 +31,7 @@
       "episode_id": "smoke-t60.coordinated.r2",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.013302",
+      "cost_cny": "0.013321",
       "file": "episodes/smoke-t60.coordinated.r2.json"
     },
     {
@@ -40,10 +40,10 @@
       "episode_id": "smoke-t60.coordinated.r3",
       "status": "completed",
       "turns": 1,
-      "cost_cny": "0.019360",
+      "cost_cny": "0.012646",
       "file": "episodes/smoke-t60.coordinated.r3.json"
     }
   ],
-  "cost_cny": "0.046300",
-  "finished_at": "2026-10-30T18:44:12+00:00"
+  "cost_cny": "0.039665",
+  "finished_at": "2026-10-31T22:11:58+00:00"
 }

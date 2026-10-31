@@ -1,11 +1,11 @@
 # Acceptance report
 
-- Build: `freeze-1-2-g960ab88`; frozen build: yes (tag: freeze-1)
-- Generated (UTC): 2026-10-30T19:13:55Z; runs: 1
+- Build: `freeze-3`; frozen build: yes (tag: freeze-3)
+- Generated (UTC): 2026-10-31T21:55:53Z; runs: 1
 - Selection: gate G3; only all; layers D, H, K, S
 - Environment: Python 3.12.16, pytest 9.2.0, Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39
 - Fixture hash: `11049f3d1e62dff51695cf20c14cb236a36b71e457d7b75f4338448bd2fcac04`
-- Features: none
+- Features: s5
 
 ## Gate G3: passed
 
@@ -21,7 +21,7 @@ Not run by this harness (U, L): T1/L, T17/L, T39/L, T60/L, T60/U.
 | S3 | 21 | 12 | 21 | 21 | 21 | 0 | 0 |
 | S6 | 18 | 9 | 18 | 18 | 18 | 0 | 0 |
 | S4 | 19 | 9 | 0 | 0 | 0 | 0 | 19 |
-| S5 | 19 | 8 | 0 | 0 | 0 | 0 | 19 |
+| S5 | 19 | 8 | 19 | 0 | 0 | 0 | 0 |
 | R | 10 | 0 | 10 | 10 | 10 | 0 | 0 |
 
 ## Cases run
@@ -103,6 +103,23 @@ Not run by this harness (U, L): T1/L, T17/L, T39/L, T60/L, T60/U.
 | T75 | S6 | P1 | passed | S passed | 3 |
 | T76 | S6 | P0 | passed | D passed, H passed | 2 |
 | T77 | S6 | P1 | passed | D passed, K passed | 2 |
+| T97 | S5 | P1 | specified | S missing | 0 |
+| T98 | S5 | P0 | specified | D missing, H missing | 0 |
+| T99 | S5 | P0 | specified | D missing, H missing | 0 |
+| T100 | S5 | P0 | specified | D missing, H missing | 0 |
+| T101 | S5 | P0 | specified | D missing, H missing, S missing | 0 |
+| T102 | S5 | P0 | specified | D missing, H missing | 0 |
+| T103 | S5 | P0 | specified | D missing, H missing | 0 |
+| T104 | S5 | P0 | specified | D missing, H missing | 0 |
+| T105 | S5 | P0 | specified | K missing | 0 |
+| T106 | S5 | P1 | specified | D missing, H missing | 0 |
+| T107 | S5 | P1 | specified | D missing, H missing, S missing | 0 |
+| T108 | S5 | P1 | specified | D missing, H missing, S missing | 0 |
+| T109 | S5 | P1 | specified | S missing | 0 |
+| T110 | S5 | P1 | specified | D missing | 0 |
+| T111 | S5 | P1 | specified | D missing, H missing | 0 |
+| T112 | S5 | P1 | specified | D missing | 0 |
+| T113 | S5 | P2 | specified | S missing | 0 |
 | R1 | R | - | passed | D passed | 1 |
 | R2 | R | - | passed | D passed | 2 |
 | R3 | R | - | passed | D passed, K passed | 3 |
@@ -113,10 +130,10 @@ Not run by this harness (U, L): T1/L, T17/L, T39/L, T60/L, T60/U.
 | R8 | R | - | passed | D passed | 4 |
 | R9 | R | - | passed | K passed | 2 |
 | R10 | R | - | passed | D passed | 5 |
+| R-S5-1 | S5 | - | specified | D missing | 0 |
 
 ## Not applicable
 
 - T14: ADD_PAYEE is not built (SPEC §25)
 - T24: Out of scope: no credit card in the fixture
 - T78–T96: S4 unscheduled: not started
-- T97–T114, R-S5-1: S5 not started: designed, not implemented
