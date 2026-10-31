@@ -262,6 +262,7 @@ class FactCollector:
             )
         if isinstance(cash, CashSnapshotView):
             details = cash.details
+            self._money(_C.POSTED_CASH, details.c_fen, "账户现金合计", ref, as_of=at)
             estimate = details.monthly_estimate_fen
             label = "本月结余估算（不是可自由支配）"
             self._money(_C.MONTHLY_ESTIMATE, estimate, label, ref, as_of=at)
