@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { api, setCsrfToken } from "./api.ts";
+import { DebitRequestForm } from "./DebitRequestForm.tsx";
 import { errorText } from "./errors.ts";
 import { formatTime } from "./format.ts";
 import { S } from "./strings.ts";
 import type { ClockView, FaultName } from "./types.ts";
 
 const FAULTS: FaultName[] = ["drop_response", "bank_ack_lost", "crash_after_commit", "crash_before_commit"];
-const VARIANTS = ["t64", "t65", "t52", "t25", "t23", "t35", "t42", "t43"];
+const BASE_PROFILE = "fixture_v1";
+const DIRECT_DEBIT_PROFILE = "fixture_s5";
+const VARIANTS: Record<string, string[]> = {
+  [BASE_PROFILE]: ["t64", "t65", "t52", "t25", "t23", "t35", "t42", "t43"],
+  [DIRECT_DEBIT_PROFILE]: ["video_suspended", "video_expiring"],
+};
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HEALTH_POLL_MS = 1000;
 
@@ -36,10 +42,11 @@ type Login = "unknown" | "needed" | "in";
 interface Props {
   refreshKey: number;
   onChange: () => void;
+  s5: boolean;
 }
 
 /** Demo controls: simulated clock, fault arming, a real process crash and a data reset. */
-export function DemoPanel({ refreshKey, onChange }: Props) {
+export function DemoPanel({ refreshKey, onChange, s5 }: Props) {
   const [login, setLogin] = useState<Login>("unknown");
   const [clock, setClock] = useState<ClockView | null>(null);
   const [due, setDue] = useState<Date | null>(null);
@@ -178,11 +185,13 @@ export function DemoPanel({ refreshKey, onChange }: Props) {
             </button>
             <p className="muted small">{S.demo.crashNote}</p>
           </div>
+          {s5 && <DebitRequestForm refreshKey={refreshKey} onChange={onChange} />}
           <ResetControl
             busy={busy}
-            onReset={(variant) =>
+            s5={s5}
+            onReset={(variant, profile) =>
               run(async () => {
-                const result = await api.simReset(variant);
+                const result = await api.simReset(variant, profile);
                 setClock(result.clock);
                 setMessage(S.demo.resetDone);
                 onChange();
@@ -279,17 +288,43 @@ function AdvanceToDay({ clock, busy, onAdvance }: { clock: ClockView; busy: bool
   );
 }
 
-function ResetControl({ busy, onReset }: { busy: boolean; onReset: (variant: string | null) => void }) {
+interface ResetProps {
+  busy: boolean;
+  s5: boolean;
+  onReset: (variant: string | null, profile: string) => void;
+}
+
+function ResetControl({ busy, s5, onReset }: ResetProps) {
+  const [profile, setProfile] = useState(BASE_PROFILE);
   const [variant, setVariant] = useState("");
   const [confirming, setConfirming] = useState(false);
 
   return (
     <div className="demo-group">
+      {s5 && (
+        <label>
+          {S.demo.profile}
+          <select
+            value={profile}
+            onChange={(e) => {
+              setProfile(e.target.value);
+              setVariant("");
+            }}
+            data-testid="reset-profile"
+          >
+            {Object.keys(VARIANTS).map((id) => (
+              <option key={id} value={id}>
+                {S.demo.profiles[id]}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label>
         {S.demo.variant}
         <select value={variant} onChange={(e) => setVariant(e.target.value)} data-testid="reset-variant">
           <option value="">{S.demo.variantNone}</option>
-          {VARIANTS.map((id) => (
+          {VARIANTS[profile].map((id) => (
             <option key={id} value={id}>
               {id}
             </option>
@@ -306,7 +341,7 @@ function ResetControl({ busy, onReset }: { busy: boolean; onReset: (variant: str
             data-testid="reset-yes"
             onClick={() => {
               setConfirming(false);
-              onReset(variant || null);
+              onReset(variant || null, profile);
             }}
           >
             {S.demo.resetConfirm}
