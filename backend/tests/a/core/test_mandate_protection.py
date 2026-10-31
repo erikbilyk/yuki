@@ -393,3 +393,36 @@ def test_a_declined_request_on_a_cancelled_agreement_keeps_the_later_end():
     cancelled = replace(FITNESS, status=MandateStatus.CANCELLED, cancelled_at=EPOCH)
     [period] = protected_periods(cancelled, [declined], EPOCH)
     assert period.until == at(11, 21)
+
+
+def new_agreement(debit_day: int, today: datetime = EPOCH) -> MandateRow:
+    """An agreement that starts on the day it is confirmed, as MANDATE_CREATE makes it."""
+    return agreement(
+        "mdt_music",
+        1_500,
+        2_000,
+        debit_day,
+        starts_on=today.date(),
+        expires_on=date(2027, 11, 1),
+    )
+
+
+def test_a_new_agreement_protects_its_first_period_at_once():
+    assert periods(new_agreement(15), EPOCH) == [("2026-11", 1_500)]
+
+
+def test_a_new_agreement_whose_day_has_passed_protects_the_next_month():
+    # Due 11-01 lies before the start, and 12-01 is within 30 days of 11-02.
+    assert periods(new_agreement(1), EPOCH) == [("2026-12", 1_500)]
+
+
+def test_a_new_agreement_due_today_protects_this_month_and_next():
+    assert periods(new_agreement(2), EPOCH) == [("2026-11", 1_500), ("2026-12", 1_500)]
+
+
+def test_a_new_agreement_protects_no_period_due_after_its_last_day():
+    one_month = replace(new_agreement(15), expires_on=date(2026, 12, 1))
+    assert periods(one_month, EPOCH) == [("2026-11", 1_500)]
+    last_day_due = replace(new_agreement(1), expires_on=date(2026, 12, 1))
+    assert periods(last_day_due, EPOCH) == [("2026-12", 1_500)]
+    assert periods(replace(last_day_due, expires_on=date(2026, 11, 30)), EPOCH) == []

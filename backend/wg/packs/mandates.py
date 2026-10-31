@@ -13,6 +13,11 @@ to the expected amount; only the part above that must fit in the headroom.
 A decline moves no money: it marks the request DECLINED, which occupies the period, and the
 period stays protected until `respond_by` (S5-SPEC §5.5, §5.6).
 
+A new agreement (MANDATE_CREATE) is the other way round: the customer asks for it, so the
+merchant must be in the registry and verified, the term at most 12 months and the cap not
+below the expected amount. It starts on the day it is confirmed and runs `months` months;
+from then on its first period is protected like any other (S5-SPEC §5.6, §6.1).
+
 A change of an agreement (cancel, suspend, resume, lower or raise the cap) moves no money
 either, but goes through the gateway like a payment, so it leaves an operation and one
 receipt: the bank records it and applies it, with what it does to the pending requests,
@@ -29,22 +34,25 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from wg.contracts.api import CardLine, MoneyChange, SourceLabel
+from wg.contracts.engines import CashInputs, CommitmentInput
 from wg.contracts.enums import (
     ActionKind,
     ActionStatus,
+    CommitmentStatus,
     DebitRequestStatus,
     MandateStatus,
     Provenance,
     Tier,
 )
 from wg.contracts.errors import ErrorCode
+from wg.contracts.ids import IdPrefix, new_id
 from wg.core import k3_policy, mandate_rules
 from wg.core.hashes import sha256_hex
 from wg.core.k1_session import not_found
 from wg.core.k4_approval import CardContent
 from wg.k6 import accounts, actions, bank, debit_requests, mandates, operations
 from wg.k6.actions import ActionRow
-from wg.k6.bank import BankRequest, MandateChangeOrder, MerchantPaymentOrder
+from wg.k6.bank import BankRequest, MandateChangeOrder, MandateCreateOrder, MerchantPaymentOrder
 from wg.k6.cash_inputs import cash_inputs_from_db
 from wg.k6.db import Reader, UnitOfWork
 from wg.k6.debit_requests import DebitRequestRow
@@ -91,6 +99,19 @@ CAP_WARNINGS = {
 RESUME_WARNING = "恢复后商户可以再次发起扣款请求，每一笔仍需您确认"
 WAITING_DECLINED_WARNING = "等待中的扣款请求将被自动拒绝"
 CODE_WARNING = "确认后需要输入短信验证码。"
+
+CREATE_PARAMS = ("account_id", "merchant_id", "expected_fen", "cap_fen", "debit_day", "months")
+CREATE_SLOT_LABELS = {
+    "merchant_id": "商户",
+    "expected_fen": "每月预计",
+    "cap_fen": "扣款上限",
+    "debit_day": "扣款日",
+    "months": "期限",
+}
+CREATE_WARNING = "未在回复截止前处理的请求不会扣款"
+# Stand-ins for the ids a stored agreement gets, so the card can show its protection.
+_PREVIEW_REF = "mdt_preview"
+_PREVIEW_PURPOSE = "pur_preview"
 
 SLOT_LABELS = {"request_id": "扣款请求", "amount_fen": "金额", "account_id": "扣款账户"}
 CHANGE_SLOT_LABELS = {"mandate_ref": "自动扣款协议", "cap_fen": "扣款上限"}
@@ -632,6 +653,224 @@ class MandateChangePack:
     def receipt_effect(self, operation: OperationRow, bank_request: BankRequest) -> dict[str, Any]:
         effect = bank_request.effect
         return {name: effect[name] for name in ("mandate_ref", "kind", "field", "old", "new")}
+
+
+def _refusal(reason: str) -> Infeasible:
+    return Infeasible(ErrorCode.UNSUPPORTED_REQUEST, {"reason": reason})
+
+
+def create_refusal(
+    reader: Reader, customer_id: str, params: Mapping[str, Any]
+) -> Infeasible | None:
+    """Why the agreement cannot be opened as asked, in the order of S5-SPEC §6.3.
+
+    An unknown merchant or a foreign account is NOT_FOUND. The gateway runs this check at the
+    draft, at the approval request and at submission, so a merchant that stops being
+    verified in between refuses.
+    """
+    account = accounts.find_account(reader, str(params["account_id"]))
+    if account is None or account.customer_id != customer_id:
+        raise not_found()
+    merchant = mandates.find_merchant(reader, str(params["merchant_id"]))
+    if merchant is None:
+        raise not_found()
+    if not merchant.verified:
+        return _refusal("merchant_unverified")
+    if params["months"] > mandate_rules.MAX_TERM_MONTHS:
+        return _refusal("term_over_12_months")
+    if not 1 <= params["debit_day"] <= 31:
+        return _refusal("day_out_of_range")
+    if params["cap_fen"] > k3_policy.SINGLE_TRANSFER_LIMIT_FEN:
+        return Infeasible(ErrorCode.SINGLE_LIMIT_EXCEEDED, {"cap_fen": params["cap_fen"]})
+    return None
+
+
+def prospective_mandate(
+    customer_id: str, params: Mapping[str, Any], at: datetime, *, ref: str, purpose_id: str
+) -> MandateRow:
+    """The agreement the params would create when confirmed at `at`: ACTIVE, from today."""
+    today = at.astimezone(SHANGHAI).date()
+    return MandateRow(
+        mandate_ref=ref,
+        customer_id=customer_id,
+        account_id=str(params["account_id"]),
+        merchant_id=str(params["merchant_id"]),
+        purpose_id=purpose_id,
+        expected_fen=int(params["expected_fen"]),
+        cap_fen=int(params["cap_fen"]),
+        debit_day=int(params["debit_day"]),
+        starts_on=today,
+        expires_on=mandate_rules.term_end(today, int(params["months"])),
+        status=MandateStatus.ACTIVE,
+        cancelled_at=None,
+        version=1,
+    )
+
+
+def _with_periods(inputs: CashInputs, mandate: MandateRow, at: datetime) -> CashInputs:
+    """The inputs with the new agreement's protected periods added to the commitments."""
+    periods = tuple(
+        CommitmentInput(
+            commitment_id=mandate_rules.subscription_commitment_id(
+                mandate.mandate_ref, period.period_key
+            ),
+            purpose_id=mandate.purpose_id,
+            status=CommitmentStatus.CONFIRMED,
+            amount_fen=period.expected_fen,
+            unpaid_fen=period.expected_fen,
+            due_date=period.due_date,
+        )
+        for period in mandate_rules.protected_periods(mandate, [], at)
+    )
+    return inputs.model_copy(update={"commitments": inputs.commitments + periods})
+
+
+class MandateCreatePack:
+    """Opens an agreement with a registry merchant: no reservation, no ledger entry."""
+
+    kinds = frozenset({ActionKind.MANDATE_CREATE})
+
+    def canonical(self, kind: ActionKind, params: Mapping[str, Any]) -> dict[str, Any]:
+        unknown = set(params) - set(CREATE_PARAMS)
+        missing = [name for name in CREATE_PARAMS if params.get(name) is None]
+        if unknown or missing:
+            raise ValueError(f"{kind} params: unknown {sorted(unknown)}, missing {missing}")
+        result: dict[str, Any] = {
+            "account_id": str(params["account_id"]),
+            "merchant_id": str(params["merchant_id"]),
+        }
+        for name in CREATE_PARAMS[2:]:
+            if type(params[name]) is not int or params[name] <= 0:
+                raise ValueError(f"{name} is a positive integer")
+            result[name] = params[name]
+        if result["cap_fen"] < result["expected_fen"]:
+            raise ValueError("cap_fen must not be below expected_fen")
+        return result
+
+    def request_hash(self, kind: ActionKind, customer_id: str, params: Mapping[str, Any]) -> str:
+        return sha256_hex(
+            {"kind": ActionKind(kind).value, "customer_id": customer_id}
+            | {name: params[name] for name in CREATE_PARAMS}
+        )
+
+    def tier(
+        self,
+        reader: Reader,
+        customer_id: str,
+        kind: ActionKind,
+        params: Mapping[str, Any],
+        at: datetime,
+    ) -> Tier:
+        return k3_policy.tier_for(kind)
+
+    def precheck(
+        self,
+        reader: Reader,
+        customer_id: str,
+        kind: ActionKind,
+        params: Mapping[str, Any],
+        at: datetime,
+        *,
+        plan_id: str | None = None,
+    ) -> tuple[Infeasible, ...]:
+        refusal = create_refusal(reader, customer_id, params)
+        return () if refusal is None else (refusal,)
+
+    def card(self, reader: Reader, action: ActionRow, at: datetime) -> CardContent:
+        params = action.params
+        merchant = mandates.find_merchant(reader, str(params["merchant_id"]))
+        assert merchant is not None
+        agreement = prospective_mandate(
+            action.customer_id, params, at, ref=_PREVIEW_REF, purpose_id=_PREVIEW_PURPOSE
+        )
+        today = at.astimezone(SHANGHAI).date()
+        next_due = mandate_rules.next_debit_date(agreement, today)
+        inputs = cash_inputs_from_db(reader, action.customer_id, at)
+        before = compute_snapshot(inputs)
+        after = compute_snapshot(_with_periods(inputs, agreement, at))
+        return CardContent(
+            title=f"新增自动扣款：{merchant.display_name}",
+            lines=(
+                CardLine(key="merchant", label="商户", text=merchant.display_name),
+                CardLine(key="expected", label="每月预计", text=fen_text(agreement.expected_fen)),
+                CardLine(key="cap", label="上限", text=fen_text(agreement.cap_fen)),
+                CardLine(key="debit_day", label="扣款日", text=f"每月{agreement.debit_day}日"),
+                CardLine(key="expires_on", label="有效期至", text=agreement.expires_on.isoformat()),
+                CardLine(
+                    key="next_debit_date",
+                    label="下次扣款日",
+                    text=next_due.isoformat() if next_due else "无",
+                ),
+            ),
+            changes=(
+                MoneyChange(
+                    key="protected",
+                    label="受保护金额",
+                    before=before.protected_fen,
+                    after=after.protected_fen,
+                ),
+                MoneyChange(
+                    key="headroom",
+                    label="可自由支配",
+                    before=before.headroom_fen,
+                    after=after.headroom_fen,
+                ),
+            ),
+            sources=tuple(_sources(action, CREATE_SLOT_LABELS)),
+            warnings=(CREATE_WARNING, CODE_WARNING),
+        )
+
+    def operation_terms(self, reader: Reader, action: ActionRow, at: datetime) -> OperationTerms:
+        return OperationTerms(
+            account_id=str(action.params["account_id"]), settle_due_at=at, settles_at_once=True
+        )
+
+    def reserve(self, uow: UnitOfWork, operation: OperationRow, terms: OperationTerms) -> None:
+        return None
+
+    def apply(
+        self, uow: UnitOfWork, operation: OperationRow, terms: OperationTerms, at: datetime
+    ) -> BankRequest:
+        assert operation.customer_id is not None
+        params = _params_of(uow, operation)
+        agreement = prospective_mandate(
+            operation.customer_id,
+            params,
+            at,
+            ref=new_id(IdPrefix.MANDATE),
+            purpose_id=new_id(IdPrefix.PURPOSE),
+        )
+        order = MandateCreateOrder(
+            key=operation.idempotency_key,
+            operation_id=operation.operation_id,
+            customer_id=agreement.customer_id,
+            account_id=agreement.account_id,
+            merchant_id=agreement.merchant_id,
+            mandate_ref=agreement.mandate_ref,
+            purpose_id=agreement.purpose_id,
+            expected_fen=agreement.expected_fen,
+            cap_fen=agreement.cap_fen,
+            debit_day=agreement.debit_day,
+            starts_on=agreement.starts_on,
+            expires_on=agreement.expires_on,
+        )
+        return bank.submit_mandate_creation(uow, order, at)
+
+    def settle(self, uow: UnitOfWork, operation: OperationRow, at: datetime) -> BankRequest:
+        # Settled at submission; the stored record is returned unchanged.
+        request = bank.find_request(uow, operation.idempotency_key)
+        if request is None:
+            raise LookupError(f"no bank request {operation.idempotency_key}")
+        return request
+
+    def on_settled(self, uow: UnitOfWork, operation: OperationRow) -> dict[str, Any]:
+        return {}
+
+    def receipt_effect(self, operation: OperationRow, bank_request: BankRequest) -> dict[str, Any]:
+        effect = bank_request.effect
+        return {
+            name: effect[name] for name in ("mandate_ref", "merchant_id", "starts_on", "expires_on")
+        }
 
 
 def _kept_after_cancel(

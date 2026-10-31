@@ -126,6 +126,7 @@ KIND_TEXT: dict[ActionKind, str] = {
     ActionKind.PURCHASE: "买入",
     ActionKind.CHECK_OUTCOME: "结果检查",
     ActionKind.ADD_PAYEE: "新增收款人",
+    ActionKind.MANDATE_CREATE: "新增自动扣款",
 }
 # Direct-debit actions are named after the merchant of their agreement.
 MANDATE_KIND_TEXT: dict[ActionKind, str] = {
