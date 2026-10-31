@@ -255,17 +255,15 @@ def test_t106_a_customer_session_cannot_call_the_merchant_simulator(wg: WgClient
         "description_raw": "",
     }
     try:
-        # SPEC 6 answers 401 SESSION_EXPIRED for a route of another role, S5-ACCEPTANCE T106
-        # says 403 FORBIDDEN_ROUTE; both refuse the call, and the open question is not the
-        # subject of this case.
+        # SPEC 6: a route of another role, or no session, answers 401 SESSION_EXPIRED.
         for role in (Role.CUSTOMER, None):
             response = (
                 customer.post("/sim/debit-requests", request, role=role)
                 if role
                 else customer.post("/sim/debit-requests", request)
             )
-            assert response.status_code in (401, 403), describe(response)
-            assert response.json().get("code") in ("SESSION_EXPIRED", "FORBIDDEN_ROUTE")
+            assert response.status_code == 401, describe(response)
+            assert response.json().get("code") == "SESSION_EXPIRED", describe(response)
     finally:
         customer.close()
 
