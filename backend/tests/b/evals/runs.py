@@ -14,6 +14,7 @@ from ..acceptance.plan_flow import (
     INSURANCE,
     REVISED_FEN,
     SEARCH,
+    S6Plan,
     approved,
     at_day,
     bought,
@@ -115,7 +116,7 @@ def insurance_paid_path(client: WgClient) -> None:
     client.approve(client.draft_pay_bill(INSURANCE))
 
 
-def late_redemption_path(client: WgClient) -> None:
+def late_redemption_path(client: WgClient) -> S6Plan:
     """The redemption slows to six days after the plan is approved; nothing is bought."""
     plan = approved(client)
     set_settle_days(client.db.path, "redeem_settle_days", 6)
@@ -125,6 +126,7 @@ def late_redemption_path(client: WgClient) -> None:
     at_day(client, 6)
     at_day(client, 7)
     plan.pay_insurance()
+    return plan
 
 
 def turn(
