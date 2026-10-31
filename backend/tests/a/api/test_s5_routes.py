@@ -19,9 +19,9 @@ from wg.contracts.api import (
     SimDebitResult,
     SubscriptionSpendView,
 )
-from wg.contracts.enums import Role
+from wg.contracts.enums import OperationStatus, Role
 from wg.contracts.fixture import load_fixture
-from wg.k6 import fixture
+from wg.k6 import fixture, operations
 from wg.k6.debit_requests import IncomingDebit, receive_in
 from wg.k6.simtime import SHANGHAI
 
@@ -390,3 +390,28 @@ def test_the_snapshot_route_lists_subscriptions_apart(s5: Browser):
     ]
     bills = s5.get("/v1/bills").json()["bills"]
     assert {b["commitment_id"] for b in bills} == {"cmt_rent", "cmt_insurance"}
+
+
+# GET /v1/transfers/history (S5-SPEC §5.9)
+
+
+def test_the_transfer_history_lists_transfers_and_bill_payments_only(s5: Browser):
+    before = s5.get("/v1/transfers/history")
+    with s5.db.unit_of_work("test merchant payment") as uow:
+        operations.insert_operation(
+            uow,
+            key="test-debit-pay",
+            request_hash="h",
+            kind="DEBIT_PAY",
+            submitted_at=EPOCH,
+            status=OperationStatus.SETTLED,
+            customer_id="cus_main",
+            account_id="acc_main",
+            amount_fen=2_500,
+            settled_at=EPOCH,
+        )
+
+    after = s5.get("/v1/transfers/history")
+
+    assert (before.status_code, after.status_code) == (200, 200)
+    assert after.json() == before.json()
