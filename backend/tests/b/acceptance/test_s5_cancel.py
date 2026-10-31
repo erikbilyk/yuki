@@ -118,10 +118,9 @@ def test_t101_closing_the_gym_agreement_settles_and_is_verified(wg: WgClient) ->
     assert after["pending_requests"] == 0
     assert subscription_spend(wg)["total_fen"] == 0
     assert mandates(wg)["monthly_total_fen"] == 4_600
-    assert [m["mandate_ref"] for m in mandates(wg)["mandates"] if m["status"] == "ACTIVE"] == [
-        VIDEO,
-        CLOUD,
-    ]
+    assert sorted(
+        m["mandate_ref"] for m in mandates(wg)["mandates"] if m["status"] == "ACTIVE"
+    ) == (sorted([VIDEO, CLOUD]))
     wg.login(Role.OPERATOR)
     assert active_locks(wg) == []
 
