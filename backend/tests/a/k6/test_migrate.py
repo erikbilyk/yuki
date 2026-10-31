@@ -29,6 +29,8 @@ SCHEMA_V1_TABLES = {
     "plan_revisions", "checkpoint_results",
     # channel
     "im_bindings", "im_pairing_codes", "im_messages_seen",
+    # S5
+    "merchants", "mandates", "mandate_events", "debit_requests", "effect_verification_events",
 }  # fmt: skip
 
 

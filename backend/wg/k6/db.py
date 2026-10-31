@@ -116,19 +116,47 @@ class Database:
         if in_transaction():
             raise NestedTransactionError(f"unit of work {reason!r} opened inside another")
         with self._lock:
-            conn = self._write_connection()
-            conn.execute("BEGIN IMMEDIATE")
-            uow = UnitOfWork(conn, reason)
-            token = _current.set(uow)
-            try:
+            with self._transaction(self._write_connection(), reason) as uow:
                 yield uow
-                conn.execute("COMMIT")
-            except BaseException:
-                if conn.in_transaction:
-                    conn.execute("ROLLBACK")
-                raise
+
+    @contextmanager
+    def unit_of_work_without_foreign_keys(self, reason: str) -> Iterator[UnitOfWork]:
+        """A unit of work with foreign key enforcement off, for table rebuilds in migrations.
+
+        SQLite ignores `PRAGMA foreign_keys` inside a transaction, so it is switched off under
+        the write lock before BEGIN and on again after COMMIT or ROLLBACK. The caller checks
+        `PRAGMA foreign_key_check` before the block ends.
+        """
+        if in_transaction():
+            raise NestedTransactionError(f"unit of work {reason!r} opened inside another")
+        with self._lock:
+            conn = self._write_connection()
+            conn.execute("PRAGMA foreign_keys=OFF")
+            try:
+                with self._transaction(conn, reason) as uow:
+                    yield uow
             finally:
-                _current.reset(token)
+                conn.execute("PRAGMA foreign_keys=ON")
+                if conn.execute("PRAGMA foreign_keys").fetchone()[0] != 1:
+                    conn.close()
+                    self._conn = None
+                    raise RuntimeError("foreign keys could not be switched back on")
+
+    @staticmethod
+    @contextmanager
+    def _transaction(conn: sqlite3.Connection, reason: str) -> Iterator[UnitOfWork]:
+        conn.execute("BEGIN IMMEDIATE")
+        uow = UnitOfWork(conn, reason)
+        token = _current.set(uow)
+        try:
+            yield uow
+            conn.execute("COMMIT")
+        except BaseException:
+            if conn.in_transaction:
+                conn.execute("ROLLBACK")
+            raise
+        finally:
+            _current.reset(token)
 
     def run_in_uow(
         self,
