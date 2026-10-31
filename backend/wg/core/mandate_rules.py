@@ -1,9 +1,10 @@
-"""Rules of direct-debit agreements (S5-SPEC §5.1, §5.2, §5.6); pure functions, no database.
+"""Rules of direct-debit agreements (S5-SPEC §5.1–§5.3, §5.6); pure functions, no database.
 
 Periods are calendar months in Asia/Shanghai. An agreement authorizes debits until the
 start of the day after `expires_on`; a merchant's request can be answered for 72 hours.
 Protected periods are derived from the agreement, its requests and the clock; they are
-passed to the cash engine as commitments and never stored.
+passed to the cash engine as commitments and never stored. What a change of an agreement
+does to its pending requests is decided here; K6 writes it.
 """
 
 from __future__ import annotations
@@ -14,7 +15,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from typing import Protocol
 
-from wg.contracts.enums import DebitReason, DebitRequestStatus, MandateStatus
+from wg.contracts.enums import ActionKind, DebitReason, DebitRequestStatus, MandateStatus
 from wg.k6.mandates import MandateRow
 from wg.k6.simtime import SHANGHAI
 
@@ -52,6 +53,26 @@ class RequestState(Protocol):
     def amount_fen(self) -> int: ...
     @property
     def respond_by(self) -> datetime: ...
+
+
+class PendingRequest(RequestState, Protocol):
+    """What an agreement change needs of a stored non-probe request."""
+
+    @property
+    def request_id(self) -> str: ...
+    @property
+    def received_at(self) -> datetime: ...
+    @property
+    def reason_code(self) -> DebitReason | None: ...
+
+
+@dataclass(frozen=True)
+class RequestChange:
+    """A request's new status after a change or the expiry of its agreement."""
+
+    request_id: str
+    status: DebitRequestStatus
+    reason: DebitReason | None
 
 
 @dataclass(frozen=True)
@@ -173,6 +194,118 @@ def next_debit_date(mandate: MandateRow, today: date) -> date | None:
     start = max(today, mandate.starts_on)
     due = due_date(mandate.debit_day, _first_period_after(mandate.debit_day, start))
     return due if due <= mandate.expires_on else None
+
+
+# Agreement changes (S5-SPEC §5.3, §6.1)
+
+_LIVE = frozenset({MandateStatus.ACTIVE, MandateStatus.SUSPENDED})
+# The statuses each change starts from.
+CHANGE_FROM: dict[ActionKind, frozenset[MandateStatus]] = {
+    ActionKind.MANDATE_CANCEL: _LIVE,
+    ActionKind.MANDATE_SUSPEND: frozenset({MandateStatus.ACTIVE}),
+    ActionKind.MANDATE_RESUME: frozenset({MandateStatus.SUSPENDED}),
+    ActionKind.MANDATE_CAP_LOWER: _LIVE,
+    ActionKind.MANDATE_CAP_RAISE: _LIVE,
+}
+CHANGE_KINDS = frozenset(CHANGE_FROM)
+CAP_KINDS = frozenset({ActionKind.MANDATE_CAP_LOWER, ActionKind.MANDATE_CAP_RAISE})
+# The status a status change leads to.
+CHANGE_TO: dict[ActionKind, MandateStatus] = {
+    ActionKind.MANDATE_CANCEL: MandateStatus.CANCELLED,
+    ActionKind.MANDATE_SUSPEND: MandateStatus.SUSPENDED,
+    ActionKind.MANDATE_RESUME: MandateStatus.ACTIVE,
+}
+
+
+def cap_change_kind(current_cap_fen: int, cap_fen: int) -> ActionKind | None:
+    """MANDATE_CAP_LOWER or MANDATE_CAP_RAISE by direction; None when the cap stays the same."""
+    if cap_fen < current_cap_fen:
+        return ActionKind.MANDATE_CAP_LOWER
+    if cap_fen > current_cap_fen:
+        return ActionKind.MANDATE_CAP_RAISE
+    return None
+
+
+def request_changes(
+    kind: ActionKind,
+    mandate: MandateRow,
+    requests: Sequence[PendingRequest],
+    now: datetime,
+    *,
+    cap_fen: int | None = None,
+) -> tuple[RequestChange, ...]:
+    """What a change of `mandate` (as it is before the change) does to its requests.
+
+    `requests` are the agreement's non-probe requests. Cancel and suspend decline the
+    requests awaiting the customer; a lower cap moves those above it out of the agreement;
+    a higher cap re-checks the CAP requests (`cap_raise_changes`); resume changes none.
+    """
+    kind = ActionKind(kind)
+    if kind in (ActionKind.MANDATE_CANCEL, ActionKind.MANDATE_SUSPEND):
+        reason = _INACTIVE_REASON[CHANGE_TO[kind]]
+        return tuple(
+            RequestChange(r.request_id, DebitRequestStatus.AUTO_DECLINED, reason)
+            for r in requests
+            if r.status is DebitRequestStatus.AWAITING_CLIENT
+        )
+    if kind is ActionKind.MANDATE_CAP_LOWER:
+        assert cap_fen is not None
+        return tuple(
+            RequestChange(r.request_id, DebitRequestStatus.OUT_OF_MANDATE, DebitReason.CAP)
+            for r in requests
+            if r.status is DebitRequestStatus.AWAITING_CLIENT and r.amount_fen > cap_fen
+        )
+    if kind is ActionKind.MANDATE_CAP_RAISE:
+        assert cap_fen is not None
+        return cap_raise_changes(mandate, requests, cap_fen, now)
+    return ()
+
+
+def cap_raise_changes(
+    mandate: MandateRow, requests: Sequence[PendingRequest], cap_fen: int, now: datetime
+) -> tuple[RequestChange, ...]:
+    """The re-check of CAP requests when the cap rises to `cap_fen` (S5-SPEC §5.3, C-14).
+
+    Per period, the CAP requests still answerable and within the new cap are eligible, and
+    only while the agreement is ACTIVE and unexpired. In a period without a request awaiting
+    the customer, paid or declined, the earliest eligible one by (received_at, request_id)
+    awaits the customer again and the other eligible ones become PERIOD_USED; in an occupied
+    period every eligible one becomes PERIOD_USED. Every other request is untouched.
+    """
+    if mandate.status is not MandateStatus.ACTIVE or not authorizes(mandate.expires_on, now):
+        return ()
+    eligible: dict[str, list[PendingRequest]] = {}
+    for request in requests:
+        if (
+            request.status is DebitRequestStatus.OUT_OF_MANDATE
+            and request.reason_code is DebitReason.CAP
+            and now < request.respond_by
+            and request.amount_fen <= cap_fen
+        ):
+            eligible.setdefault(request.period_key, []).append(request)
+    occupied = {r.period_key for r in requests if r.status in OCCUPYING_STATUSES}
+    changes: list[RequestChange] = []
+    for key in sorted(eligible):
+        ordered = sorted(eligible[key], key=lambda r: (r.received_at, r.request_id))
+        if key not in occupied:
+            changes.append(
+                RequestChange(ordered[0].request_id, DebitRequestStatus.AWAITING_CLIENT, None)
+            )
+            ordered = ordered[1:]
+        changes.extend(
+            RequestChange(r.request_id, DebitRequestStatus.OUT_OF_MANDATE, DebitReason.PERIOD_USED)
+            for r in ordered
+        )
+    return tuple(changes)
+
+
+def expiry_changes(requests: Sequence[PendingRequest]) -> tuple[RequestChange, ...]:
+    """When an agreement expires, the requests awaiting the customer are declined."""
+    return tuple(
+        RequestChange(r.request_id, DebitRequestStatus.AUTO_DECLINED, DebitReason.MANDATE_EXPIRED)
+        for r in requests
+        if r.status is DebitRequestStatus.AWAITING_CLIENT
+    )
 
 
 # Protection (S5-SPEC §5.6)

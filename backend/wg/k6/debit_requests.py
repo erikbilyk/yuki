@@ -5,8 +5,9 @@ happens then (no action, hold or notification). `description_raw` is the merchan
 stored as received and never read as an instruction.
 
 Afterwards a request leaves AWAITING_CLIENT once: paid (S5-SPEC §6.2), declined (§5.5) or
-expired by the sweep at `respond_by` (§5.8). Each change raises its version and is audited
-in the same unit of work.
+expired by the sweep at `respond_by` (§5.8). A change or the expiry of its agreement may
+also move it (§5.3), including a CAP request back to AWAITING_CLIENT after a cap raise.
+Each change raises its version and is audited in the same unit of work.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from wg.contracts.enums import AuditActor, DebitReason, DebitRequestStatus
 from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.ids import IdPrefix, new_id
 from wg.core import mandate_rules
+from wg.core.mandate_rules import RequestChange
 from wg.k6 import audit, mandates
 from wg.k6.db import Database, Reader, UnitOfWork
 from wg.k6.simtime import from_db, now, to_db
@@ -303,6 +305,50 @@ def expire(uow: UnitOfWork, request_id: str) -> DebitRequestRow:
         actor=AuditActor.COORDINATOR,
         event="request_expired",
     )
+
+
+def apply_change(
+    uow: UnitOfWork, request: DebitRequestRow, change: RequestChange, actor: AuditActor
+) -> DebitRequestRow:
+    """Record what a change or the expiry of the agreement did to `request` (S5-SPEC §5.3).
+
+    The update holds only at the version the decision was made on.
+    """
+    cursor = uow.execute(
+        "UPDATE debit_requests SET status = ?, reason_code = ?, version = version + 1"
+        " WHERE request_id = ? AND version = ?",
+        (
+            change.status.value,
+            change.reason.value if change.reason else None,
+            request.request_id,
+            request.version,
+        ),
+    )
+    if cursor.rowcount != 1:
+        raise RuntimeError(f"debit request {request.request_id} changed since it was read")
+    audit.record(
+        uow,
+        actor,
+        "debit_request_updated",
+        customer_id=request.customer_id,
+        ref=request.request_id,
+        decision=change.status.value,
+        reason=change.reason.value if change.reason else None,
+    )
+    row = find_request(uow, request.request_id)
+    assert row is not None
+    return row
+
+
+def apply_changes(
+    uow: UnitOfWork,
+    requests: list[DebitRequestRow],
+    changes: tuple[RequestChange, ...],
+    actor: AuditActor,
+) -> None:
+    by_id = {request.request_id: request for request in requests}
+    for change in changes:
+        apply_change(uow, by_id[change.request_id], change, actor)
 
 
 def _close(

@@ -9,7 +9,9 @@ order settles on its product's calendar (SPEC §15.3) against the simulator's fu
 settlement and fee income accounts.
 
 A payment of a merchant's direct-debit request settles in the call that submits it, through
-clearing, and marks the request PAID (S5-SPEC §6.2).
+clearing, and marks the request PAID (S5-SPEC §6.2). A change of a direct-debit agreement
+moves no money; the bank records it and applies it to the agreement and its pending
+requests in the same call.
 
 Two fault points live here (SPEC §12.7): `bank_ack_lost` fires after the order and its
 effect are recorded, and `settlement_reject` makes the bank refuse a payment at settlement.
@@ -27,6 +29,7 @@ from enum import StrEnum
 from typing import Any
 
 from wg.contracts.enums import (
+    ActionKind,
     AuditActor,
     BankRequestStatus,
     Fault,
@@ -34,8 +37,9 @@ from wg.contracts.enums import (
     OperationStatus,
 )
 from wg.contracts.errors import ErrorCode, WgError
+from wg.core import mandate_rules
 from wg.core.hashes import sha256_hex
-from wg.k6 import accounts, audit, debit_requests, faults, operations
+from wg.k6 import accounts, audit, debit_requests, faults, mandates, operations
 from wg.k6.db import Reader, UnitOfWork
 from wg.k6.operations import OperationRow
 from wg.k6.simtime import from_db, now_db, to_db
@@ -272,6 +276,73 @@ def submit_merchant_payment(
         at,
     )
     debit_requests.mark_paid(uow, order.request_id, order.operation_id)
+    if faults.consume(uow, Fault.BANK_ACK_LOST):
+        raise AckLost(request)
+    return request
+
+
+@dataclass(frozen=True)
+class MandateChangeOrder:
+    """A change of one agreement's status or cap, as the customer confirmed it."""
+
+    key: str
+    operation_id: str
+    kind: ActionKind
+    mandate_ref: str
+    mandate_version: int
+    cap_fen: int | None = None
+
+
+def submit_mandate_change(uow: UnitOfWork, order: MandateChangeOrder, at: datetime) -> BankRequest:
+    """Record and apply an agreement change once per key; it settles in the same call.
+
+    The agreement changes at the version on the order, with its event carrying the
+    operation, and its pending requests follow S5-SPEC §5.3. No money moves. Raises
+    AckLost, after all of these writes, when `bank_ack_lost` fires.
+    """
+    request = find_request(uow, order.key)
+    if request is not None:
+        return request
+    mandate = mandates.find_mandate(uow, order.mandate_ref)
+    if mandate is None or mandate.version != order.mandate_version:
+        raise WgError(
+            ErrorCode.MANDATE_CHANGED, {"reason": "version", "mandate_ref": order.mandate_ref}
+        )
+    if order.kind in mandate_rules.CAP_KINDS:
+        assert order.cap_fen is not None
+        field, old, new = mandates.CAP_FIELD, mandate.cap_fen, order.cap_fen
+        status, cap_fen = None, order.cap_fen
+    else:
+        target = mandate_rules.CHANGE_TO[order.kind]
+        field, old, new = mandates.STATUS_FIELD, mandate.status.value, target.value
+        status, cap_fen = target, None
+    request = _insert_request(
+        uow,
+        order.key,
+        BankRequestStatus.EXECUTED,
+        {
+            "operation_id": order.operation_id,
+            "mandate_ref": order.mandate_ref,
+            "kind": order.kind.value,
+            "field": field,
+            "old": old,
+            "new": new,
+            "version_after": mandate.version + 1,
+            "settled_at": to_db(at),
+        },
+    )
+    pending = debit_requests.mandate_requests(uow, order.mandate_ref)
+    changes = mandate_rules.request_changes(order.kind, mandate, pending, at, cap_fen=order.cap_fen)
+    mandates.update_mandate(
+        uow,
+        mandate,
+        actor=AuditActor.CUSTOMER,
+        reason=order.kind.value,
+        status=status,
+        cap_fen=cap_fen,
+        operation_id=order.operation_id,
+    )
+    debit_requests.apply_changes(uow, pending, changes, AuditActor.CUSTOMER)
     if faults.consume(uow, Fault.BANK_ACK_LOST):
         raise AckLost(request)
     return request

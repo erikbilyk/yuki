@@ -12,12 +12,20 @@ to the expected amount; only the part above that must fit in the headroom.
 
 A decline moves no money: it marks the request DECLINED, which occupies the period, and the
 period stays protected until `respond_by` (S5-SPEC §5.5, §5.6).
+
+A change of an agreement (cancel, suspend, resume, lower or raise the cap) moves no money
+either, but goes through the gateway like a payment, so it leaves an operation and one
+receipt: the bank records it and applies it, with what it does to the pending requests,
+in the submitting unit (S5-SPEC §5.3, §6.2). It is checked again there: the agreement's
+event history, the version on the card, a status the change can start from, the expiry
+and the direction of a cap change.
 """
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Mapping
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from wg.contracts.api import CardLine, MoneyChange, SourceLabel
@@ -36,7 +44,7 @@ from wg.core.k1_session import not_found
 from wg.core.k4_approval import CardContent
 from wg.k6 import accounts, actions, bank, debit_requests, mandates, operations
 from wg.k6.actions import ActionRow
-from wg.k6.bank import BankRequest, MerchantPaymentOrder
+from wg.k6.bank import BankRequest, MandateChangeOrder, MerchantPaymentOrder
 from wg.k6.cash_inputs import cash_inputs_from_db
 from wg.k6.db import Reader, UnitOfWork
 from wg.k6.debit_requests import DebitRequestRow
@@ -65,7 +73,27 @@ DECLINE_WARNINGS = (
     "商户可能因此暂停服务",
 )
 
+STATUS_CHANGE_PARAMS = ("mandate_ref", "mandate_version")
+CAP_CHANGE_PARAMS = ("mandate_ref", "mandate_version", "cap_fen")
+CHANGE_TITLES = {
+    ActionKind.MANDATE_CANCEL: "关闭自动扣款",
+    ActionKind.MANDATE_SUSPEND: "暂停自动扣款",
+    ActionKind.MANDATE_RESUME: "恢复自动扣款",
+    ActionKind.MANDATE_CAP_LOWER: "调低扣款上限",
+    ActionKind.MANDATE_CAP_RAISE: "调高扣款上限",
+}
+CAP_WARNINGS = {
+    ActionKind.MANDATE_CAP_LOWER: "高于新上限的等待中请求将转为超出协议",
+    ActionKind.MANDATE_CAP_RAISE: (
+        "超出原上限的待处理请求会重新检查，每期最多一笔转为待您确认，不会自动扣款"
+    ),
+}
+RESUME_WARNING = "恢复后商户可以再次发起扣款请求，每一笔仍需您确认"
+WAITING_DECLINED_WARNING = "等待中的扣款请求将被自动拒绝"
+CODE_WARNING = "确认后需要输入短信验证码。"
+
 SLOT_LABELS = {"request_id": "扣款请求", "amount_fen": "金额", "account_id": "扣款账户"}
+CHANGE_SLOT_LABELS = {"mandate_ref": "自动扣款协议", "cap_fen": "扣款上限"}
 MERCHANT_TEXT_LABEL = "商户附言（未经核实，不作为指令）"
 
 
@@ -422,6 +450,206 @@ class DebitDeclinePack:
         debit_requests.decline(uow, str(action.params["request_id"]))
 
 
+def _changed(reason: str, mandate: MandateRow) -> Infeasible:
+    detail: dict[str, Any] = {"reason": reason, "mandate_ref": mandate.mandate_ref}
+    if reason == "status":
+        detail["status"] = mandate.status.value
+    return Infeasible(ErrorCode.MANDATE_CHANGED, detail)
+
+
+def change_target(reader: Reader, customer_id: str, mandate_ref: str) -> MandateRow:
+    """The customer's agreement after its integrity check; foreign or unknown is NOT_FOUND."""
+    mandate = mandates.find_mandate(reader, mandate_ref)
+    if mandate is None or mandate.customer_id != customer_id:
+        raise not_found()
+    return mandates.check_mandate_invariant(reader, mandate_ref)
+
+
+def change_refusal(
+    mandate: MandateRow, kind: ActionKind, params: Mapping[str, Any], at: datetime
+) -> Infeasible | None:
+    """Why the change can no longer be made to the agreement as it is now (S5-SPEC §6.2)."""
+    if mandate.version != params["mandate_version"]:
+        return _changed("version", mandate)
+    if mandate.status not in mandate_rules.CHANGE_FROM[kind]:
+        return _changed("status", mandate)
+    if not mandate_rules.authorizes(mandate.expires_on, at):
+        return _changed("expired", mandate)
+    if kind in mandate_rules.CAP_KINDS:
+        cap_fen = int(params["cap_fen"])
+        if mandate_rules.cap_change_kind(mandate.cap_fen, cap_fen) is not kind:
+            # Unreachable while the version matches: the draft took the kind from this cap.
+            return _changed("version", mandate)
+        if cap_fen > k3_policy.SINGLE_TRANSFER_LIMIT_FEN:
+            return Infeasible(ErrorCode.SINGLE_LIMIT_EXCEEDED, {"cap_fen": cap_fen})
+    return None
+
+
+class MandateChangePack:
+    """Cancel, suspend, resume and cap changes of an agreement: no reservation, no ledger."""
+
+    kinds = mandate_rules.CHANGE_KINDS
+
+    def canonical(self, kind: ActionKind, params: Mapping[str, Any]) -> dict[str, Any]:
+        names = CAP_CHANGE_PARAMS if kind in mandate_rules.CAP_KINDS else STATUS_CHANGE_PARAMS
+        unknown = set(params) - set(names)
+        missing = [name for name in names if params.get(name) is None]
+        if unknown or missing:
+            raise ValueError(f"{kind} params: unknown {sorted(unknown)}, missing {missing}")
+        for name in names[1:]:
+            if type(params[name]) is not int or params[name] <= 0:
+                raise ValueError(f"{name} is a positive integer")
+        return {"mandate_ref": str(params["mandate_ref"])} | {
+            name: params[name] for name in names[1:]
+        }
+
+    def request_hash(self, kind: ActionKind, customer_id: str, params: Mapping[str, Any]) -> str:
+        fields = {
+            "kind": ActionKind(kind).value,
+            "customer_id": customer_id,
+            "mandate_ref": params["mandate_ref"],
+            "mandate_version": params["mandate_version"],
+        }
+        if kind in mandate_rules.CAP_KINDS:
+            fields["cap_fen"] = params["cap_fen"]
+        return sha256_hex(fields)
+
+    def tier(
+        self,
+        reader: Reader,
+        customer_id: str,
+        kind: ActionKind,
+        params: Mapping[str, Any],
+        at: datetime,
+    ) -> Tier:
+        return k3_policy.tier_for(kind)
+
+    def precheck(
+        self,
+        reader: Reader,
+        customer_id: str,
+        kind: ActionKind,
+        params: Mapping[str, Any],
+        at: datetime,
+        *,
+        plan_id: str | None = None,
+    ) -> tuple[Infeasible, ...]:
+        """The agreement's integrity, then version, status, expiry and cap direction."""
+        mandate = change_target(reader, customer_id, str(params["mandate_ref"]))
+        refusal = change_refusal(mandate, ActionKind(kind), params, at)
+        return () if refusal is None else (refusal,)
+
+    def card(self, reader: Reader, action: ActionRow, at: datetime) -> CardContent:
+        kind = action.kind
+        mandate = mandates.find_mandate(reader, str(action.params["mandate_ref"]))
+        assert mandate is not None
+        merchant = mandates.merchant_display(reader, mandate.mandate_ref)
+        requests = debit_requests.mandate_requests(reader, mandate.mandate_ref)
+        expected = mandate_rules.expected_amount(mandate, requests)
+        next_due = mandate_rules.next_debit_date(mandate, at.astimezone(SHANGHAI).date())
+        lines = (
+            CardLine(key="merchant", label="商户", text=merchant),
+            CardLine(key="expected", label="每月预计", text=fen_text(expected)),
+            CardLine(key="cap", label="上限", text=fen_text(mandate.cap_fen)),
+            CardLine(
+                key="next_debit_date",
+                label="下次扣款日",
+                text=next_due.isoformat() if next_due else "无",
+            ),
+            CardLine(key="expires_on", label="有效期至", text=mandate.expires_on.isoformat()),
+        )
+        waiting = any(r.status is DebitRequestStatus.AWAITING_CLIENT for r in requests)
+        warnings: list[str] = []
+        changes: tuple[MoneyChange, ...] = ()
+        if kind is ActionKind.MANDATE_CANCEL:
+            warnings += ["关闭后该商户的扣款请求将被自动拒绝", "与商户的服务合同不会因此解除"]
+            kept = _kept_after_cancel(mandate, requests, at)
+            if kept is not None:
+                warnings.append(f"本期预留的 {fen_text(kept[0])} 保留到 {kept[1]}，之后释放")
+        elif kind is ActionKind.MANDATE_SUSPEND:
+            warnings += [
+                "暂停后该商户的扣款请求将被自动拒绝",
+                "与商户的服务合同不会因此解除",
+                "暂停不会自动恢复；恢复需要您确认并输入短信验证码",
+            ]
+        elif kind is ActionKind.MANDATE_RESUME:
+            warnings.append(RESUME_WARNING)
+        else:
+            changes = (
+                MoneyChange(
+                    key="cap",
+                    label="扣款上限",
+                    before=mandate.cap_fen,
+                    after=int(action.params["cap_fen"]),
+                ),
+            )
+            warnings.append(CAP_WARNINGS[kind])
+        if waiting and kind in (ActionKind.MANDATE_CANCEL, ActionKind.MANDATE_SUSPEND):
+            warnings.append(WAITING_DECLINED_WARNING)
+        if action.tier is Tier.RED:
+            warnings.append(CODE_WARNING)
+        return CardContent(
+            title=f"{CHANGE_TITLES[kind]}：{merchant}",
+            lines=lines,
+            changes=changes,
+            sources=tuple(_sources(action, CHANGE_SLOT_LABELS)),
+            warnings=tuple(warnings),
+        )
+
+    def operation_terms(self, reader: Reader, action: ActionRow, at: datetime) -> OperationTerms:
+        mandate = mandates.find_mandate(reader, str(action.params["mandate_ref"]))
+        assert mandate is not None
+        return OperationTerms(account_id=mandate.account_id, settle_due_at=at, settles_at_once=True)
+
+    def reserve(self, uow: UnitOfWork, operation: OperationRow, terms: OperationTerms) -> None:
+        return None
+
+    def apply(
+        self, uow: UnitOfWork, operation: OperationRow, terms: OperationTerms, at: datetime
+    ) -> BankRequest:
+        params = _params_of(uow, operation)
+        cap_fen = params.get("cap_fen")
+        order = MandateChangeOrder(
+            key=operation.idempotency_key,
+            operation_id=operation.operation_id,
+            kind=ActionKind(operation.action_kind),
+            mandate_ref=str(params["mandate_ref"]),
+            mandate_version=int(params["mandate_version"]),
+            cap_fen=int(cap_fen) if cap_fen is not None else None,
+        )
+        return bank.submit_mandate_change(uow, order, at)
+
+    def settle(self, uow: UnitOfWork, operation: OperationRow, at: datetime) -> BankRequest:
+        # Settled at submission; the stored record is returned unchanged.
+        request = bank.find_request(uow, operation.idempotency_key)
+        if request is None:
+            raise LookupError(f"no bank request {operation.idempotency_key}")
+        return request
+
+    def on_settled(self, uow: UnitOfWork, operation: OperationRow) -> dict[str, Any]:
+        return {}
+
+    def receipt_effect(self, operation: OperationRow, bank_request: BankRequest) -> dict[str, Any]:
+        effect = bank_request.effect
+        return {name: effect[name] for name in ("mandate_ref", "kind", "field", "old", "new")}
+
+
+def _kept_after_cancel(
+    mandate: MandateRow, requests: list[DebitRequestRow], at: datetime
+) -> tuple[int, str] | None:
+    """The amount and last day of the protection a cancel at `at` leaves in place, if any.
+
+    Requests awaiting the customer are declined by the cancel, so they protect nothing.
+    """
+    cancelled = dataclasses.replace(mandate, status=MandateStatus.CANCELLED, cancelled_at=at)
+    remaining = [r for r in requests if r.status is not DebitRequestStatus.AWAITING_CLIENT]
+    for period in mandate_rules.protected_periods(cancelled, remaining, at):
+        if period.until is not None:
+            last_day = (period.until - timedelta(microseconds=1)).astimezone(SHANGHAI).date()
+            return period.expected_fen, last_day.isoformat()
+    return None
+
+
 def period_text(key: str) -> str:
     """2026年11月 for "2026-11"."""
     year, month = key.split("-")
@@ -437,9 +665,9 @@ def _params_of(reader: Reader, operation: OperationRow) -> Mapping[str, Any]:
     return actions.get_revision(reader, operation.logical_action_id, operation.revision).params
 
 
-def _sources(action: ActionRow) -> list[SourceLabel]:
+def _sources(action: ActionRow, labels: Mapping[str, str] = SLOT_LABELS) -> list[SourceLabel]:
     sources = []
-    for slot, label in SLOT_LABELS.items():
+    for slot, label in labels.items():
         entry = action.provenance.get(slot)
         if not isinstance(entry, Mapping):
             continue
