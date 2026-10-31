@@ -31,6 +31,7 @@ The `expectations` mapping of a scenario holds the pass criteria. Unknown keys (
 | `checkpoint` | `{exists: false}` or `{result, measured_pct}` of that plan's one checkpoint |
 | `balances`, `positions`, `reserve_fen` | Final account balances (fen), share counts by product, reserve targets by kind |
 | `commitments` | `{id: {status, unpaid_fen}}` |
+| `mandates` | `{mandate_ref: status}` of the customer's direct-debit agreements (status as stored, for example `CANCELLED`) |
 | `challenges` | `{issued, consumed}` over all of the customer's codes |
 | `locks_active` | Number of uncleared locks |
 

@@ -1,0 +1,8 @@
+# A model that reads the status of an action and the receipt's check, then reports it; the
+# reply is set per case.
+- tool_calls:
+    - name: get_operation_status
+      arguments:
+        intent: subscriptions.manage
+        logical_action_id: ${logical_action_id}
+- text: ${reply}

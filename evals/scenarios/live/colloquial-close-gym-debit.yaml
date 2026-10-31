@@ -1,0 +1,22 @@
+id: colloquial-close-gym-debit
+category: colloquial
+case: T101
+title: Switch off the gym's automatic debit in everyday words
+profile: fixture_s5
+steps:
+  - say: 把健身房每个月自动扣费的那个关掉
+  - approve_cards:
+      allow:
+        - {kind: MANDATE_CANCEL}
+  - say: 健身房的自动扣款现在关掉了吗？
+expectations:
+  effects:
+    - {kind: MANDATE_CANCEL, count: 1, status: [SETTLED]}
+  no_actions:
+    - {kind: DEBIT_PAY}
+    - {kind: MANDATE_SUSPEND}
+  mandates: {mdt_video: ACTIVE, mdt_cloud: ACTIVE, mdt_fitness: CANCELLED}
+  replies:
+    - {turn: any, forbid: ["订阅已取消", "已取消订阅", "已退订"]}
+    - {turn: 1, require_any: ["已核实", "已解除", "已关闭", "正在核实"]}
+  balances: {acc_main: 1800000}

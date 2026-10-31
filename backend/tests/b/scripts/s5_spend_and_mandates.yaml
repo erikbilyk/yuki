@@ -1,0 +1,10 @@
+# A model that reads the agreements and the recorded spend, then answers; the reply is set per case.
+- tool_calls:
+    - name: list_mandates
+      arguments:
+        intent: subscriptions.manage
+    - name: get_subscription_spend
+      arguments:
+        intent: subscriptions.manage
+        days: 30
+- text: ${reply}

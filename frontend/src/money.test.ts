@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatFen, formatPct, parseYuanToFen } from "./money.ts";
+import { formatFen, formatFenExact, formatPct, parseYuanToFen } from "./money.ts";
 
 describe("formatFen", () => {
   it("drops the cents of whole yuan", () => {
@@ -20,6 +20,16 @@ describe("formatFen", () => {
 
   it("rejects values that are not integers", () => {
     expect(() => formatFen(12.5)).toThrow(RangeError);
+  });
+});
+
+describe("formatFenExact", () => {
+  it("always shows two decimals", () => {
+    expect(formatFenExact(24500)).toBe("¥245.00");
+    expect(formatFenExact(2500)).toBe("¥25.00");
+    expect(formatFenExact(8505)).toBe("¥85.05");
+    expect(formatFenExact(1234500)).toBe("¥12,345.00");
+    expect(formatFenExact(-1600000)).toBe("-¥16,000.00");
   });
 });
 

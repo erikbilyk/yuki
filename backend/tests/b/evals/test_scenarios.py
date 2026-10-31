@@ -6,7 +6,15 @@ import re
 from collections import Counter
 
 import pytest
-from evals.runner.schema import Allowed, ApproveCards, EnterCode, Say, Scenario, load_scenarios
+from evals.runner.schema import (
+    SIM_POSTS,
+    Allowed,
+    ApproveCards,
+    EnterCode,
+    Say,
+    Scenario,
+    load_scenario,
+)
 from evals.score.checks import KNOWN_KEYS
 from evals.score.effects import validate
 
@@ -23,13 +31,25 @@ CATEGORIES = {
     "colloquial",
     "out_of_scope",
 }
+S5_PROFILE = "fixture_s5"
 AMOUNT_KINDS = {"TRANSFER", "PAY_BILL", "PURCHASE"}
 SMOKE = {"smoke-t1", "smoke-t17", "smoke-t39", "smoke-t60"}
 COMPARED = {"T61", "T62", "T64", "T65", "T66", "T67", "T68"}
+# Simulator routes that exist only once the chat tools for direct debits are built.
+ROUTES_BY_LEVEL = ("/sim/debit-requests",)
+S5_LIVE = {
+    "grounded-subscriptions-total",
+    "colloquial-close-gym-debit",
+    "injected-debit-request-text",
+}
 
 
 def directory(name: str) -> list[Scenario]:
-    return load_scenarios(SCENARIOS / name)
+    """Scenarios under a folder, except those that post to a simulator route this build lacks."""
+    files = sorted((SCENARIOS / name).rglob("*.yaml"))
+    missing = [route for route in ROUTES_BY_LEVEL if route not in SIM_POSTS]
+    files = [f for f in files if not any(route in f.read_text("utf-8") for route in missing)]
+    return [load_scenario(path) for path in files]
 
 
 def allow_entries(scenario: Scenario) -> list[Allowed]:
@@ -54,11 +74,20 @@ def test_every_file_loads_and_ids_are_unique() -> None:
 
 
 def test_live_trials_stay_within_three_per_category() -> None:
-    live = directory("live")
+    live = [s for s in directory("live") if s.profile != S5_PROFILE]
     counts = Counter(s.category for s in live)
     assert set(counts) == CATEGORIES
     assert set(counts.values()) == {3}
     assert all(s.system == "coordinated" for s in live)
+
+
+def test_the_direct_debit_trials_use_their_profile_and_the_existing_categories() -> None:
+    found = [s for s in directory("live") if s.profile == S5_PROFILE]
+    assert {s.id for s in found} <= S5_LIVE
+    assert all(s.category in CATEGORIES and s.system == "coordinated" for s in found)
+    assert {s.case for s in found} <= {"T97", "T101", "T108"}
+    # The profile is the only thing that sets them apart: the other trials stay on fixture_v1.
+    assert all(s.profile != S5_PROFILE for s in directory("live") if s.id not in S5_LIVE)
 
 
 def test_smoke_scenarios_are_the_four_agreed_ones() -> None:

@@ -1,0 +1,9 @@
+# A model that drafts pausing the video agreement; no tool can schedule a resume.
+- tool_calls:
+    - name: draft_mandate_change
+      arguments:
+        intent: subscriptions.manage
+        mandate_ref: mdt_video
+        merchant_quote: 视频会员
+        change: suspend
+- text: ${reply}

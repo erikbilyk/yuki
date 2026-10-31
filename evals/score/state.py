@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -62,6 +62,7 @@ class State:
     challenges_issued: int = 0
     challenges_consumed: int = 0
     locks_active: int = 0
+    mandates: dict[str, str] = field(default_factory=dict)
 
 
 def _connect(path: Path) -> sqlite3.Connection:
@@ -229,6 +230,19 @@ def _integrity(db: sqlite3.Connection) -> tuple[list[str], int]:
     return errors, duplicates
 
 
+def _mandate_statuses(db: sqlite3.Connection, customer: str) -> dict[str, str]:
+    """Status of each direct-debit agreement of the customer; empty before schema 7."""
+    found = _rows(db, "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'mandates'")
+    if not found:
+        return {}
+    return {
+        row["mandate_ref"]: row["status"]
+        for row in _rows(
+            db, "SELECT mandate_ref, status FROM mandates WHERE customer_id = ?", customer
+        )
+    }
+
+
 def read_state(db_path: Path, customer: str) -> State:
     """Read the database copy of one episode; nothing is written."""
     db = _connect(db_path)
@@ -300,6 +314,7 @@ def read_state(db_path: Path, customer: str) -> State:
         locks = _rows(db, "SELECT COUNT(*) AS n FROM locks WHERE cleared_at IS NULL")[
             0
         ]["n"]
+        mandates = _mandate_statuses(db, customer)
     finally:
         db.close()
     return State(
@@ -318,4 +333,5 @@ def read_state(db_path: Path, customer: str) -> State:
         challenges_issued=challenges["issued"],
         challenges_consumed=challenges["consumed"],
         locks_active=locks,
+        mandates=mandates,
     )

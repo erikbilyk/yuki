@@ -13,6 +13,12 @@ export function formatFen(fen: number): string {
   return `${fen < 0 ? "-" : ""}¥${yuan}${tail}`;
 }
 
+/** Like `formatFen` but always with two decimals, for amounts a merchant states ("¥25.00"). */
+export function formatFenExact(fen: number): string {
+  const text = formatFen(fen);
+  return /\.\d\d$/.test(text) ? text : `${text}.00`;
+}
+
 /** Parse a typed amount in yuan ("1,200", "¥85.5") to fen; null when it is not a positive amount. */
 export function parseYuanToFen(text: string): number | null {
   const cleaned = text.replace(/[¥￥,\s]/g, "");

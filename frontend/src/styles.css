@@ -555,3 +555,72 @@ button.danger {
 .banner-up {
   background: var(--green);
 }
+
+/* Direct-debit agreements */
+.mandate-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.mandate-row {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  background: var(--paper);
+}
+.mandate-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.mandate-active,
+.request-paid {
+  background: #dff3e7;
+  color: var(--green);
+}
+.mandate-suspended,
+.request-awaiting_client {
+  background: #fff1d6;
+  color: var(--yellow);
+}
+.mandate-cancelled,
+.mandate-expired,
+.request-declined,
+.request-expired,
+.request-auto_declined,
+.request-out_of_mandate {
+  background: #fdecea;
+  color: var(--red);
+}
+.merchant-text {
+  margin: 0.4rem 0;
+  padding: 0.3rem 0.6rem;
+  border-left: 3px solid var(--line);
+  color: var(--muted);
+  background: var(--ground);
+}
+.merchant-text p {
+  margin: 0.2rem 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.inline-form {
+  margin: 0.5rem 0 0;
+}
+.effect-check {
+  margin: 0.5rem 0 0;
+  font-weight: 600;
+}
+.effect-verified {
+  color: var(--green);
+}
+.effect-pending {
+  color: var(--yellow);
+}
+.effect-failed {
+  color: var(--red);
+}
