@@ -156,3 +156,23 @@ def test_chat_needs_csrf_and_history_is_the_customers_own(browser: Browser, tmp_
     browser.login("cus_other")
     assert history(browser).messages == ()
     assert browser.post("/v1/chat/messages", {"text": ""}, role=Role.CUSTOMER).status_code == 422
+
+
+def test_an_amount_from_an_earlier_customer_message_may_be_restated(
+    browser: Browser, tmp_path: Path
+):
+    question = "好的，给王芳转500元，需要我现在准备草稿吗？"
+    scripted(browser, tmp_path, [{"text": "请问是王磊还是王芳？"}, {"text": question}])
+    send(browser, "给小王转500")
+    reply = send(browser, "王芳")
+    assert reply.explanation == question and not reply.explanation_replaced
+
+
+def test_a_trimmed_question_is_reported_and_stored_as_replaced(browser: Browser, tmp_path: Path):
+    scripted(browser, tmp_path, [{"text": "请问您要转多少钱？比如1000元。"}])
+    reply = send(browser, "给妈妈转点钱")
+    assert reply.explanation == "请问您要转多少钱？" and reply.explanation_replaced
+    [answer] = rows(browser, "SELECT k7_replaced FROM chat_messages WHERE role = 'assistant'")
+    assert answer == {"k7_replaced": 1}
+    [audit] = rows(browser, "SELECT decision FROM audit_log WHERE event = 'explanation_replaced'")
+    assert audit == {"decision": "trimmed,unsupported"}

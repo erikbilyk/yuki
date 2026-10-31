@@ -4,7 +4,8 @@ Facts come from the results of the turn's tool calls, which the services built f
 receipts, calc results, checkpoints and plan rows; draft amounts are read back from the stored
 action. The fact block is rendered from fixed zh-CN templates. An explanation with any claim
 the facts do not support is replaced by a template and the replacement is audited. A money or
-percent claim that only restates a value the customer wrote is not held against the reply.
+percent claim that only restates a value the customer wrote is not held against the reply, and a
+clarifying question loses only its unsupported asides when the rest stands on its own.
 """
 
 from __future__ import annotations
@@ -84,6 +85,8 @@ from wg.textcheck.amounts import (
 from wg.textcheck.claims import FEASIBLE_WITH_APPROVAL, check_claims
 
 REPLACED_EVENT = "explanation_replaced"
+# Added to the audited reasons when unsupported asides were cut from a clarifying question.
+TRIMMED_DECISION = "trimmed"
 # A purchase paused by these is still possible at the new amount once the customer approves it.
 BOUND_PAUSES = frozenset(
     {
@@ -771,13 +774,20 @@ def _reply_values(text: str) -> dict[tuple[int, int], StatedValue]:
     return values
 
 
-def _sentence_of(text: str, position: int) -> str:
+def _sentences(text: str) -> list[tuple[int, int]]:
+    """Spans of the sentences of the text, each with its closing mark."""
+    spans: list[tuple[int, int]] = []
     start = 0
     for match in _SENTENCE_END_RE.finditer(text):
-        if match.start() >= position:
-            return text[start : match.end()]
+        spans.append((start, match.end()))
         start = match.end()
-    return text[start:]
+    if start < len(text):
+        spans.append((start, len(text)))
+    return spans
+
+
+def _sentence_of(text: str, position: int) -> str:
+    return next((text[a:b] for a, b in _sentences(text) if a <= position < b), "")
 
 
 def _states_account(sentence: str) -> bool:
@@ -839,6 +849,8 @@ def verify_reply(
 
     `customer_texts` are the masked messages the customer wrote that the model received for the
     turn; a money or percent claim that only restates one of their values is not a violation.
+    In a turn without a draft, a question whose only violations are unsupported claims keeps
+    its other sentences when they pass on their own; that is audited as a replacement.
     """
     with db.read() as conn:
         block = collect_facts(conn, results, as_of)
@@ -849,16 +861,46 @@ def verify_reply(
     violations = remaining_violations(text, block, customer_texts)
     if not violations:
         return VerifiedReply(block, lines, text, replaced=False)
+    trimmed = trimmed_question(text, block, violations) if _no_draft(results) else None
+    if trimmed is not None:
+        _audit_replacement(db, customer_id, violations, TRIMMED_DECISION)
+        return VerifiedReply(block, lines, trimmed, replaced=True, violations=violations)
     _audit_replacement(db, customer_id, violations)
     return VerifiedReply(
         block, lines, fallback_explanation(block), replaced=True, violations=violations
     )
 
 
+def trimmed_question(
+    text: str, block: FactBlock, violations: Sequence[ClaimViolation]
+) -> str | None:
+    """A clarifying question without the sentences that hold unsupported claims, if it stands.
+
+    Only unsupported claims may be cut out; the rest must pass the claim check as it is and
+    still ask the customer something. Otherwise None, and the explanation is replaced.
+    """
+    if any(v.reason is not _R.UNSUPPORTED for v in violations):
+        return None
+    kept = [
+        text[a:b]
+        for a, b in _sentences(text)
+        if not any(v.start < b and a < v.end for v in violations)
+    ]
+    rest = "".join(kept).strip()
+    if "？" not in rest and "?" not in rest:
+        return None
+    return rest if check_claims(rest, block).passed else None
+
+
+def _no_draft(results: Sequence[BaseModel]) -> bool:
+    drafts = (DraftResult, PlanDraftResult, ApprovalRequestResult)
+    return not any(isinstance(result, drafts) for result in results)
+
+
 def _audit_replacement(
-    db: Database, customer_id: str, violations: Sequence[ClaimViolation]
+    db: Database, customer_id: str, violations: Sequence[ClaimViolation], *extra: str
 ) -> None:
-    decision = sorted({v.reason.value for v in violations})
+    decision = sorted({v.reason.value for v in violations} | set(extra))
     db.run_in_uow(
         lambda uow: audit.record(
             uow,
