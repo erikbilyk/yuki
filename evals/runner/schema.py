@@ -19,6 +19,7 @@ from wg.contracts.api import (
     EbillRequest,
     ExternalDebitRequest,
     IncomingPaymentRequest,
+    SimDebitRequest,
     SimSmsRequest,
 )
 
@@ -138,6 +139,7 @@ SIM_POSTS: dict[str, type[BaseModel]] = {
     "/sim/sms": SimSmsRequest,
     "/sim/incoming-payment": IncomingPaymentRequest,
     "/sim/external-debit": ExternalDebitRequest,
+    "/sim/debit-requests": SimDebitRequest,
 }
 
 
