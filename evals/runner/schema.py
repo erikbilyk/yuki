@@ -76,8 +76,33 @@ class ApproveCards(_Strict):
     allow: Annotated[tuple[Allowed, ...], Field(min_length=1)]
 
 
+class Withhold(_Strict):
+    """An action whose code the customer does not enter in one `enter_code` step.
+
+    Fields left out match any value, so `{kind: PURCHASE}` holds back every purchase code.
+    """
+
+    kind: str
+    amount_fen: Annotated[int, Field(ge=0)] | None = None
+    shares: str | None = None
+    payee_id: str | None = None
+    product_id: str | None = None
+
+    @model_validator(mode="after")
+    def _an_action_kind(self) -> Self:
+        if self.kind == "PLAN":
+            raise ValueError("a code belongs to an action; name the action kind, not PLAN")
+        return self
+
+
 class EnterCode(_Strict):
-    """Read the code of each open challenge from GET /v1/sms and verify it (allow-listed only)."""
+    """Read the code of each open challenge from GET /v1/sms and verify it (allow-listed only).
+
+    `withhold` lists actions whose code is neither requested nor entered in this step even
+    though an earlier allow-list covers them; a later `enter_code` without it enters them.
+    """
+
+    withhold: tuple[Withhold, ...] = ()
 
 
 class AdvanceTo(_Strict):
