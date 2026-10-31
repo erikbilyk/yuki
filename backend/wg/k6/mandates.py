@@ -17,11 +17,13 @@ from datetime import date, datetime
 from wg.contracts.enums import AuditActor, EffectCheck, MandateStatus
 from wg.contracts.errors import ErrorCode, WgError
 from wg.k6.db import Reader, UnitOfWork
-from wg.k6.simtime import from_db, now_db
+from wg.k6.simtime import from_db, now_db, to_db
 
 STATUS_FIELD = "status"
 CAP_FIELD = "cap_fen"
 CHECK_KINDS = frozenset({"probe_cancel", "probe_suspend", "probe_cap"})
+# An agreement's expiry instant, 00:00 CST after `expires_on`, in the encoding of `to_db`.
+EXPIRY_SQL = "(date(expires_on, '+1 day') || 'T00:00:00.000000+08:00')"
 
 
 @dataclass(frozen=True)
@@ -349,3 +351,17 @@ def effect_event_count(reader: Reader, operation_id: str) -> int:
         "SELECT COUNT(*) FROM effect_verification_events WHERE operation_id = ?", (operation_id,)
     ).fetchone()
     return int(row[0])
+
+
+def ended_mandates(reader: Reader, at: datetime, customer_id: str | None = None) -> list[str]:
+    """ACTIVE or SUSPENDED agreements whose expiry instant is at or before `at`."""
+    sql = (
+        f"SELECT mandate_ref FROM mandates WHERE status IN ('ACTIVE', 'SUSPENDED')"
+        f" AND {EXPIRY_SQL} <= ?"
+        + (" AND customer_id = ?" if customer_id is not None else "")
+        + " ORDER BY expires_on, mandate_ref"
+    )
+    params: list[object] = [to_db(at)]
+    if customer_id is not None:
+        params.append(customer_id)
+    return [row["mandate_ref"] for row in reader.execute(sql, params).fetchall()]

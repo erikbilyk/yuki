@@ -1,10 +1,11 @@
 """K5: the direct-debit sweep (S5-SPEC §5.8).
 
 The sweep records what the clock and the customer's answers leave behind: a request nobody
-answered by its `respond_by` becomes EXPIRED at that instant, and a payment or decline
-action whose request has left AWAITING_CLIENT, or a payment whose agreement has changed
-version since its card, is cancelled, so its card shows expired and confirming it is
-refused. Finally each settled cancel, suspend or cap lowering is checked by a probe: a
+answered by its `respond_by` becomes EXPIRED at that instant; an agreement past its expiry
+becomes EXPIRED, and the requests still waiting on it are declined; a payment or decline
+action whose request has left AWAITING_CLIENT, or a payment or change whose agreement has
+changed version since its card, is cancelled, so its card shows expired and confirming it
+is refused. Finally each settled cancel, suspend or cap lowering is checked by a probe: a
 merchant request through the normal intake that the change must refuse (S5-SPEC §5.7).
 A probe that is accepted is an integrity incident and locks the customer.
 
@@ -26,6 +27,7 @@ from wg.contracts.enums import (
     DebitRequestStatus,
     EffectCheck,
     Fault,
+    MandateStatus,
     OperationStatus,
 )
 from wg.contracts.errors import ErrorCode, WgError
@@ -42,13 +44,16 @@ from wg.packs.mandates import OPEN_DECISION_STATUSES
 log = logging.getLogger("wg.k5.mandates")
 
 DECISION_KINDS = frozenset({ActionKind.DEBIT_PAY, ActionKind.DEBIT_DECLINE})
+# Open actions that the sweep closes when their request or agreement moves on.
+SWEPT_KINDS = DECISION_KINDS | mandate_rules.CHANGE_KINDS
 REQUEST_CLOSED = "request_closed"
 MANDATE_CHANGED = "mandate_changed"
+EXPIRY_REASON = "expires_on"
 PROBE_ACCEPTED = "probe_accepted"
 
 
 def sweep(db: Database, step_up: StepUp, *, customer_id: str | None = None) -> None:
-    """Expire unanswered requests, close the decision actions made stale, probe changes."""
+    """Expire unanswered requests and ended agreements, close stale actions, probe changes."""
     with db.read() as conn:
         try:
             at = now(conn)
@@ -62,10 +67,14 @@ def sweep(db: Database, step_up: StepUp, *, customer_id: str | None = None) -> N
             f"expire {request.request_id}",
         )
     with db.read() as conn:
+        ended = mandates.ended_mandates(conn, at, customer_id)
+    for mandate_ref in ended:
+        _run(db, lambda uow, ref=mandate_ref: _expire_mandate(uow, ref), f"expire {mandate_ref}")
+    with db.read() as conn:
         stale = [
             action
             for action in actions.actions_of_kinds(
-                conn, DECISION_KINDS, OPEN_DECISION_STATUSES, customer_id
+                conn, SWEPT_KINDS, OPEN_DECISION_STATUSES, customer_id
             )
             if stale_reason(conn, action) is not None
         ]
@@ -104,11 +113,12 @@ def sweep(db: Database, step_up: StepUp, *, customer_id: str | None = None) -> N
 
 
 def stale_reason(reader: Reader, action: ActionRow) -> str | None:
-    """Why an open payment or decline can no longer be confirmed, or None."""
-    request = debit_requests.find_request(reader, str(action.params["request_id"]))
-    if request is None or request.status is not DebitRequestStatus.AWAITING_CLIENT:
-        return REQUEST_CLOSED
-    if action.kind is ActionKind.DEBIT_PAY:
+    """Why an open payment, decline or change can no longer be confirmed, or None."""
+    if action.kind in DECISION_KINDS:
+        request = debit_requests.find_request(reader, str(action.params["request_id"]))
+        if request is None or request.status is not DebitRequestStatus.AWAITING_CLIENT:
+            return REQUEST_CLOSED
+    if action.kind is not ActionKind.DEBIT_DECLINE:
         mandate = mandates.find_mandate(reader, str(action.params["mandate_ref"]))
         if mandate is None or mandate.version != action.params["mandate_version"]:
             return MANDATE_CHANGED
@@ -124,6 +134,39 @@ def _expire(uow: UnitOfWork, request_id: str) -> None:
         and request.respond_by <= now(uow)
     ):
         debit_requests.expire(uow, request_id)
+
+
+def _expire_mandate(uow: UnitOfWork, mandate_ref: str) -> None:
+    """Record the end of an agreement at its expiry and decline the requests still waiting.
+
+    The agreement's event history is checked first, as before any change of it.
+    """
+    mandate = mandates.check_mandate_invariant(uow, mandate_ref)
+    at = now(uow)
+    if mandate.status not in (MandateStatus.ACTIVE, MandateStatus.SUSPENDED):
+        return
+    if mandate_rules.authorizes(mandate.expires_on, at):
+        return
+    pending = debit_requests.mandate_requests(uow, mandate_ref)
+    mandates.update_mandate(
+        uow,
+        mandate,
+        actor=AuditActor.COORDINATOR,
+        reason=EXPIRY_REASON,
+        status=MandateStatus.EXPIRED,
+    )
+    debit_requests.apply_changes(
+        uow, pending, mandate_rules.expiry_changes(pending), AuditActor.COORDINATOR
+    )
+    audit.record(
+        uow,
+        AuditActor.COORDINATOR,
+        "mandate_expired",
+        customer_id=mandate.customer_id,
+        ref=mandate_ref,
+        decision=MandateStatus.EXPIRED.value,
+        reason=EXPIRY_REASON,
+    )
 
 
 def _probe(uow: UnitOfWork, operation_id: str) -> dict[str, str] | None:

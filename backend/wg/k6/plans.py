@@ -16,6 +16,7 @@ from wg.contracts.ids import IdPrefix, new_id
 from wg.k6 import actions
 from wg.k6.actions import ActionRow, IllegalTransition
 from wg.k6.db import Reader, UnitOfWork
+from wg.k6.mandates import EXPIRY_SQL
 from wg.k6.simtime import from_db, now_db, to_db
 
 FINAL_STATUSES = frozenset({PlanStatus.COMPLETED, PlanStatus.PARTIAL})
@@ -182,8 +183,9 @@ def next_due_instant(reader: Reader, after: datetime, before: datetime) -> datet
     """The earliest instant strictly between `after` and `before` at which something is due.
 
     Due instants (SPEC §15.3): settlement times of open operations, `not_before` of DRAFT
-    nodes, the expiry of the root approval of plans that are not final and the `respond_by`
-    of merchants' requests still awaiting the customer (S5-SPEC §5.8).
+    nodes, the expiry of the root approval of plans that are not final, the `respond_by` of
+    merchants' requests still awaiting the customer and the expiry instant of agreements
+    that are ACTIVE or SUSPENDED (S5-SPEC §5.8).
     """
     bounds = (to_db(after), to_db(before))
     row = reader.execute(
@@ -202,8 +204,11 @@ def next_due_instant(reader: Reader, after: datetime, before: datetime) -> datet
         " UNION ALL"
         " SELECT respond_by FROM debit_requests"
         "  WHERE status = 'AWAITING_CLIENT' AND probe = 0"
-        "  AND respond_by > ? AND respond_by < ?)",
-        bounds * 4,
+        "  AND respond_by > ? AND respond_by < ?"
+        " UNION ALL"
+        f" SELECT {EXPIRY_SQL} FROM mandates WHERE status IN ('ACTIVE', 'SUSPENDED')"
+        f"  AND {EXPIRY_SQL} > ? AND {EXPIRY_SQL} < ?)",
+        bounds * 5,
     ).fetchone()
     return None if row is None or row[0] is None else from_db(row[0])
 
