@@ -4,8 +4,9 @@ A request is decided once, when it arrives, and stored with that outcome; nothin
 happens then (no action, hold or notification). `description_raw` is the merchant's text,
 stored as received and never read as an instruction.
 
-Afterwards a request leaves AWAITING_CLIENT once: paid (S5-SPEC §6.2) or declined (§5.5).
-Each change raises its version and is audited in the same unit of work.
+Afterwards a request leaves AWAITING_CLIENT once: paid (S5-SPEC §6.2), declined (§5.5) or
+expired by the sweep at `respond_by` (§5.8). Each change raises its version and is audited
+in the same unit of work.
 """
 
 from __future__ import annotations
@@ -292,6 +293,18 @@ def decline(uow: UnitOfWork, request_id: str) -> DebitRequestRow:
     )
 
 
+def expire(uow: UnitOfWork, request_id: str) -> DebitRequestRow:
+    """Nobody answered the request before its `respond_by`."""
+    return _close(
+        uow,
+        request_id,
+        DebitRequestStatus.EXPIRED,
+        DebitReason.EXPIRED,
+        actor=AuditActor.COORDINATOR,
+        event="request_expired",
+    )
+
+
 def _close(
     uow: UnitOfWork,
     request_id: str,
@@ -360,6 +373,21 @@ def period_statuses(reader: Reader, mandate_ref: str, key: str) -> list[DebitReq
         (mandate_ref, key),
     ).fetchall()
     return [DebitRequestStatus(row["status"]) for row in rows]
+
+
+def overdue_requests(
+    reader: Reader, at: datetime, customer_id: str | None = None
+) -> list[DebitRequestRow]:
+    """Non-probe requests still AWAITING_CLIENT whose `respond_by` is at or before `at`."""
+    sql = (
+        "SELECT * FROM debit_requests WHERE status = ? AND probe = 0 AND respond_by <= ?"
+        + (" AND customer_id = ?" if customer_id is not None else "")
+        + " ORDER BY respond_by, rowid"
+    )
+    params: list[object] = [DebitRequestStatus.AWAITING_CLIENT.value, to_db(at)]
+    if customer_id is not None:
+        params.append(customer_id)
+    return [_request(row) for row in reader.execute(sql, params).fetchall()]
 
 
 def payment_operation_ids(reader: Reader, request_id: str) -> list[str]:

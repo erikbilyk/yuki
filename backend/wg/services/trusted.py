@@ -6,6 +6,8 @@ audit row is then written in a unit of its own, so every refusal leaves an audit
 Confirm and verify commit READY first and submit in a second unit. When that submission is
 refused or fails, a third unit moves the action out of READY, so no later tick or restart
 sends what the customer was told did not go through; only a new customer step does (SPEC §12.3).
+Then the direct-debit sweep runs for the customer, so a payment or decline card that the
+step made stale already shows expired when the response arrives (S5-SPEC §5.8).
 """
 
 from __future__ import annotations
@@ -26,6 +28,7 @@ from wg.contracts.api import (
 from wg.contracts.enums import ActionStatus, AuditActor, Tier
 from wg.contracts.errors import ErrorClass, ErrorCode, WgError
 from wg.core import k4_approval as k4
+from wg.core import k5_mandates
 from wg.core.k4_approval import Confirmation, InvalidationReason, Refusal, StepUp, Verified
 from wg.core.k5_coordinator import Coordinator, store_status
 from wg.k6 import actions, audit, challenges
@@ -85,7 +88,7 @@ class TrustedService:
             if done.card.kind is CardKind.PLAN and done.card.plan_id is not None:
                 # Nodes that are due now move at once: a RED one waits for its code.
                 self.coordinator.tick_plan(done.card.plan_id)
-            action, operation = self._execute(customer_id, done.action)
+            action, operation = self._execute_and_sweep(customer_id, done.action)
         self.coordinator.continue_plans(customer_id)
         result = ConfirmResult(
             card_id=done.card.card_id,
@@ -141,7 +144,7 @@ class TrustedService:
             # The refusal and its audit row were committed with the attempt count.
             raise outcome.error()
         with self._audited(customer_id, "verify_refused", challenge_id):
-            action, operation = self._execute(customer_id, outcome.action)
+            action, operation = self._execute_and_sweep(customer_id, outcome.action)
         self.coordinator.continue_plans(customer_id)
         return VerifyResult(
             challenge_id=outcome.challenge.challenge_id,
@@ -181,6 +184,15 @@ class TrustedService:
                     )
                 )
         return SmsView(messages=tuple(messages))
+
+    def _execute_and_sweep(
+        self, customer_id: str, action: ActionRow | None
+    ) -> tuple[ActionRow | None, OperationView | None]:
+        """Submit as `_execute` does; then, also after a refusal, sweep the customer's records."""
+        try:
+            return self._execute(customer_id, action)
+        finally:
+            k5_mandates.sweep(self.db, self.step_up, customer_id=customer_id)
 
     def _execute(
         self, customer_id: str, action: ActionRow | None

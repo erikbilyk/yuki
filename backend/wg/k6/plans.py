@@ -182,7 +182,8 @@ def next_due_instant(reader: Reader, after: datetime, before: datetime) -> datet
     """The earliest instant strictly between `after` and `before` at which something is due.
 
     Due instants (SPEC §15.3): settlement times of open operations, `not_before` of DRAFT
-    nodes and the expiry of the root approval of plans that are not final.
+    nodes, the expiry of the root approval of plans that are not final and the `respond_by`
+    of merchants' requests still awaiting the customer (S5-SPEC §5.8).
     """
     bounds = (to_db(after), to_db(before))
     row = reader.execute(
@@ -197,8 +198,12 @@ def next_due_instant(reader: Reader, after: datetime, before: datetime) -> datet
         " SELECT ap.expires_at FROM plans p"
         "  JOIN approvals ap ON ap.approval_id = p.root_approval_id"
         "  WHERE p.status NOT IN ('completed', 'partial')"
-        "  AND ap.expires_at > ? AND ap.expires_at < ?)",
-        bounds * 3,
+        "  AND ap.expires_at > ? AND ap.expires_at < ?"
+        " UNION ALL"
+        " SELECT respond_by FROM debit_requests"
+        "  WHERE status = 'AWAITING_CLIENT' AND probe = 0"
+        "  AND respond_by > ? AND respond_by < ?)",
+        bounds * 4,
     ).fetchone()
     return None if row is None or row[0] is None else from_db(row[0])
 

@@ -37,7 +37,7 @@ from wg.contracts.enums import (
 from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.events import CheckpointRecorded, DomainEventType
 from wg.core import k4_approval as k4
-from wg.core import k5_continuation
+from wg.core import k5_continuation, k5_mandates
 from wg.core.k1_session import owned
 from wg.core.k4_approval import InvalidationReason, StepUp
 from wg.k6 import actions, approvals, audit, events, faults, funds, locks, operations, plans
@@ -352,8 +352,8 @@ class Coordinator:
         """Walk the clock to `target` through every due instant in ascending order.
 
         At each instant: move the clock (codes whose five minutes are over close), apply the
-        settlements due by then, then tick the plans. A target equal to now changes nothing;
-        an earlier one is refused.
+        settlements due by then, run the direct-debit sweep, then tick the plans. A target
+        equal to now changes nothing; an earlier one is refused.
         """
         with self.db.read() as conn:
             start = read_clock(conn)
@@ -374,6 +374,7 @@ class Coordinator:
     def _step(self, instant: datetime) -> None:
         self.db.run_in_uow(lambda uow: self._move_clock(uow, instant), "sim clock advance")
         self.gateway.settle_due()
+        k5_mandates.sweep(self.db, self.step_up)
         self.process_events()
 
     def _move_clock(self, uow: UnitOfWork, instant: datetime) -> None:
@@ -392,9 +393,10 @@ class Coordinator:
         """Bring the database to a consistent state at process start, without new authority.
 
         In order: reconcile every SUBMITTED and UNKNOWN operation; replay unprocessed events;
-        apply settlements due by the current simulated time (the clock does not move); then
-        tick every plan, which resubmits READY nodes whose grant is valid, moves the others to
-        AWAITING_STEPUP and moves RED nodes that are due to AWAITING_STEPUP. Reconciliation
+        apply settlements due by the current simulated time (the clock does not move); run the
+        direct-debit sweep (S5-SPEC §5.8); then tick every plan, which resubmits READY nodes
+        whose grant is valid, moves the others to AWAITING_STEPUP and moves RED nodes that are
+        due to AWAITING_STEPUP. Reconciliation
         comes first so that a lock it sets (a missing bank record) holds every submission the
         replayed events would otherwise make.
 
@@ -414,6 +416,7 @@ class Coordinator:
         steps += [
             ("events", self.process_events),
             ("settlements", self.gateway.settle_due),
+            ("direct-debit sweep", lambda: k5_mandates.sweep(self.db, self.step_up)),
             ("tick", self.tick),
         ]
         for name, step in steps:
