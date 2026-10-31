@@ -3,11 +3,14 @@
 Facts come from the results of the turn's tool calls, which the services built from snapshots,
 receipts, calc results, checkpoints and plan rows; draft amounts are read back from the stored
 action. The fact block is rendered from fixed zh-CN templates. An explanation with any claim
-the facts do not support is replaced by a template and the replacement is audited.
+the facts do not support is replaced by a template and the replacement is audited. A money or
+percent claim that only restates a value the customer wrote is not held against the reply, and a
+clarifying question loses only its unsupported asides when the rest stands on its own.
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -48,11 +51,13 @@ from wg.contracts.enums import (
 from wg.contracts.errors import ErrorCode
 from wg.contracts.facts import (
     ClaimViolation,
+    ClaimViolationReason,
     CountFact,
     DateFact,
     Fact,
     FactBlock,
     FactConcept,
+    FactKind,
     MoneyFact,
     PercentFact,
     StatusFact,
@@ -64,12 +69,24 @@ from wg.contracts.tools import (
     PlanStatusResult,
 )
 from wg.core import k5_continuation, mandate_rules
+from wg.core.k2_context import Utterance
 from wg.k6 import accounts, actions, audit, commitments, funds, plans
 from wg.k6.db import Database, Reader
 from wg.packs.labels import bill_label
+from wg.textcheck.amounts import (
+    GE,
+    GT,
+    LE,
+    LT,
+    amounts_outside,
+    find_amounts,
+    parse_chinese_numeral,
+)
 from wg.textcheck.claims import FEASIBLE_WITH_APPROVAL, check_claims
 
 REPLACED_EVENT = "explanation_replaced"
+# Added to the audited reasons when unsupported asides were cut from a clarifying question.
+TRIMMED_DECISION = "trimmed"
 # A purchase paused by these is still possible at the new amount once the customer approves it.
 BOUND_PAUSES = frozenset(
     {
@@ -142,6 +159,100 @@ TEMPLATE_AWAITING = "已为您准备好确认卡片，请在卡片上核对后�
 TEMPLATE_DRAFT = "已生成草稿，尚未提交确认；上方数字以系统记录为准。"
 TEMPLATE_FACTS = "以上数字和状态来自系统记录，请以此为准。"
 TEMPLATE_EMPTY = "抱歉，我暂时无法给出可靠的说明，请换一种方式描述您的需求。"
+
+_R = ClaimViolationReason
+# Mismatch reasons a restated value may carry only with the customer's own comparator before it
+# ("手续费不超过20元" against a fee fact of 15 yuan restates the customer's limit).
+COMPARATOR_REASONS = frozenset({_R.VALUE_MISMATCH, _R.CONCEPT_MISMATCH, _R.PRECISION})
+# A sentence with one of these speaks about what the account holds, so a value in it is a claim
+# about the account even when the customer wrote the same number.
+ACCOUNT_STATE_WORDS = (
+    "余额",
+    "账上",
+    "账户里",
+    "账户中",
+    "共有",
+    "还有",
+    "剩余",
+    "剩下",
+    "到账",
+    "可用",
+    "现金",
+    "存款",
+    "结余",
+    "可支配",
+    "自由支配",
+    "缺口",
+    "持有",
+    "市值",
+)
+# A sentence with one of these says what was done, is under way or is (not) possible; a value in
+# it is a claim about an outcome ("已为您买入4,785元", "买入4,785元可以执行").
+OUTCOME_WORDS = (
+    "已",
+    "处理中",
+    "执行中",
+    "进行中",
+    "成功",
+    "可执行",
+    "可以执行",
+    "能执行",
+    "可行",
+    "够",
+    "可以转",
+    "可以买",
+    "可以付",
+    "能转",
+    "能买",
+    "能付",
+    "不可能",
+    "无法",
+    "不能",
+    "做不到",
+    "办不到",
+)
+FEE_WORDS = ("手续费", "赎回费", "费用", "费率")
+_NO_FACTS = FactBlock(facts=())
+_SENTENCE_END_RE = re.compile(r"[。！？!?；;\n]")
+# Parsed as the claim checker parses percents, so a reply's percent and a customer's compare.
+_PERCENT_RE = re.compile(
+    r"(?<![\d.])(\d+(?:\.\d+)?)\s*[%％]|百分之([零〇一二两三四五六七八九十百]+|\d+(?:\.\d+)?)"
+)
+_PERCENT_COMPARATOR_WORDS = {
+    "不超过": LE,
+    "不高于": LE,
+    "不大于": LE,
+    "最多": LE,
+    "至多": LE,
+    "≤": LE,
+    "<=": LE,
+    "低于": LT,
+    "少于": LT,
+    "小于": LT,
+    "不到": LT,
+    "<": LT,
+    "＜": LT,
+    "不低于": GE,
+    "不少于": GE,
+    "不小于": GE,
+    "至少": GE,
+    "最少": GE,
+    "≥": GE,
+    ">=": GE,
+    "高于": GT,
+    "多于": GT,
+    "超过": GT,
+    "大于": GT,
+    ">": GT,
+    "＞": GT,
+}
+_PERCENT_COMPARATOR_BEFORE_RE = re.compile(
+    "("
+    + "|".join(re.escape(w) for w in sorted(_PERCENT_COMPARATOR_WORDS, key=len, reverse=True))
+    + r")\s*(?:为|是)?\s*$"
+)
+_PERCENT_COMPARATOR_AFTER_RE = re.compile(r"\s*(及以下|以下|以内|及以上|以上)")
+_PERCENT_COMPARATOR_AFTER = {"及以下": LE, "以下": LE, "以内": LE, "及以上": GE, "以上": GE}
 
 
 @dataclass(frozen=True)
@@ -262,6 +373,7 @@ class FactCollector:
             )
         if isinstance(cash, CashSnapshotView):
             details = cash.details
+            self._money(_C.POSTED_CASH, details.c_fen, "账户现金合计", ref, as_of=at)
             estimate = details.monthly_estimate_fen
             label = "本月结余估算（不是可自由支配）"
             self._money(_C.MONTHLY_ESTIMATE, estimate, label, ref, as_of=at)
@@ -637,35 +749,208 @@ def fallback_explanation(block: FactBlock) -> str:
     return TEMPLATE_FACTS if block.facts else TEMPLATE_EMPTY
 
 
+@dataclass(frozen=True)
+class StatedValue:
+    """A money (fen) or percent value as written, with the comparator written next to it."""
+
+    kind: FactKind
+    value: int | Decimal
+    comparator: str | None
+
+
+def customer_values(texts: Iterable[str]) -> frozenset[StatedValue]:
+    """Values the customer wrote in the given messages, outside each message's remark."""
+    values: set[StatedValue] = set()
+    for text in texts:
+        remark = Utterance.of(text).remark_span
+        for amount in amounts_outside(text, remark):
+            values.add(StatedValue(FactKind.MONEY, amount.fen, amount.comparator))
+        for start, end, value in _percents(text):
+            if remark is None or not (start < remark[1] and remark[0] < end):
+                values.add(
+                    StatedValue(FactKind.PERCENT, value, _percent_comparator(text, start, end))
+                )
+    return frozenset(values)
+
+
+def _percents(text: str) -> list[tuple[int, int, Decimal]]:
+    found = []
+    for match in _PERCENT_RE.finditer(text):
+        if match.group(1) is not None:
+            value: Decimal | None = Decimal(match.group(1))
+        elif re.fullmatch(r"\d+(?:\.\d+)?", match.group(2)):
+            value = Decimal(match.group(2))
+        else:
+            number = parse_chinese_numeral(match.group(2))
+            value = None if number is None else Decimal(number)
+        if value is not None:
+            found.append((match.start(), match.end(), value))
+    return found
+
+
+def _percent_comparator(text: str, start: int, end: int) -> str | None:
+    """The limit written before a percent ("不超过40%") or right after it ("40%以下")."""
+    before = _PERCENT_COMPARATOR_BEFORE_RE.search(text[max(0, start - 8) : start])
+    if before is not None:
+        return _PERCENT_COMPARATOR_WORDS[before.group(1)]
+    after = _PERCENT_COMPARATOR_AFTER_RE.match(text, end)
+    return _PERCENT_COMPARATOR_AFTER[after.group(1)] if after is not None else None
+
+
+def _reply_values(text: str) -> dict[tuple[int, int], StatedValue]:
+    """The reply's money and percent values by span, as the claim checker found them."""
+    values = {
+        (m.start, m.end): StatedValue(FactKind.MONEY, m.fen, m.comparator)
+        for m in find_amounts(text)
+    }
+    for start, end, value in _percents(text):
+        values[(start, end)] = StatedValue(
+            FactKind.PERCENT, value, _percent_comparator(text, start, end)
+        )
+    return values
+
+
+def _sentences(text: str) -> list[tuple[int, int]]:
+    """Spans of the sentences of the text, each with its closing mark."""
+    spans: list[tuple[int, int]] = []
+    start = 0
+    for match in _SENTENCE_END_RE.finditer(text):
+        spans.append((start, match.end()))
+        start = match.end()
+    if start < len(text):
+        spans.append((start, len(text)))
+    return spans
+
+
+def _sentence_of(text: str, position: int) -> str:
+    return next((text[a:b] for a, b in _sentences(text) if a <= position < b), "")
+
+
+def _states_account(sentence: str) -> bool:
+    """Whether the sentence speaks about the account, an outcome or a status."""
+    if any(word in sentence for word in (*ACCOUNT_STATE_WORDS, *OUTCOME_WORDS)):
+        return True
+    return any(
+        v.claim_kind is FactKind.STATUS for v in check_claims(sentence, _NO_FACTS).violations
+    )
+
+
+def restates_customer(
+    violation: ClaimViolation,
+    text: str,
+    stated: frozenset[StatedValue],
+    reply_values: dict[tuple[int, int], StatedValue],
+) -> bool:
+    """Whether a flagged claim only repeats a value the customer wrote (SPEC §17, K7-1).
+
+    The value must come with the comparator the customer wrote next to it (none for none), so
+    a limit is never restated as a plain figure. A limit is required against a fact of another
+    value, and in a sentence about a fee, where a plain figure would state the fee itself.
+    """
+    if violation.reason is _R.UNSUPPORTED:
+        needs_comparator = False
+    elif violation.reason in COMPARATOR_REASONS:
+        needs_comparator = True
+    else:
+        return False
+    claim = reply_values.get((violation.start, violation.end))
+    if claim is None or claim.kind is not violation.claim_kind:
+        return False
+    sentence = _sentence_of(text, violation.start)
+    if _states_account(sentence):
+        return False
+    if needs_comparator or any(word in sentence for word in FEE_WORDS):
+        return claim.comparator is not None and claim in stated
+    return claim in stated
+
+
+def remaining_violations(
+    text: str, block: FactBlock, customer_texts: Sequence[str] = ()
+) -> tuple[ClaimViolation, ...]:
+    """The claim violations of the explanation that are not restated customer values."""
+    check = check_claims(text, block)
+    if check.passed:
+        return ()
+    stated = customer_values(customer_texts)
+    if not stated:
+        return check.violations
+    values = _reply_values(text)
+    return tuple(v for v in check.violations if not restates_customer(v, text, stated, values))
+
+
 def verify_reply(
     db: Database,
     customer_id: str,
     explanation: str | None,
     results: Sequence[BaseModel],
     as_of: datetime,
+    *,
+    customer_texts: Sequence[str] = (),
 ) -> VerifiedReply:
-    """Build the fact block and check the explanation; an unsupported claim replaces it."""
+    """Build the fact block and check the explanation; an unsupported claim replaces it.
+
+    `customer_texts` are the masked messages the customer wrote that the model received for the
+    turn; a money or percent claim that only restates one of their values is not a violation.
+    In a turn without a draft, a question whose only violations are unsupported claims keeps
+    its other sentences when they pass on their own; that is audited as a replacement.
+    """
     with db.read() as conn:
         block = collect_facts(conn, results, as_of)
     lines = tuple(render_fact(fact) for fact in block.facts)
     text = (explanation or "").strip()
     if not text:
         return VerifiedReply(block, lines, None, replaced=False)
-    check = check_claims(text, block)
-    if check.passed:
+    violations = remaining_violations(text, block, customer_texts)
+    if not violations:
         return VerifiedReply(block, lines, text, replaced=False)
-    reasons = sorted({violation.reason.value for violation in check.violations})
+    trimmed = trimmed_question(text, block, violations) if _no_draft(results) else None
+    if trimmed is not None:
+        _audit_replacement(db, customer_id, violations, TRIMMED_DECISION)
+        return VerifiedReply(block, lines, trimmed, replaced=True, violations=violations)
+    _audit_replacement(db, customer_id, violations)
+    return VerifiedReply(
+        block, lines, fallback_explanation(block), replaced=True, violations=violations
+    )
+
+
+def trimmed_question(
+    text: str, block: FactBlock, violations: Sequence[ClaimViolation]
+) -> str | None:
+    """A clarifying question without the sentences that hold unsupported claims, if it stands.
+
+    Only unsupported claims may be cut out; the rest must pass the claim check as it is and
+    still ask the customer something. Otherwise None, and the explanation is replaced.
+    """
+    if any(v.reason is not _R.UNSUPPORTED for v in violations):
+        return None
+    kept = [
+        text[a:b]
+        for a, b in _sentences(text)
+        if not any(v.start < b and a < v.end for v in violations)
+    ]
+    rest = "".join(kept).strip()
+    if "？" not in rest and "?" not in rest:
+        return None
+    return rest if check_claims(rest, block).passed else None
+
+
+def _no_draft(results: Sequence[BaseModel]) -> bool:
+    drafts = (DraftResult, PlanDraftResult, ApprovalRequestResult)
+    return not any(isinstance(result, drafts) for result in results)
+
+
+def _audit_replacement(
+    db: Database, customer_id: str, violations: Sequence[ClaimViolation], *extra: str
+) -> None:
+    decision = sorted({v.reason.value for v in violations} | set(extra))
     db.run_in_uow(
         lambda uow: audit.record(
             uow,
             AuditActor.SYSTEM,
             REPLACED_EVENT,
             customer_id=customer_id,
-            decision=",".join(reasons)[:64],
-            reason=str(len(check.violations)),
+            decision=",".join(decision)[:64],
+            reason=str(len(violations)),
         ),
         "audit replaced explanation",
-    )
-    return VerifiedReply(
-        block, lines, fallback_explanation(block), replaced=True, violations=check.violations
     )

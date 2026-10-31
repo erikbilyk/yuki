@@ -84,7 +84,12 @@ class Agent:
         self.log_path = tmp_path / "llm_calls.jsonl"
         self.stub: RecordingStub | None = None
 
-    def turn(self, text: str, script: list[dict[str, Any]]) -> AgentTurn:
+    def turn(
+        self,
+        text: str,
+        script: list[dict[str, Any]],
+        history: Sequence[dict[str, Any]] = (),
+    ) -> AgentTurn:
         path = self.tmp_path / "script.yaml"
         path.write_text(yaml.safe_dump(script, allow_unicode=True), encoding="utf-8")
         self.stub = RecordingStub(path)
@@ -92,7 +97,12 @@ class Agent:
             self.stub, make_settings(self.tmp_path / "wg.db"), log_path=self.log_path
         )
         return agent_turn(
-            adapter, self.registry, customer_id="cus_main", channel=Channel.WEB, text=text
+            adapter,
+            self.registry,
+            customer_id="cus_main",
+            channel=Channel.WEB,
+            text=text,
+            history=history,
         )
 
     def play(

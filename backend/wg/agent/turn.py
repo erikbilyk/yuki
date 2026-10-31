@@ -63,5 +63,22 @@ def agent_turn(
     )
     result = run_turn(adapter, registry, context, ingress.text, history=history)
     results = [outcome.result for outcome in result.outcomes if outcome.result is not None]
-    reply = verify_reply(registry.db, customer_id, result.explanation, results, as_of)
+    reply = verify_reply(
+        registry.db,
+        customer_id,
+        result.explanation,
+        results,
+        as_of,
+        customer_texts=customer_texts(ingress.text, history),
+    )
     return AgentTurn(masked_text=ingress.text, turn=result, reply=reply)
+
+
+def customer_texts(masked_text: str, history: Sequence[Mapping[str, Any]]) -> tuple[str, ...]:
+    """The customer's own messages the model received: this one and the earlier user turns."""
+    earlier = [
+        item["content"]
+        for item in history
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    ]
+    return (masked_text, *earlier)
