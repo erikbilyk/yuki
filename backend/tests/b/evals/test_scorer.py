@@ -340,6 +340,24 @@ def test_the_bill_and_late_redemption_branches_meet_their_comparison_expectation
     assert scored.outcome == "passed", failed_names(scored)
 
 
+def test_a_purchase_entered_after_the_late_redemption_fails_the_comparison_scenario(
+    app_client: WgClient, tmp_path: Path
+) -> None:
+    plan = late_redemption_path(app_client)
+    plan.buy()
+    database = copy_database(app_client, tmp_path / "bought.db")
+    turns = [turn(index, "请继续", "还没有完成。") for index in range(6)]
+    record = episode_record(
+        "bought",
+        database="x",
+        expectations=expectations_of("comparison/cmp-t65.yaml"),
+        turns=turns,
+    )
+    scored = score_one(tmp_path / "run", record, database)
+    assert scored.outcome == "failed"
+    assert {"position[990004]", "balance[acc_main]"} <= set(failed_names(scored))
+
+
 @pytest.mark.parametrize(
     ("path", "scenario", "injection"),
     [

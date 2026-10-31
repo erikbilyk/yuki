@@ -55,5 +55,7 @@ steps:
   - approve_cards:
       allow:
         - {kind: PAY_BILL, payee_id: pay_insurer, amount_fen: 500000}
-  - enter_code: {}
+  - enter_code:
+      withhold:
+        - {kind: PURCHASE, product_id: "990004"}
   - say: 这件事现在都做完了吗？请告诉我哪些已经做完，哪些还没做。
