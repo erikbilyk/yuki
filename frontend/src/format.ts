@@ -13,3 +13,8 @@ export function formatTime(iso: string): string {
   const parts = Object.fromEntries(clock.formatToParts(new Date(iso)).map((p) => [p.type, p.value]));
   return `${parts["year"]}-${parts["month"]}-${parts["day"]} ${parts["hour"]}:${parts["minute"]}`;
 }
+
+/** Format a server timestamp as a Beijing calendar date, "2026-10-29". */
+export function formatDate(iso: string): string {
+  return formatTime(iso).slice(0, 10);
+}

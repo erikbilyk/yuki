@@ -27,6 +27,7 @@ KNOWN_KEYS = frozenset(
         "commitments",
         "reserve_fen",
         "locks_active",
+        "mandates",
     }
 )
 # Words that claim a payment or completion; each needs a settled record behind it (K7, SPEC §17).
@@ -337,6 +338,7 @@ def judge_episode(
             "reserve", expectations.get("reserve_fen", {}), state.reserve_fen
         )
         checks += _check_commitments(expectations.get("commitments", {}), state)
+        checks += _check_values("mandate", expectations.get("mandates", {}), state.mandates)
         if "locks_active" in expectations:
             checks.append(
                 Check(

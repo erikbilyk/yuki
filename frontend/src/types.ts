@@ -25,7 +25,15 @@ export type ActionKind =
   | "REDEEM"
   | "PURCHASE"
   | "CHECK_OUTCOME"
-  | "ADD_PAYEE";
+  | "ADD_PAYEE"
+  | "DEBIT_PAY"
+  | "DEBIT_DECLINE"
+  | "MANDATE_CANCEL"
+  | "MANDATE_SUSPEND"
+  | "MANDATE_RESUME"
+  | "MANDATE_CAP_LOWER"
+  | "MANDATE_CAP_RAISE"
+  | "MANDATE_CREATE";
 export type Provenance = "user_utterance" | "server_record" | "untrusted_text";
 export type PercentQuality = "estimated" | "confirmed";
 export type NodePhrase =
@@ -227,6 +235,11 @@ export interface ReceiptView {
   unpaid_after_fen: number | null;
   reason_code: string | null;
   created_at: string;
+  // Direct-debit kinds only; effect_check is set only for cancel, suspend and cap lower.
+  mandate_ref?: string | null;
+  request_id?: string | null;
+  merchant_display?: string | null;
+  effect_check?: EffectCheck | null;
 }
 
 export interface ChallengeView {
@@ -371,6 +384,95 @@ export interface AuditLine {
   decision: string | null;
   reason: string | null;
   text: string;
+}
+
+export type EffectCheck = "verified" | "pending" | "failed";
+export type MandateStatus = "ACTIVE" | "SUSPENDED" | "CANCELLED" | "EXPIRED";
+export type MandateChange = "cancel" | "suspend" | "resume" | "set_cap";
+export type DebitRequestStatus =
+  | "AWAITING_CLIENT"
+  | "PAID"
+  | "DECLINED"
+  | "EXPIRED"
+  | "AUTO_DECLINED"
+  | "OUT_OF_MANDATE";
+export type DebitReason =
+  | "NO_MANDATE"
+  | "MANDATE_SUSPENDED"
+  | "MANDATE_CANCELLED"
+  | "MANDATE_EXPIRED"
+  | "CAP"
+  | "PERIOD_USED"
+  | "EXPIRED";
+export type DebitDecision = "pay" | "decline";
+
+export interface ProtectionPeriodView {
+  period_key: string;
+  due_date: string;
+  expected_fen: number;
+  until: string | null;
+}
+
+export interface MandateView {
+  mandate_ref: string;
+  merchant_id: string;
+  merchant_display: string;
+  account_id: string;
+  status: MandateStatus;
+  expected_fen: number;
+  cap_fen: number;
+  period: "monthly";
+  debit_day: number;
+  next_debit_date: string | null;
+  starts_on: string;
+  expires_on: string;
+  version: number;
+  protection: ProtectionPeriodView[];
+  pending_requests: number;
+}
+
+export interface MandatesView {
+  as_of: string;
+  monthly_total_fen: number;
+  mandates: MandateView[];
+}
+
+export interface DebitRequestView {
+  request_id: string;
+  mandate_ref: string;
+  merchant_id: string;
+  merchant_display: string;
+  amount_fen: number;
+  currency: "CNY";
+  period_key: string;
+  status: DebitRequestStatus;
+  reason_code: DebitReason | null;
+  received_at: string;
+  respond_by: string;
+  description_raw: string;
+  payable: boolean;
+  operation_id: string | null;
+}
+
+export interface DebitRequestsView {
+  requests: DebitRequestView[];
+}
+
+export interface SimDebitResult {
+  request_id: string;
+  status: DebitRequestStatus;
+  reason_code: DebitReason | null;
+  respond_by: string;
+  duplicate: boolean;
+}
+
+export interface SimDebitBody {
+  merchant_id: string;
+  merchant_request_id: string;
+  mandate_ref: string;
+  amount_fen: number;
+  currency: string;
+  description_raw: string;
 }
 
 export interface HealthView {

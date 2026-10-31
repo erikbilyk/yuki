@@ -4,8 +4,9 @@ T21 needs a commitment whose unpaid amount disagrees with its payments, which on
 defect or outside tampering can produce. T58 needs an imported transaction to disappear
 after a plan started, and T56 needs a domain event to be delivered a second time. R4
 needs the bank's record of an order to vanish, which reconciliation must treat as an
-integrity violation. T52, T65 and R2 need the settlement calendar to slow down after the
-plan was approved, which a variant applied at reset cannot do. Each write uses its own
+integrity violation. T112 needs a direct-debit agreement whose status disagrees with its
+newest event. T52, T65 and R2 need the settlement calendar to slow down after the plan
+was approved, which a variant applied at reset cannot do. Each write uses its own
 connection and one statement; the product must cope with the result.
 """
 
@@ -30,6 +31,25 @@ def corrupt_unpaid(db_path: Path, commitment_id: str, unpaid_fen: int) -> None:
         if updated != 1:
             conn.execute("ROLLBACK")
             raise AssertionError(f"no commitment {commitment_id}")
+        conn.execute("COMMIT")
+
+
+def set_mandate_status(db_path: Path, mandate_ref: str, status: str) -> None:
+    """Set `mandates.status` directly, without the event row every real change appends.
+
+    The schema ties `cancelled_at` to the CANCELLED status, so the edit keeps them together.
+    """
+    with closing(sqlite3.connect(db_path, timeout=10.0, isolation_level=None)) as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        updated = conn.execute(
+            "UPDATE mandates SET status = ?1, cancelled_at = CASE WHEN ?1 = 'CANCELLED' "
+            "THEN COALESCE(cancelled_at, strftime('%Y-%m-%dT%H:%M:%S+00:00', 'now')) "
+            "ELSE NULL END WHERE mandate_ref = ?2",
+            (status, mandate_ref),
+        ).rowcount
+        if updated != 1:
+            conn.execute("ROLLBACK")
+            raise AssertionError(f"no agreement {mandate_ref}")
         conn.execute("COMMIT")
 
 

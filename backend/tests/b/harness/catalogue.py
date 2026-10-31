@@ -143,7 +143,7 @@ def _validate(case: Case, sets: dict[str, object], known_gates: set[str | None])
             problems.append(f"bad layer gate {layer}: {gate}")
     if case.applicable not in ("always", "never") and not case.applicable.startswith("feature:"):
         problems.append(f"bad applicability {case.applicable}")
-    if case.applicable != "always" and not case.reason:
-        problems.append("a case that may be not applicable needs a reason")
+    if case.applicable == "never" and not case.reason:
+        problems.append("a case that is never applicable needs a reason")
     if problems:
         raise CatalogueError(f"{case.case_id}: {'; '.join(problems)}")

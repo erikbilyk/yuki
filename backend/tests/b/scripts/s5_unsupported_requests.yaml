@@ -1,0 +1,7 @@
+# A model that tries a tool the bank does not offer for a new card subscription, then answers.
+- tool_calls:
+    - name: draft_mandate_create
+      arguments:
+        intent: subscriptions.manage
+        merchant_quote: 视频会员
+- text: ${reply}

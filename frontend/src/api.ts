@@ -9,12 +9,16 @@ import type {
   ChatReply,
   ClockView,
   ConfirmResult,
+  DebitDecision,
+  DebitRequestsView,
   DraftResult,
   ErrorBody,
   FaultName,
   FaultView,
   AuditLine,
   HealthView,
+  MandateChange,
+  MandatesView,
   OperationView,
   PayeeView,
   PlanSummary,
@@ -22,6 +26,8 @@ import type {
   ReceiptView,
   SessionEntry,
   SessionView,
+  SimDebitBody,
+  SimDebitResult,
   SimResetResult,
   SmsMessage,
   VerifyResult,
@@ -92,6 +98,16 @@ export const api = {
     }),
   draftReserve: (targetFen: number) =>
     post<DraftResult>("/v1/drafts/reserve", { target_fen: targetFen }),
+  mandates: () => get<MandatesView>("/v1/mandates"),
+  debitRequests: () => get<DebitRequestsView>("/v1/debit-requests"),
+  draftMandateChange: (mandateRef: string, change: MandateChange, capFen?: number) =>
+    post<DraftResult>("/v1/drafts/mandate-change", {
+      mandate_ref: mandateRef,
+      change,
+      ...(capFen === undefined ? {} : { cap_fen: capFen }),
+    }),
+  draftDebitDecision: (requestId: string, decision: DebitDecision) =>
+    post<DraftResult>("/v1/drafts/debit-decision", { request_id: requestId, decision }),
   requestApproval: (actionId: string) =>
     post<ApprovalRequestResult>(`/v1/actions/${encodeURIComponent(actionId)}/request-approval`),
   cancelAction: (actionId: string) =>
@@ -125,8 +141,9 @@ export const api = {
   simAdvanceDays: (days: number) => sim<ClockView>("/sim/clock/advance", { days }),
   simFault: (fault: FaultName, count: number) =>
     sim<{ faults: FaultView[] }>("/sim/faults", { fault, count }),
-  simReset: (variant: string | null) =>
-    sim<SimResetResult>("/sim/reset", { profile: "fixture_v1", ...(variant ? { variant } : {}) }),
+  simReset: (variant: string | null, profile = "fixture_v1") =>
+    sim<SimResetResult>("/sim/reset", { profile, ...(variant ? { variant } : {}) }),
+  simDebitRequest: (body: SimDebitBody) => sim<SimDebitResult>("/sim/debit-requests", body),
   simCrash: () => sim<null>("/sim/crash"),
 
   sendChat: (text: string) => post<ChatReply>("/v1/chat/messages", { text }),
