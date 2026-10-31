@@ -64,6 +64,14 @@ def base_path(client: WgClient) -> None:
     plan.pay_insurance()
 
 
+def restarted_path(client: WgClient) -> None:
+    """Redeemed at T+0; the rent code and the purchase code are both entered after T+3."""
+    plan = redeemed(client)
+    at_day(client, 3)
+    plan.pay_rent()
+    plan.buy()
+
+
 def revised_purchase_path(client: WgClient) -> None:
     """The 1,200 yuan bill at T+3: the purchase is revised, then the base path to T+7."""
     plan = settled_at_t3(client)
