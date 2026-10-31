@@ -329,3 +329,53 @@ def test_every_refusal_of_the_new_drafts_is_audited(s5: Agent):
     assert ("tool_refused", "draft_mandate_change", "UNTRUSTED_SOURCE") in events
     assert ("tool_refused", "draft_debit_decision", "UNTRUSTED_SOURCE") in events
     assert ("tool_refused", "draft_mandate_change", "UNSUPPORTED_REQUEST") in events
+
+
+def test_closing_an_agreement_through_chat_ends_with_the_customers_click(s5: Agent):
+    message = "把健身房的自动扣款关掉"
+    close = {
+        "name": "draft_mandate_change",
+        "arguments": {
+            **SUBSCRIPTIONS,
+            "mandate_ref": "mdt_fitness",
+            "merchant_quote": "健身房",
+            "change": "cancel",
+        },
+    }
+    listing = {"name": "list_mandates", "arguments": SUBSCRIPTIONS}
+    turn = s5.turn(message, [{"tool_calls": [listing]}, {"tool_calls": [close]}, {"text": ""}])
+    draft_result = turn.turn.outcomes[1].result
+    assert draft_result is not None and draft_result.status is ActionStatus.DRAFT
+    assert s5.rows("SELECT status FROM mandates WHERE mandate_ref = 'mdt_fitness'") == [
+        {"status": "ACTIVE"}
+    ]
+
+    approval = {
+        "name": "request_approval",
+        "arguments": {**SUBSCRIPTIONS, "logical_action_id": draft_result.logical_action_id},
+    }
+    asked = s5.turn(
+        message, [{"tool_calls": [approval]}, {"text": "已为您准备好，请在卡片上确认。"}]
+    )
+    card_result = asked.turn.outcomes[0].result
+    assert card_result is not None and card_result.status is ActionStatus.AWAITING_APPROVAL
+    assert s5.rows("SELECT status FROM mandates WHERE mandate_ref = 'mdt_fitness'") == [
+        {"status": "ACTIVE"}
+    ]
+
+    card = s5.browser.get(f"/v1/cards/{card_result.card_id}").json()
+    confirmed = s5.browser.post(
+        f"/v1/cards/{card['card_id']}/confirm", {"terms_hash": card["terms_hash"]}
+    )
+    assert confirmed.status_code in (200, 201), confirmed.text
+    assert s5.rows("SELECT status FROM mandates WHERE mandate_ref = 'mdt_fitness'") == [
+        {"status": "CANCELLED"}
+    ]
+    results = s5.rows("SELECT result FROM effect_verification_events")
+    assert results == [{"result": "verified"}]
+    assert extra_reads(s5) == 0
+
+
+def extra_reads(agent: Agent) -> int:
+    with agent.db.read() as conn:
+        return extra_read_count(conn)
