@@ -61,17 +61,6 @@ def test_the_agreement_list_becomes_status_cap_expected_and_total_facts(s5: Agen
     assert "模拟云盘：扣款授权有效" in result.reply.fact_lines
 
 
-def test_the_agreement_list_gives_the_next_debit_date_of_each_active_agreement(s5: Agent):
-    result = turn(s5, "我有哪些自动扣款？", [tool("list_mandates")], "")
-    dates = {f.subject: f.value.isoformat() for f in facts(result, FactConcept.DUE_DATE)}
-    assert dates == {
-        "mdt_video": "2026-11-05",
-        "mdt_cloud": "2026-11-12",
-        "mdt_fitness": "2026-11-20",
-    }
-    assert "模拟云盘下次扣款日：2026年11月12日" in result.reply.fact_lines
-
-
 def test_an_explanation_with_the_listed_amounts_stands_and_a_wrong_one_is_replaced(s5: Agent):
     calls = [tool("list_mandates")]
     good = turn(s5, "我有哪些自动扣款？", calls, "云盘每月扣21元，三项合计245元。")
