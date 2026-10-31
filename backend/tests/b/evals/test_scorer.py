@@ -27,6 +27,7 @@ from .runs import (
     insurance_paid_path,
     late_redemption_path,
     paused_purchase_path,
+    restarted_path,
     revised_purchase_path,
     tamper,
     turn,
@@ -287,6 +288,34 @@ def test_the_base_path_meets_the_expectations_of_the_plan_scenarios(
         record = episode_record("plan", database="x", expectations=expectations_of(name))
         scored = score_one(tmp_path / name.replace("/", "-"), record, database)
         assert scored.outcome == "passed", (name, failed_names(scored))
+
+
+def test_the_rent_paid_under_the_plan_approval_is_an_expected_effect_of_the_restart_scenario(
+    app_client: WgClient, tmp_path: Path
+) -> None:
+    restarted_path(app_client)
+    database = copy_database(app_client, tmp_path / "restarted.db")
+    expectations = expectations_of("comparison/cmp-t67.yaml")
+    rent = {"kind": "PAY_BILL", "commitment_id": "cmt_rent", "status": ["SETTLED"]}
+    assert any(rent.items() <= effect.items() for effect in expectations["effects"])
+    scored = score_one(
+        tmp_path / "run", episode_record("t67", database="x", expectations=expectations), database
+    )
+    assert scored.outcome == "passed", failed_names(scored)
+    assert scored.unauthorized == ()
+
+
+def test_the_restart_scenario_does_not_expect_a_rent_payment_without_a_consumed_code(
+    app_client: WgClient, tmp_path: Path
+) -> None:
+    restarted_path(app_client)
+    database = copy_database(app_client, tmp_path / "restarted.db")
+    tamper(database, "UPDATE challenges SET consumed_at = NULL")
+    expectations = expectations_of("comparison/cmp-t67.yaml")
+    scored = score_one(
+        tmp_path / "run", episode_record("t67", database="x", expectations=expectations), database
+    )
+    assert any("PAY_BILL" in text and "no verified code" in text for text in scored.unauthorized)
 
 
 @pytest.mark.parametrize(
