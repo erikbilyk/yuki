@@ -84,6 +84,7 @@ from .common import (
     lose_response,
     new_audit_lines,
 )
+from .direct_debit import has_direct_debits, sweep_direct_debit_routes
 
 EPOCH = datetime(2026, 11, 2, 9, 0, tzinfo=timezone(timedelta(hours=8)))
 OTHER_CUSTOMER = "cus_other"
@@ -1434,6 +1435,8 @@ def test_t59_no_float_in_any_schema_or_response(
     }
     import_public_figures(server)
     sweep(wg, server.env["WG_CHANNEL_SECRET"], plan, ids)
+    if has_direct_debits():
+        sweep_direct_debit_routes(wg)
 
     problems: list[str] = []
     answered: dict[tuple[str, str], list[int]] = defaultdict(list)
