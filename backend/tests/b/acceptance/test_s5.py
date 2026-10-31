@@ -11,14 +11,10 @@ Agreement mdt_video (expected 2,500, cap 3,000, debit day 5) carries most varian
 
 from __future__ import annotations
 
-import threading
 from collections import Counter
-from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Any
 
-import httpx
 import pytest
 
 from ..harness.client import MAIN_CUSTOMER, WgClient, describe
@@ -46,6 +42,7 @@ from .direct_debit import (
     merchant_request_response,
     operation_count,
     pay_request,
+    race,
     refused,
     reset_s5,
     stored_requests,
@@ -62,23 +59,6 @@ CAP = CAP_FEN[VIDEO]
 def outcome(result: dict[str, Any]) -> tuple[str, str | None]:
     """Status and reason code of a SimDebitResult."""
     return result["status"], result["reason_code"]
-
-
-def race(wg: WgClient, sends: list[Callable[[WgClient], httpx.Response]]) -> list[httpx.Response]:
-    """Run each send on its own connection (another tab) released together."""
-    tabs = [wg.fork() for _ in sends]
-    start = threading.Barrier(len(tabs))
-
-    def run(tab: WgClient, send: Callable[[WgClient], httpx.Response]) -> httpx.Response:
-        start.wait()
-        return send(tab)
-
-    try:
-        with ThreadPoolExecutor(len(tabs)) as pool:
-            return list(pool.map(run, tabs, sends))
-    finally:
-        for tab in tabs:
-            tab.close()
 
 
 # T99

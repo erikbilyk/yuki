@@ -8,7 +8,10 @@ Role, ROUTES) are the only module-level imports from the product.
 from __future__ import annotations
 
 import itertools
+import threading
 from collections import Counter
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -17,7 +20,8 @@ import httpx
 from wg.contracts.api import ROUTES
 from wg.contracts.enums import Role
 
-from ..harness.client import WgClient, describe
+from ..harness.client import MAIN_ACCOUNT, MAIN_CUSTOMER, WgClient, describe
+from ..harness.inject import corrupt_unpaid
 
 PROFILE = "fixture_s5"
 CST = timezone(timedelta(hours=8))
@@ -40,6 +44,13 @@ AWAITING = "AWAITING_CLIENT"
 OUT_OF_MANDATE = "OUT_OF_MANDATE"
 AUTO_DECLINED = "AUTO_DECLINED"
 PAID, DECLINED, EXPIRED = "PAID", "DECLINED", "EXPIRED"
+CLEARING = "acc_sys_clearing"
+RENT = "cmt_rent"
+
+# Statuses of an action that no longer waits for the customer or the bank.
+OPEN_ACTION_STATUSES = frozenset(
+    {"DRAFT", "AWAITING_APPROVAL", "AWAITING_STEPUP", "READY", "SUBMITTED", "UNKNOWN"}
+)
 
 _serial = itertools.count(1)
 
@@ -223,7 +234,11 @@ def approve(wg: WgClient, draft: dict[str, Any]) -> dict[str, Any]:
     Keys: draft, card, confirm, verify (None for a YELLOW card) and operation (None when the
     action is a state change without an operation, such as a decline).
     """
-    card = open_card(wg, draft)
+    return complete(wg, draft, open_card(wg, draft))
+
+
+def complete(wg: WgClient, draft: dict[str, Any], card: dict[str, Any]) -> dict[str, Any]:
+    """Confirm an open card and, for a RED card, verify its SMS code; the keys of `approve`."""
     confirm = body(confirm_card_response(wg, card), 200, 201, 202)
     verify = None
     if confirm.get("challenge") is not None:
@@ -379,3 +394,121 @@ def sweep_direct_debit_routes(wg: WgClient) -> None:
                 "months": 12,
             },
         )
+
+
+def race(wg: WgClient, sends: list[Callable[[WgClient], httpx.Response]]) -> list[httpx.Response]:
+    """Run each send on its own connection (another tab) released together."""
+    tabs = [wg.fork() for _ in sends]
+    start = threading.Barrier(len(tabs))
+
+    def run(tab: WgClient, send: Callable[[WgClient], httpx.Response]) -> httpx.Response:
+        start.wait()
+        return send(tab)
+
+    try:
+        with ThreadPoolExecutor(len(tabs)) as pool:
+            return list(pool.map(run, tabs, sends))
+    finally:
+        for tab in tabs:
+            tab.close()
+
+
+# Money, protection and receipts
+
+
+def subscription_sum(wg: WgClient) -> int:
+    """Fen protected for subscription periods in the cash snapshot."""
+    return sum(row["expected_fen"] for row in subscription_periods(wg).values())
+
+
+def assert_subscriptions(wg: WgClient, expected_fen: int) -> dict[tuple[str, str], dict[str, Any]]:
+    """The protected subscription sum, and B as the two unpaid bills plus that sum.
+
+    The second check holds while rent and insurance are unpaid (S5-ACCEPTANCE §3).
+    """
+    periods = subscription_periods(wg)
+    assert sum(row["expected_fen"] for row in periods.values()) == expected_fen, periods
+    details = cash_details(wg)["details"]
+    assert details["b_fen"] == 840_000 + expected_fen, details
+    return periods
+
+
+def money_state(wg: WgClient) -> dict[str, Any]:
+    """Everything a refused or ineffective step must leave as it was."""
+    return {
+        "posted": wg.balance().posted_fen,
+        "ledger": wg.db.count("ledger_entries"),
+        "reservations": wg.db.reservations(),
+        "payments": payment_operations(wg),
+        "caps": {m["mandate_ref"]: m["cap_fen"] for m in mandates(wg)["mandates"]},
+    }
+
+
+def payment_operations(wg: WgClient) -> list[dict[str, Any]]:
+    return wg.db.rows("SELECT * FROM operations WHERE kind = 'DEBIT_PAY' ORDER BY rowid")
+
+
+def operation_kinds(wg: WgClient) -> list[str]:
+    """Kinds of every operation in the order they were stored."""
+    return [r["kind"] for r in wg.db.rows("SELECT kind FROM operations ORDER BY rowid")]
+
+
+def assert_paid_once(
+    wg: WgClient, request_id: str, amount_fen: int, mandate_ref: str = VIDEO
+) -> dict[str, Any]:
+    """The only DEBIT_PAY operation settled with its receipt, ledger entries and a PAID request.
+
+    Returns the stored operation row.
+    """
+    request = debit_request(wg, request_id)
+    assert request["status"] == PAID and request["payable"] is False, request
+    operations = payment_operations(wg)
+    assert len(operations) == 1, f"{len(operations)} DEBIT_PAY operations"
+    operation = operations[0]
+    assert request["operation_id"] == operation["operation_id"]
+    assert operation["status"] == "SETTLED" and operation["amount_fen"] == amount_fen
+    assert (operation["customer_id"], operation["account_id"]) == (MAIN_CUSTOMER, MAIN_ACCOUNT)
+
+    entries = wg.db.ledger_entries(operation["operation_id"])
+    assert sum(e["amount_fen"] for e in entries) == 0
+    assert sorted((e["account_id"], e["amount_fen"]) for e in entries) == sorted(
+        [(MAIN_ACCOUNT, -amount_fen), (CLEARING, amount_fen)]
+    )
+    stored = wg.db.receipts(operation["operation_id"])
+    assert len(stored) == 1 and stored[0]["status"] == "SETTLED"
+    shown = receipt(wg, operation["operation_id"])
+    assert shown["receipt_id"] == stored[0]["receipt_id"]
+    assert (shown["kind"], shown["status"], shown["amount_fen"]) == (
+        "DEBIT_PAY",
+        "SETTLED",
+        amount_fen,
+    )
+    assert (shown["mandate_ref"], shown["request_id"]) == (mandate_ref, request_id)
+    assert shown["effect_check"] is None
+    assert [r["status"] for r in stored_requests(wg, mandate_ref)].count(PAID) == 1
+    return operation
+
+
+# A customer lock by the T21 corruption
+
+
+def lock_customer(wg: WgClient) -> None:
+    """Corrupt the rent's unpaid amount and try to pay it: the refusal locks cus_main.
+
+    Leaves an operator session next to the customer's, so the locks can be read.
+    """
+    wg.login(Role.OPERATOR)
+    corrupt_unpaid(wg.db.path, RENT, 300_000)
+    draft = wg.pay_bill_response(RENT, 50_000)
+    refusal = draft
+    if draft.status_code == 201:
+        approval = wg.post(f"/v1/actions/{draft.json()['logical_action_id']}/request-approval")
+        refusal = approval
+        if approval.status_code < 400:
+            card = wg.card(approval.json()["card_id"])
+            refusal = wg.confirm_response(card)
+    assert refusal.status_code >= 400, "a payment ran on a bill whose unpaid amount has no payments"
+    assert refusal.json()["code"] in ("INTEGRITY_VIOLATION", "LOCKED_WRITE"), describe(refusal)
+    assert [(lock.scope, lock.scope_ref) for lock in wg.locks().locks] == [
+        ("customer", MAIN_CUSTOMER)
+    ]
