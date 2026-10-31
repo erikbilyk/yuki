@@ -18,7 +18,7 @@ import yaml
 from wg.agent.llm import ModelAdapter, ModelReply, StubProvider, ToolCallRequest
 from wg.agent.registry import Services, ToolContext, ToolRegistry
 from wg.agent.turn import AgentTurn, agent_turn
-from wg.contracts.enums import Channel
+from wg.contracts.enums import Channel, PlanMode
 from wg.k6.db import Database
 
 from ..api.conftest import Browser, make_client, make_settings
@@ -95,13 +95,20 @@ class Agent:
             adapter, self.registry, customer_id="cus_main", channel=Channel.WEB, text=text
         )
 
-    def play(self, text: str, model: ReadingModel) -> AgentTurn:
+    def play(
+        self, text: str, model: ReadingModel, mode: PlanMode = PlanMode.COORDINATED
+    ) -> AgentTurn:
         """One turn with a model that reacts to the tool results it is sent."""
         adapter = ModelAdapter(
             model, make_settings(self.tmp_path / "wg.db"), log_path=self.log_path
         )
         return agent_turn(
-            adapter, self.registry, customer_id="cus_main", channel=Channel.WEB, text=text
+            adapter,
+            self.registry,
+            customer_id="cus_main",
+            channel=Channel.WEB,
+            text=text,
+            mode=mode,
         )
 
     def context(self, utterance: str = "") -> ToolContext:
