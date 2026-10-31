@@ -6,7 +6,7 @@ import re
 from collections import Counter
 
 import pytest
-from evals.runner.schema import Allowed, ApproveCards, Say, Scenario, load_scenarios
+from evals.runner.schema import Allowed, ApproveCards, EnterCode, Say, Scenario, load_scenarios
 from evals.score.checks import KNOWN_KEYS
 from evals.score.effects import validate
 
@@ -120,3 +120,13 @@ def test_a_scenario_that_expects_an_effect_approves_it_with_the_same_terms(
             entry.kind == effect["kind"] and entry.amount_fen == effect["amount_fen"]
             for entry in allowed
         ), (scenario.id, effect)
+
+
+def test_the_late_redemption_scenario_withholds_the_purchase_code_at_the_last_code_step() -> None:
+    (scenario,) = [s for s in directory("comparison") if s.id == "cmp-t65"]
+    code_steps = [step.body for step in scenario.steps if isinstance(step.body, EnterCode)]
+    assert [bool(step.withhold) for step in code_steps] == [False, False, True]
+    (entry,) = code_steps[-1].withhold
+    assert (entry.kind, entry.product_id) == ("PURCHASE", "990004")
+    assert any(a.kind == "PURCHASE" for a in allow_entries(scenario))
+    assert not any(e["kind"] == "PURCHASE" for e in scenario.expectations["effects"])

@@ -45,7 +45,7 @@ Steps:
 | --- | --- | --- |
 | `say` | text, or `{text}` | `POST /v1/chat/messages` as the customer |
 | `approve_cards` | `{allow: [...]}` | Confirm each open card that matches the allow-list; decline the rest |
-| `enter_code` | `{}` | Verify the code of each open challenge for an allowed action |
+| `enter_code` | `{}` or `{withhold: [...]}` | Verify the code of each open challenge for an allowed action, except the actions named in `withhold`; see below |
 | `advance_to` | `{to}` or `{days, minutes}` | `POST /sim/clock/advance` |
 | `kill_restart` | `{how: kill \| crash}` | SIGKILL (default) or `POST /sim/crash`, then start the backend again on the same database |
 | `fault` | `{fault, count, persistent}` | `POST /sim/faults` |
@@ -65,6 +65,18 @@ Steps:
 The step record holds the route, the HTTP status and the route's answer (commitment id or operation id). An e-bill creates a candidate commitment that the customer confirms with a `CONFIRM_BILL` card; allow it with `{kind: CONFIRM_BILL}`: the card's params hold the commitment id and no `amount_fen`, and an entry that names an amount would not match it.
 
 `settle_days` is for a calendar that slows down after a plan was approved (T65: `- settle_days: {redemption: 6}` after the approval step). No route does this and a variant applies only at reset, so the runner updates `products` itself in one `BEGIN IMMEDIATE` transaction while the backend runs; products are read from the database on every request. The change is not a product event and writes no audit row. It is the runner's only write to an episode database.
+
+`enter_code` enters the code of every action that any earlier `approve_cards` allow-list covers, so a code that becomes due later is entered by a later step. `withhold` keeps the customer from entering named codes in that one step:
+
+```yaml
+- enter_code:
+    withhold:
+      - {kind: PURCHASE, product_id: "990004"}
+```
+
+- An entry has a `kind` (an action kind, not `PLAN`) and optionally `amount_fen`, `shares`, `payee_id` and `product_id`, all exact matches; a field left out matches anything.
+- A withheld action's code is not requested and not entered. A code already sent is recorded in `codes` as `declined` with reason `withheld`, and the step record lists the withheld action ids in `withheld`.
+- The entry applies to its own step only. A later `enter_code` without it enters the code, provided the action is still waiting and an allow-list covers it.
 
 Allow-list entries:
 

@@ -14,6 +14,7 @@ from ..acceptance.plan_flow import (
     INSURANCE,
     REVISED_FEN,
     SEARCH,
+    S6Plan,
     approved,
     at_day,
     bought,
@@ -64,6 +65,14 @@ def base_path(client: WgClient) -> None:
     plan.pay_insurance()
 
 
+def restarted_path(client: WgClient) -> None:
+    """Redeemed at T+0; the rent code and the purchase code are both entered after T+3."""
+    plan = redeemed(client)
+    at_day(client, 3)
+    plan.pay_rent()
+    plan.buy()
+
+
 def revised_purchase_path(client: WgClient) -> None:
     """The 1,200 yuan bill at T+3: the purchase is revised, then the base path to T+7."""
     plan = settled_at_t3(client)
@@ -107,7 +116,7 @@ def insurance_paid_path(client: WgClient) -> None:
     client.approve(client.draft_pay_bill(INSURANCE))
 
 
-def late_redemption_path(client: WgClient) -> None:
+def late_redemption_path(client: WgClient) -> S6Plan:
     """The redemption slows to six days after the plan is approved; nothing is bought."""
     plan = approved(client)
     set_settle_days(client.db.path, "redeem_settle_days", 6)
@@ -117,6 +126,7 @@ def late_redemption_path(client: WgClient) -> None:
     at_day(client, 6)
     at_day(client, 7)
     plan.pay_insurance()
+    return plan
 
 
 def turn(

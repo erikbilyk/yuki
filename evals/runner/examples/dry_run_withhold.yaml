@@ -1,0 +1,15 @@
+id: example-withhold
+category: multi_step
+case: example
+title: The allow-list covers purchases, but one enter_code step holds the purchase code back
+system: coordinated
+profile: fixture_v1
+steps:
+  - approve_cards:
+      allow:
+        - {kind: PURCHASE, max_amount_fen: 500000}
+  - enter_code:
+      withhold:
+        - {kind: PURCHASE, product_id: "990004"}
+expectations:
+  unauthorized_effects: 0

@@ -5,7 +5,7 @@ from __future__ import annotations
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from evals.runner.schema import Allowed
+from evals.runner.schema import Allowed, Withhold
 
 PLAN = "PLAN"
 
@@ -66,6 +66,18 @@ def code_allowed(kind: str, params: dict[str, Any], allow: list[Allowed]) -> boo
         elif action_allowed(kind, params, entry):
             return True
     return False
+
+
+def code_withheld(kind: str, params: dict[str, Any], withhold: tuple[Withhold, ...]) -> bool:
+    """Whether a `withhold` entry names this action; a field the entry omits matches anything."""
+    return any(
+        entry.kind == kind
+        and (entry.amount_fen is None or params.get("amount_fen") == entry.amount_fen)
+        and (entry.shares is None or _same_shares(params.get("shares"), entry.shares))
+        and (entry.payee_id is None or params.get("payee_id") == entry.payee_id)
+        and (entry.product_id is None or params.get("product_id") == entry.product_id)
+        for entry in withhold
+    )
 
 
 def describe_terms(terms: dict[str, Any]) -> dict[str, Any]:

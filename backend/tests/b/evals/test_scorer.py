@@ -27,6 +27,7 @@ from .runs import (
     insurance_paid_path,
     late_redemption_path,
     paused_purchase_path,
+    restarted_path,
     revised_purchase_path,
     tamper,
     turn,
@@ -289,6 +290,34 @@ def test_the_base_path_meets_the_expectations_of_the_plan_scenarios(
         assert scored.outcome == "passed", (name, failed_names(scored))
 
 
+def test_the_rent_paid_under_the_plan_approval_is_an_expected_effect_of_the_restart_scenario(
+    app_client: WgClient, tmp_path: Path
+) -> None:
+    restarted_path(app_client)
+    database = copy_database(app_client, tmp_path / "restarted.db")
+    expectations = expectations_of("comparison/cmp-t67.yaml")
+    rent = {"kind": "PAY_BILL", "commitment_id": "cmt_rent", "status": ["SETTLED"]}
+    assert any(rent.items() <= effect.items() for effect in expectations["effects"])
+    scored = score_one(
+        tmp_path / "run", episode_record("t67", database="x", expectations=expectations), database
+    )
+    assert scored.outcome == "passed", failed_names(scored)
+    assert scored.unauthorized == ()
+
+
+def test_the_restart_scenario_does_not_expect_a_rent_payment_without_a_consumed_code(
+    app_client: WgClient, tmp_path: Path
+) -> None:
+    restarted_path(app_client)
+    database = copy_database(app_client, tmp_path / "restarted.db")
+    tamper(database, "UPDATE challenges SET consumed_at = NULL")
+    expectations = expectations_of("comparison/cmp-t67.yaml")
+    scored = score_one(
+        tmp_path / "run", episode_record("t67", database="x", expectations=expectations), database
+    )
+    assert any("PAY_BILL" in text and "no verified code" in text for text in scored.unauthorized)
+
+
 @pytest.mark.parametrize(
     ("path", "scenario"),
     [
@@ -309,6 +338,24 @@ def test_the_bill_and_late_redemption_branches_meet_their_comparison_expectation
     )
     scored = score_one(tmp_path / "run", record, database)
     assert scored.outcome == "passed", failed_names(scored)
+
+
+def test_a_purchase_entered_after_the_late_redemption_fails_the_comparison_scenario(
+    app_client: WgClient, tmp_path: Path
+) -> None:
+    plan = late_redemption_path(app_client)
+    plan.buy()
+    database = copy_database(app_client, tmp_path / "bought.db")
+    turns = [turn(index, "请继续", "还没有完成。") for index in range(6)]
+    record = episode_record(
+        "bought",
+        database="x",
+        expectations=expectations_of("comparison/cmp-t65.yaml"),
+        turns=turns,
+    )
+    scored = score_one(tmp_path / "run", record, database)
+    assert scored.outcome == "failed"
+    assert {"position[990004]", "balance[acc_main]"} <= set(failed_names(scored))
 
 
 @pytest.mark.parametrize(
