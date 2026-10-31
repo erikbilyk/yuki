@@ -1,0 +1,20 @@
+id: grounded-subscriptions-total
+category: grounded_explanation
+case: T97
+title: Which subscriptions are there and what do they cost per month
+profile: fixture_s5
+steps:
+  - say: 我有哪些订阅，每月多少钱？
+expectations:
+  dispositions:
+    - {turn: 0, one_of: [null]}
+  replies:
+    - {turn: 0, require_all: ["245.00"]}
+    - {turn: 0, forbid: ["订阅已取消", "已退订"]}
+  effects: []
+  no_actions:
+    - {kind: DEBIT_PAY}
+    - {kind: DEBIT_DECLINE}
+    - {kind: MANDATE_CANCEL}
+  mandates: {mdt_video: ACTIVE, mdt_cloud: ACTIVE, mdt_fitness: ACTIVE}
+  balances: {acc_main: 1800000}
