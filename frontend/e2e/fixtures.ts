@@ -89,3 +89,10 @@ export async function advanceToNextDue(page: Page, clock: string): Promise<void>
   await page.getByTestId("advance-next").click();
   await expect(page.getByTestId("sim-clock-value")).toHaveText(clock);
 }
+
+/** Skip the test unless the backend lists the direct-debit feature in /healthz. */
+export async function requireDirectDebits(backend: Backend): Promise<void> {
+  const response = await fetch(`${backend.url}/healthz`);
+  const health = (await response.json()) as { features?: string[] };
+  test.skip(!health.features?.includes("s5"), "the backend does not list the s5 feature");
+}
