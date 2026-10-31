@@ -10,6 +10,7 @@ from wg.core.mandate_rules import (
     expiry_instant,
     period_key,
     respond_by,
+    term_end,
 )
 from wg.k6.simtime import SHANGHAI
 
@@ -70,3 +71,32 @@ def test_respond_by_is_72_hours_after_receipt():
         2026, 11, 2, 9, 0
     )
     assert respond_by(received).tzinfo is SHANGHAI
+
+
+@pytest.mark.parametrize(
+    ("starts_on", "months", "expected"),
+    [
+        (date(2026, 11, 2), 12, date(2027, 11, 1)),
+        (date(2026, 11, 2), 1, date(2026, 12, 1)),
+        (date(2026, 12, 15), 1, date(2027, 1, 14)),
+        (date(2026, 1, 31), 1, date(2026, 2, 27)),
+        (date(2026, 8, 31), 6, date(2027, 2, 27)),
+        (date(2028, 2, 29), 12, date(2029, 2, 27)),
+        (date(2026, 3, 1), 12, date(2027, 2, 28)),
+    ],
+)
+def test_a_term_ends_the_day_before_the_same_day_months_later(starts_on, months, expected):
+    assert term_end(starts_on, months) == expected
+
+
+@pytest.mark.parametrize("months", [0, -1, 13, 24])
+def test_a_term_outside_1_to_12_months_is_refused(months):
+    with pytest.raises(ValueError):
+        term_end(date(2026, 11, 2), months)
+
+
+@pytest.mark.parametrize("starts_on", [date(2026, 11, 2), date(2028, 2, 29), date(2026, 12, 31)])
+def test_a_twelve_month_term_stays_within_the_stored_limit(starts_on):
+    # The schema accepts expires_on up to starts_on + 12 months (S5-SPEC §4.2).
+    limit = date(starts_on.year + 1, starts_on.month, 28) + timedelta(days=4)
+    assert starts_on < term_end(starts_on, 12) <= limit

@@ -20,6 +20,7 @@ from wg.k6.mandates import MandateRow
 from wg.k6.simtime import SHANGHAI
 
 RESPOND_WINDOW = timedelta(hours=72)
+MAX_TERM_MONTHS = 12
 # A period holds at most one request that awaits the customer, is paid or is declined.
 OCCUPYING_STATUSES = frozenset(
     {DebitRequestStatus.AWAITING_CLIENT, DebitRequestStatus.PAID, DebitRequestStatus.DECLINED}
@@ -119,6 +120,21 @@ def due_date(debit_day: int, key: str) -> date:
         raise ValueError(f"debit day out of range: {debit_day}")
     year, month = _month(key)
     return date(year, month, min(debit_day, calendar.monthrange(year, month)[1]))
+
+
+def term_end(starts_on: date, months: int) -> date:
+    """The last day of an agreement that starts on `starts_on` and runs `months` months.
+
+    The term ends the day before the same day `months` later; a day the later month lacks
+    is clamped to its last day first, so one month from 2026-01-31 ends on 2026-02-27.
+    """
+    if not 1 <= months <= MAX_TERM_MONTHS:
+        raise ValueError(f"term out of range: {months} months")
+    index = starts_on.year * 12 + starts_on.month - 1 + months
+    year, month = divmod(index, 12)
+    month += 1
+    day = min(starts_on.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day) - timedelta(days=1)
 
 
 def expiry_instant(expires_on: date) -> datetime:
