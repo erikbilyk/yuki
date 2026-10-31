@@ -512,3 +512,23 @@ def lock_customer(wg: WgClient) -> None:
     assert [(lock.scope, lock.scope_ref) for lock in wg.locks().locks] == [
         ("customer", MAIN_CUSTOMER)
     ]
+
+
+# Reading stored requests
+
+
+def outcome(result: dict[str, Any]) -> tuple[str, str | None]:
+    """Status and reason code of a SimDebitResult."""
+    return result["status"], result["reason_code"]
+
+
+def probes(wg: WgClient, mandate_ref: str) -> list[dict[str, Any]]:
+    return [r for r in stored_requests(wg, mandate_ref) if r["probe"]]
+
+
+def customer_requests(wg: WgClient, mandate_ref: str) -> list[dict[str, Any]]:
+    return [r for r in stored_requests(wg, mandate_ref) if not r["probe"]]
+
+
+def operations_of(wg: WgClient, kind: str) -> list[dict[str, Any]]:
+    return wg.db.rows("SELECT * FROM operations WHERE kind = ? ORDER BY rowid", (kind,))
