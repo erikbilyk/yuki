@@ -119,6 +119,79 @@ def test_code_is_not_entered_for_an_action_outside_the_allow_list(episode):
     ) == [(0,)]
 
 
+def awaiting_code(ep: Episode, amount_fen: int = 200_000) -> str:
+    """A transfer the allow-list covers, approved and now waiting for its code."""
+    draft_and_request(ep, amount_fen)
+    ep.rec.allow.append(Allowed(kind="TRANSFER", amount_fen=amount_fen))
+    ep._run_step(0, step(approve_cards={"allow": [{"kind": "TRANSFER", "amount_fen": amount_fen}]}))
+    (action_id,) = [a for (a,) in rows(ep.db.path, "SELECT logical_action_id FROM actions")]
+    return action_id
+
+
+def test_withheld_code_stays_unused_and_a_later_step_still_enters_it(episode):
+    ep = episode()
+    action_id = awaiting_code(ep)
+    db = ep.db.path
+
+    ep._run_step(1, step(enter_code={"withhold": [{"kind": "TRANSFER", "amount_fen": 200_000}]}))
+
+    assert ep.rec.steps[1]["withheld"] == [action_id]
+    assert {(c["decision"], c.get("reason")) for c in ep.rec.codes} == {("declined", "withheld")}
+    assert rows(db, "SELECT verified_at IS NULL, consumed_at IS NULL FROM challenges") == [(1, 1)]
+    assert rows(db, "SELECT status FROM actions") == [("AWAITING_STEPUP",)]
+    assert rows(db, "SELECT COUNT(*) FROM operations WHERE logical_action_id IS NOT NULL") == [(0,)]
+
+    ep._run_step(2, step(enter_code={}))
+    assert "withheld" not in ep.rec.steps[2]
+    assert ep.rec.codes[-1]["decision"] == "entered"
+    assert rows(db, "SELECT amount_fen FROM operations WHERE logical_action_id IS NOT NULL") == [
+        (200_000,)
+    ]
+
+
+def test_withheld_code_is_not_even_requested_when_none_is_open(episode):
+    ep = episode()
+    action_id = awaiting_code(ep)
+    db = ep.db.path
+    ep._run_step(1, step(advance_to={"minutes": 10}))
+    assert ep._customer.get("/v1/sms").json()["messages"] == []
+    assert rows(db, "SELECT status FROM actions") == [("AWAITING_STEPUP",)]
+    challenges = rows(db, "SELECT COUNT(*) FROM challenges")
+
+    ep._run_step(2, step(enter_code={"withhold": [{"kind": "TRANSFER"}]}))
+    assert ep.rec.steps[2]["withheld"] == [action_id]
+    assert ep.rec.codes == [] and ep.rec.requested == set()
+    assert rows(db, "SELECT COUNT(*) FROM challenges") == challenges
+
+    ep._run_step(3, step(enter_code={}))
+    assert [code["decision"] for code in ep.rec.codes] == ["requested", "entered"]
+    assert rows(db, "SELECT amount_fen FROM operations WHERE logical_action_id IS NOT NULL") == [
+        (200_000,)
+    ]
+
+
+@pytest.mark.parametrize(
+    "entry",
+    [
+        {"kind": "PAY_BILL"},
+        {"kind": "TRANSFER", "amount_fen": 1},
+        {"kind": "TRANSFER", "payee_id": "pay_dad"},
+    ],
+    ids=["other-kind", "other-amount", "other-payee"],
+)
+def test_a_withhold_entry_that_does_not_match_leaves_the_code_to_be_entered(episode, entry):
+    ep = episode()
+    awaiting_code(ep)
+
+    ep._run_step(1, step(enter_code={"withhold": [entry]}))
+
+    assert ep.rec.steps[1]["withheld"] == []
+    assert [code["decision"] for code in ep.rec.codes] == ["entered"]
+    assert rows(
+        ep.db.path, "SELECT amount_fen FROM operations WHERE logical_action_id IS NOT NULL"
+    ) == [(200_000,)]
+
+
 def test_clock_fault_and_wait_steps(episode):
     ep = episode()
     ep._run_step(0, step(advance_to={"days": 1}))
@@ -164,7 +237,7 @@ def test_dry_run_writes_one_json_per_episode_and_a_database_copy(tmp_path, capsy
     assert code == 0
     run = tmp_path / "dry"
     manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
-    assert [e["status"] for e in manifest["episodes"]] == ["completed", "completed"]
+    assert [e["status"] for e in manifest["episodes"]] == ["completed"] * 3
 
     episode = json.loads(
         (run / "episodes" / "example-transfer.coordinated.r1.json").read_text("utf-8")
@@ -353,3 +426,19 @@ def test_settle_days_step_changes_every_product_while_the_backend_runs(episode):
     ep._run_step(1, step(settle_days={"purchase": 2}))
     assert {redemption for redemption, _ in settle_days(ep)} == {6}
     assert {purchase for _, purchase in settle_days(ep)} == {2}
+
+
+def test_dry_run_example_withholds_with_nothing_to_enter(tmp_path):
+    """The stub model cannot request a card, so no code is waiting; the step must still run."""
+    argv = ["live", "--stub", "--scenarios", str(EXAMPLES), "--out", str(tmp_path)]
+    assert main([*argv, "--only", "example-withhold"]) == 0
+    (run,) = tmp_path.iterdir()
+    episode = json.loads(
+        (run / "episodes" / "example-withhold.coordinated.r1.json").read_text("utf-8")
+    )
+    assert episode["status"] == "completed" and episode["errors"] == []
+    assert [(s["kind"], s["ok"]) for s in episode["steps"]] == [
+        ("approve_cards", True),
+        ("enter_code", True),
+    ]
+    assert episode["steps"][1]["withheld"] == [] and episode["codes"] == []

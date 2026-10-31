@@ -137,6 +137,40 @@ def test_settle_days_step_refuses_an_empty_or_unreasonable_period(body):
         scenario(steps=[{"settle_days": body}])
 
 
+def test_enter_code_withholds_nothing_by_default_and_parses_its_entries():
+    loaded = scenario(
+        steps=[
+            {"enter_code": {}},
+            {
+                "enter_code": {
+                    "withhold": [{"kind": "PURCHASE"}, {"kind": "PAY_BILL", "payee_id": "p"}]
+                }
+            },
+        ]
+    )
+    assert loaded.steps[0].body.withhold == ()
+    assert [(w.kind, w.payee_id) for w in loaded.steps[1].body.withhold] == [
+        ("PURCHASE", None),
+        ("PAY_BILL", "p"),
+    ]
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"withhold": [{}]},
+        {"withhold": [{"kind": "PLAN"}]},
+        {"withhold": [{"kind": "PURCHASE", "max_amount_fen": 1}]},
+        {"withhold": [{"kind": "PURCHASE", "amount_fen": -1}]},
+        {"withhold": {"kind": "PURCHASE"}},
+        {"hold": [{"kind": "PURCHASE"}]},
+    ],
+)
+def test_enter_code_refuses_malformed_withhold_entries(body):
+    with pytest.raises(ValidationError):
+        scenario(steps=[{"enter_code": body}])
+
+
 @pytest.mark.parametrize(
     "step",
     [
