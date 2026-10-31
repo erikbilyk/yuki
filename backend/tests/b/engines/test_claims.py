@@ -390,8 +390,22 @@ needs_direct_debits = pytest.mark.skipif(
     reason="the build has no direct-debit fact concepts",
 )
 
-CLOSED_WORDS = ["自动扣款已关闭", "已关闭自动扣款", "自动扣款已停止", "已停止自动扣款"]
-CANCELLED_WORDS = ["订阅已取消", "已取消订阅", "订阅已经取消", "已取消了订阅", "已退订"]
+CLOSED_WORDS = [
+    "自动扣款已关闭",
+    "已关闭自动扣款",
+    "自动扣款已停止",
+    "已停止自动扣款",
+    "自动扣款都已关闭",
+]
+CANCELLED_WORDS = [
+    "订阅已取消",
+    "已取消订阅",
+    "订阅已经取消",
+    "已取消了订阅",
+    "已退订",
+    "订阅已被取消",
+    "订阅被取消了",
+]
 
 
 def concept(value: str) -> FactConcept:

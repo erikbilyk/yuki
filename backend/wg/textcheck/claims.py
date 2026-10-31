@@ -77,10 +77,17 @@ _STATUS_RULES: tuple[StatusRule, ...] = (
     # refused a new debit attempt; the debit authorisation is not the service contract, so a
     # cancelled subscription is never a fact the bank holds.
     StatusRule(
-        re.compile(r"自动扣款已(?:经)?(?:关闭|停止)|已(?:经)?(?:关闭|停止)自动扣款"),
+        re.compile(
+            r"自动扣款(?:都|全部|均)?已(?:经)?(?:关闭|停止)|已(?:经)?(?:关闭|停止)(?:了)?自动扣款"
+        ),
         (("effect_check", "verified"),),
     ),
-    StatusRule(re.compile(r"订阅已(?:经)?取消|已(?:经)?取消(?:了)?订阅|已(?:经)?退订"), ()),
+    StatusRule(
+        re.compile(
+            r"订阅(?:已(?:经)?)?被取消|订阅已(?:经)?取消|已(?:经)?(?:被)?取消(?:了)?订阅|已(?:经)?退订"
+        ),
+        (),
+    ),
     StatusRule(
         re.compile(r"已扣款|扣款成功"),
         (
