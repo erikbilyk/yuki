@@ -11,6 +11,9 @@ listed on it like a transfer's.
 A change draft takes its kind from the request and, for a new cap, from the direction
 against the current cap; the version comes from the stored agreement. Every reason the
 change cannot be made refuses the draft.
+
+A new-agreement draft takes the customer's main account; the merchant must be in the
+registry and verified, and the term at most 12 months. It stores nothing but the draft.
 """
 
 from __future__ import annotations
@@ -28,6 +31,7 @@ from wg.contracts.api import (
     DebitRequestView,
     DraftResult,
     MandateChangeRequest,
+    MandateCreateRequest,
     MandatesView,
     MandateView,
     MerchantsView,
@@ -50,7 +54,7 @@ from wg.contracts.errors import ErrorClass, ErrorCode, WgError
 from wg.core import mandate_rules
 from wg.core.k1_session import not_found
 from wg.core.k3_policy import check_not_locked, is_risk_reducing
-from wg.k6 import actions, debit_requests, mandates
+from wg.k6 import accounts, actions, debit_requests, mandates
 from wg.k6.actions import ActionRow
 from wg.k6.db import Database, Reader, UnitOfWork
 from wg.k6.debit_requests import DebitRequestRow, PaidRequest
@@ -287,6 +291,71 @@ class MandateService:
             None,
             risk_reducing=is_risk_reducing(uow, customer_id, kind, params),
         )
+        return self.action_service.insert_draft(
+            uow, customer_id, kind, params, provenance, reasons, actor
+        )
+
+    def draft_mandate_create(
+        self,
+        customer_id: str,
+        body: MandateCreateRequest,
+        actor: AuditActor = AuditActor.CUSTOMER,
+    ) -> DraftResult:
+        """A MANDATE_CREATE in DRAFT: nothing is stored or protected until it is confirmed."""
+        with self._audited(customer_id, "draft_refused", body.merchant_id, actor):
+            action = self.db.run_in_uow(
+                lambda uow: self._insert_create(uow, customer_id, body, actor),
+                "draft mandate create",
+            )
+        return DraftResult(
+            logical_action_id=action.logical_action_id,
+            revision=action.revision,
+            kind=action.kind,
+            status=action.status,
+            tier=action.tier,
+            feasible=True,
+            reasons=(),
+        )
+
+    def _insert_create(
+        self, uow: UnitOfWork, customer_id: str, body: MandateCreateRequest, actor: AuditActor
+    ) -> ActionRow:
+        """The registry and term checks of the pack, a duplicate, then the lock."""
+        account = accounts.main_account(uow, customer_id)
+        if account is None:
+            raise not_found()
+        kind = ActionKind.MANDATE_CREATE
+        pack = pack_for(kind)
+        params = pack.canonical(
+            kind,
+            {
+                "account_id": account.account_id,
+                "merchant_id": body.merchant_id,
+                "expected_fen": body.expected_fen,
+                "cap_fen": body.cap_fen,
+                "debit_day": body.debit_day,
+                "months": body.months,
+            },
+        )
+        reasons = pack.precheck(uow, customer_id, kind, params, now(uow))
+        if reasons:
+            raise reasons[0].error()
+        for open_action in actions.actions_of_kinds(
+            uow, {kind}, OPEN_DECISION_STATUSES, customer_id
+        ):
+            if open_action.params.get("merchant_id") == body.merchant_id:
+                raise WgError(
+                    ErrorCode.DUPLICATE_INTENT,
+                    {"logical_action_id": open_action.logical_action_id},
+                )
+        check_not_locked(uow, customer_id, None, risk_reducing=False)
+        provenance: dict[str, Any] = {
+            "account_id": _SERVER_RECORD,
+            **{
+                slot: _USER_UTTERANCE
+                for slot in ("merchant_id", "expected_fen", "cap_fen", "debit_day", "months")
+            },
+        }
         return self.action_service.insert_draft(
             uow, customer_id, kind, params, provenance, reasons, actor
         )

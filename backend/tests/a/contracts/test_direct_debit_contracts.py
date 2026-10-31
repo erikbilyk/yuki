@@ -97,11 +97,16 @@ def test_mandate_create_needs_a_cap_at_least_the_expected_amount():
     assert MandateCreateRequest(**body, cap_fen=1500).cap_fen == 1500
     for bad in (
         {"cap_fen": 1499},
-        {"cap_fen": 2000, "months": 13},
+        {"cap_fen": 2000, "months": 0},
         {"cap_fen": 2000, "debit_day": 0},
     ):
         with pytest.raises(ValidationError):
             MandateCreateRequest(**{**body, **bad})
+
+
+def test_mandate_create_leaves_a_long_term_to_its_own_refusal():
+    body = {"merchant_id": "mer_music", "expected_fen": 1500, "cap_fen": 2000, "debit_day": 5}
+    assert MandateCreateRequest(**body, months=24).months == 24
 
 
 def test_sim_debit_request_accepts_any_integer_and_any_currency_text():

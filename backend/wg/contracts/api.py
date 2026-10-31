@@ -1220,11 +1220,13 @@ class DebitDecisionRequest(ContractModel):
 
 
 class MandateCreateRequest(ContractModel):
+    """`months` is only bounded below here: a longer term is refused with its own reason."""
+
     merchant_id: MerchantId
     expected_fen: PositiveFen
     cap_fen: PositiveFen
     debit_day: DebitDay
-    months: Annotated[int, Field(strict=True, ge=1, le=12)]
+    months: Annotated[int, Field(strict=True, ge=1)]
 
     @model_validator(mode="after")
     def _cap_covers_expected(self) -> MandateCreateRequest:
@@ -1551,6 +1553,7 @@ ROUTES: tuple[Route, ...] = (
         DraftResult,
         MandateChangeRequest,
     ),
+    _post("/v1/drafts/mandate", _R.CUSTOMER, _G.DRAFTS, DraftResult, MandateCreateRequest),
     _post("/v1/funds/plans", _R.CUSTOMER, _G.DRAFTS, PlanDraftResult, RebalancePlanDraftRequest),
     _post("/v1/plans/compose", _R.CUSTOMER, _G.DRAFTS, PlanDraftResult, ComposePlanRequest),
     _post("/v1/actions/{id}/request-approval", _R.CUSTOMER, _G.DRAFTS, ApprovalRequestResult),

@@ -107,6 +107,7 @@ GET /v1/debit-requests/{id}
 GET /v1/subscriptions/spend
 POST /v1/drafts/debit-decision
 POST /v1/drafts/mandate-change
+POST /v1/drafts/mandate
 POST /sim/debit-requests
 """
 

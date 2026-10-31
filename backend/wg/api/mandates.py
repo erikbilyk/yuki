@@ -2,7 +2,8 @@
 
 A decision draft from the guided UI names only the request and the decision; the amount and
 the account come from the stored request and agreement. A change draft names the agreement
-and the change; its kind and version come from the stored agreement.
+and the change; its kind and version come from the stored agreement. A new agreement names
+the merchant, the amounts, the debit day and the term.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from wg.contracts.api import (
     DebitRequestView,
     DraftResult,
     MandateChangeRequest,
+    MandateCreateRequest,
     MandatesView,
     MerchantsView,
     SubscriptionSpendQuery,
@@ -36,6 +38,7 @@ RequestReader = Annotated[Principal, Depends(route_guard("GET", "/v1/debit-reque
 SpendReader = Annotated[Principal, Depends(route_guard("GET", "/v1/subscriptions/spend"))]
 DecisionDrafter = Annotated[Principal, Depends(route_guard("POST", "/v1/drafts/debit-decision"))]
 ChangeDrafter = Annotated[Principal, Depends(route_guard("POST", "/v1/drafts/mandate-change"))]
+CreateDrafter = Annotated[Principal, Depends(route_guard("POST", "/v1/drafts/mandate"))]
 
 
 def _service(request: Request) -> MandateService:
@@ -83,3 +86,10 @@ def draft_mandate_change(
     body: MandateChangeRequest, request: Request, principal: ChangeDrafter
 ) -> DraftResult:
     return _service(request).draft_mandate_change(principal.customer_id, body)
+
+
+@router.post("/drafts/mandate", status_code=status.HTTP_201_CREATED)
+def draft_mandate_create(
+    body: MandateCreateRequest, request: Request, principal: CreateDrafter
+) -> DraftResult:
+    return _service(request).draft_mandate_create(principal.customer_id, body)
