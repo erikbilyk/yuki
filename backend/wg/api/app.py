@@ -154,7 +154,7 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
     app.state.reads = ReadService(db)
     app.state.cash = cash_service = CashService(db)
     app.state.funds = FundsService(db)
-    app.state.mandates = MandateService(db)
+    app.state.mandates = MandateService(db, action_service)
     app.state.plans = PlanService(db, step_up, cash_service)
     app.state.composer = PlanComposer(db)
     app.state.trusted = TrustedService(db, step_up, action_service, coordinator)

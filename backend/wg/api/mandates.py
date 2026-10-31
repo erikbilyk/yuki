@@ -1,16 +1,22 @@
-"""Read routes of direct-debit agreements and merchants' requests (S5-SPEC §3.5)."""
+"""Routes of direct-debit agreements and merchants' requests (S5-SPEC §3.5).
+
+A decision draft from the guided UI names only the request and the decision; the amount and
+the account come from the stored request and agreement.
+"""
 
 from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, status
 
 from wg.api.guards import route_guard
 from wg.contracts.api import (
+    DebitDecisionRequest,
     DebitRequestsQuery,
     DebitRequestsView,
     DebitRequestView,
+    DraftResult,
     MandatesView,
     MerchantsView,
     SubscriptionSpendQuery,
@@ -26,6 +32,7 @@ MerchantsReader = Annotated[Principal, Depends(route_guard("GET", "/v1/merchants
 RequestsReader = Annotated[Principal, Depends(route_guard("GET", "/v1/debit-requests"))]
 RequestReader = Annotated[Principal, Depends(route_guard("GET", "/v1/debit-requests/{id}"))]
 SpendReader = Annotated[Principal, Depends(route_guard("GET", "/v1/subscriptions/spend"))]
+DecisionDrafter = Annotated[Principal, Depends(route_guard("POST", "/v1/drafts/debit-decision"))]
 
 
 def _service(request: Request) -> MandateService:
@@ -59,3 +66,10 @@ def subscription_spend(
     request: Request, principal: SpendReader, query: Annotated[SubscriptionSpendQuery, Query()]
 ) -> SubscriptionSpendView:
     return _service(request).subscription_spend(principal.customer_id, query)
+
+
+@router.post("/drafts/debit-decision", status_code=status.HTTP_201_CREATED)
+def draft_debit_decision(
+    body: DebitDecisionRequest, request: Request, principal: DecisionDrafter
+) -> DraftResult:
+    return _service(request).draft_debit_decision(principal.customer_id, body)

@@ -1,18 +1,28 @@
-"""Reads of direct-debit agreements, merchants' requests and subscription spending (S5-SPEC §3.5).
+"""Direct-debit agreements: reads (S5-SPEC §3.5) and the customer's decision drafts (§6.3).
 
 Lists show only the customer's own requests and never probes; a foreign, probe or unknown
 request is the same NOT_FOUND. Merchant names come from the registry, amounts from rows.
+
+A decision draft takes the amount and the account from the request and the agreement only.
+A payment draft runs the whole payment gate: a request that cannot be paid, a changed
+agreement or an amount above the single limit refuses the draft, and the money reasons are
+listed on it like a transfer's.
 """
 
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import datetime, timedelta
+from typing import Any
 
 from wg.contracts.api import (
+    DebitDecisionRequest,
     DebitRequestsQuery,
     DebitRequestsView,
     DebitRequestView,
+    DraftResult,
     MandatesView,
     MandateView,
     MerchantsView,
@@ -22,19 +32,49 @@ from wg.contracts.api import (
     SubscriptionSpendRow,
     SubscriptionSpendView,
 )
-from wg.contracts.enums import DebitRequestStatus, MandateStatus
+from wg.contracts.enums import (
+    ActionKind,
+    AuditActor,
+    DebitDecision,
+    DebitRequestStatus,
+    MandateStatus,
+    Provenance,
+)
+from wg.contracts.errors import ErrorClass, ErrorCode, WgError
 from wg.core import mandate_rules
 from wg.core.k1_session import not_found
-from wg.k6 import debit_requests, mandates
-from wg.k6.db import Database, Reader
+from wg.core.k3_policy import check_not_locked, is_risk_reducing
+from wg.k6 import actions, debit_requests, mandates
+from wg.k6.actions import ActionRow
+from wg.k6.db import Database, Reader, UnitOfWork
 from wg.k6.debit_requests import DebitRequestRow, PaidRequest
 from wg.k6.mandates import MandateRow
 from wg.k6.simtime import SHANGHAI, now
+from wg.packs.base import Infeasible
+from wg.packs.mandates import OPEN_DECISION_STATUSES, decision_target
+from wg.packs.registry import pack_for
+from wg.services.actions import ActionService
+from wg.services.refusals import record_refusal
+
+# Refusals that end a decision draft at once; the money reasons are listed on the draft.
+_REFUSED_AT_DRAFT = frozenset(
+    {
+        ErrorCode.REQUEST_NOT_PAYABLE,
+        ErrorCode.MANDATE_CHANGED,
+        ErrorCode.SINGLE_LIMIT_EXCEEDED,
+    }
+)
+_DECISION_KINDS = {
+    DebitDecision.PAY: ActionKind.DEBIT_PAY,
+    DebitDecision.DECLINE: ActionKind.DEBIT_DECLINE,
+}
+_SERVER_RECORD = {"provenance": Provenance.SERVER_RECORD.value}
 
 
 class MandateService:
-    def __init__(self, db: Database) -> None:
+    def __init__(self, db: Database, action_service: ActionService) -> None:
         self.db = db
+        self.action_service = action_service
 
     def mandates(self, customer_id: str) -> MandatesView:
         """Every agreement of the customer; the monthly total counts the ACTIVE ones."""
@@ -94,6 +134,95 @@ class MandateService:
         return SubscriptionSpendView(
             days=query.days, rows=rows, total_fen=sum(row.paid_fen for row in rows)
         )
+
+    # Drafts (S5-SPEC §6.3)
+
+    def draft_debit_decision(
+        self,
+        customer_id: str,
+        body: DebitDecisionRequest,
+        actor: AuditActor = AuditActor.CUSTOMER,
+    ) -> DraftResult:
+        """A DEBIT_PAY or DEBIT_DECLINE in DRAFT for a request the customer can still answer."""
+        with self._audited(customer_id, "draft_refused", body.request_id, actor):
+            action, reasons = self.db.run_in_uow(
+                lambda uow: self._insert_decision(uow, customer_id, body, actor),
+                "draft debit decision",
+            )
+        return DraftResult(
+            logical_action_id=action.logical_action_id,
+            revision=action.revision,
+            kind=action.kind,
+            status=action.status,
+            tier=action.tier,
+            feasible=not reasons,
+            reasons=tuple(r.code for r in reasons),
+        )
+
+    def _insert_decision(
+        self, uow: UnitOfWork, customer_id: str, body: DebitDecisionRequest, actor: AuditActor
+    ) -> tuple[ActionRow, tuple[Infeasible, ...]]:
+        request = debit_requests.find_request(uow, body.request_id)
+        if request is None or request.probe or request.customer_id != customer_id:
+            raise not_found()
+        assert request.mandate_ref is not None
+        mandate, request = decision_target(uow, customer_id, request.mandate_ref, body.request_id)
+        kind = _DECISION_KINDS[body.decision]
+        pack = pack_for(kind)
+        params = pack.canonical(kind, _decision_params(kind, mandate, request))
+        check_not_locked(
+            uow,
+            customer_id,
+            None,
+            risk_reducing=is_risk_reducing(uow, customer_id, kind, params),
+        )
+        reasons = pack.precheck(uow, customer_id, kind, params, now(uow))
+        for reason in reasons:
+            if reason.code in _REFUSED_AT_DRAFT:
+                raise reason.error()
+        for open_action in actions.actions_of_kinds(
+            uow, {kind}, OPEN_DECISION_STATUSES, customer_id
+        ):
+            if open_action.params.get("request_id") == request.request_id:
+                raise WgError(
+                    ErrorCode.DUPLICATE_INTENT,
+                    {"logical_action_id": open_action.logical_action_id},
+                )
+        provenance: dict[str, Any] = {
+            "request_id": {"provenance": Provenance.USER_UTTERANCE.value},
+            "mandate_ref": _SERVER_RECORD,
+        }
+        if kind is ActionKind.DEBIT_PAY:
+            provenance.update(
+                account_id=_SERVER_RECORD, mandate_version=_SERVER_RECORD, amount_fen=_SERVER_RECORD
+            )
+        action = self.action_service.insert_draft(
+            uow, customer_id, kind, params, provenance, reasons, actor
+        )
+        return action, reasons
+
+    @contextmanager
+    def _audited(self, customer_id: str, event: str, ref: str, actor: AuditActor) -> Iterator[None]:
+        try:
+            yield
+        except WgError as error:
+            if error.error_class is ErrorClass.EXPECTED:
+                record_refusal(self.db, customer_id, event, ref, error, actor=actor)
+            raise
+
+
+def _decision_params(
+    kind: ActionKind, mandate: MandateRow, request: DebitRequestRow
+) -> dict[str, Any]:
+    """Every value from the stored request and agreement; nothing from the merchant's text."""
+    params: dict[str, Any] = {"mandate_ref": mandate.mandate_ref, "request_id": request.request_id}
+    if kind is ActionKind.DEBIT_PAY:
+        params.update(
+            account_id=mandate.account_id,
+            mandate_version=mandate.version,
+            amount_fen=request.amount_fen,
+        )
+    return params
 
 
 def _mandate_view(reader: Reader, mandate: MandateRow, at: datetime) -> MandateView:

@@ -4,8 +4,8 @@ A request is decided once, when it arrives, and stored with that outcome; nothin
 happens then (no action, hold or notification). `description_raw` is the merchant's text,
 stored as received and never read as an instruction.
 
-Afterwards a request leaves AWAITING_CLIENT once, when it is paid (S5-SPEC §6.2); the
-change raises its version and is audited in the same unit of work.
+Afterwards a request leaves AWAITING_CLIENT once: paid (S5-SPEC §6.2) or declined (§5.5).
+Each change raises its version and is audited in the same unit of work.
 """
 
 from __future__ import annotations
@@ -277,6 +277,18 @@ def mark_paid(uow: UnitOfWork, request_id: str, operation_id: str) -> DebitReque
         operation_id=operation_id,
         actor=AuditActor.SYSTEM,
         event="debit_request_paid",
+    )
+
+
+def decline(uow: UnitOfWork, request_id: str) -> DebitRequestRow:
+    """The customer declined the request; the period stays occupied."""
+    return _close(
+        uow,
+        request_id,
+        DebitRequestStatus.DECLINED,
+        None,
+        actor=AuditActor.CUSTOMER,
+        event="debit_request_declined",
     )
 
 

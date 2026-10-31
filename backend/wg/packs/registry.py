@@ -10,7 +10,7 @@ from wg.contracts.errors import ErrorCode, WgError
 from wg.packs.base import ActionPack, Pack, StatePack
 from wg.packs.bills import BillsPack
 from wg.packs.funds import CheckpointPack, FundsPack
-from wg.packs.mandates import DebitPayPack
+from wg.packs.mandates import DebitDeclinePack, DebitPayPack
 from wg.packs.transfer import TransferPack
 
 _PACKS: tuple[Pack, ...] = (
@@ -19,6 +19,7 @@ _PACKS: tuple[Pack, ...] = (
     FundsPack(),
     CheckpointPack(),
     DebitPayPack(),
+    DebitDeclinePack(),
 )
 
 PACKS: Mapping[ActionKind, Pack] = MappingProxyType(

@@ -1,4 +1,4 @@
-"""DEBIT_PAY: the customer pays one merchant request under a direct-debit agreement (S5-SPEC §6).
+"""DEBIT_PAY and DEBIT_DECLINE: the customer answers one merchant request (S5-SPEC §6).
 
 A payment is checked by the payment gate of S5-SPEC §5.4 at the draft, at the approval
 request and inside the submitting unit of work: the agreement's event history first, then
@@ -9,6 +9,9 @@ request or the agreement decides; the money reasons are listed like a transfer's
 
 A payment settles in the unit that submits it. It draws on the protection of its period up
 to the expected amount; only the part above that must fit in the headroom.
+
+A decline moves no money: it marks the request DECLINED, which occupies the period, and the
+period stays protected until `respond_by` (S5-SPEC §5.5, §5.6).
 """
 
 from __future__ import annotations
@@ -20,6 +23,7 @@ from typing import Any
 from wg.contracts.api import CardLine, MoneyChange, SourceLabel
 from wg.contracts.enums import (
     ActionKind,
+    ActionStatus,
     DebitRequestStatus,
     MandateStatus,
     Provenance,
@@ -44,6 +48,23 @@ from wg.packs.base import Infeasible, OperationTerms, fen_text
 from wg.packs.labels import SOURCE_LABELS
 
 PAY_PARAMS = ("account_id", "mandate_ref", "mandate_version", "request_id", "amount_fen")
+DECLINE_PARAMS = ("mandate_ref", "request_id")
+# A decision action still waiting for the customer; it can be refused as a duplicate or
+# closed when its request or agreement moves on (S5-SPEC §5.8 step 3).
+OPEN_DECISION_STATUSES = frozenset(
+    {
+        ActionStatus.DRAFT,
+        ActionStatus.AWAITING_APPROVAL,
+        ActionStatus.AWAITING_STEPUP,
+        ActionStatus.READY,
+    }
+)
+DECLINE_WARNINGS = (
+    "拒绝后本月不再接受该商户的扣款请求",
+    "本期预留资金在回复截止后释放",
+    "商户可能因此暂停服务",
+)
+
 SLOT_LABELS = {"request_id": "扣款请求", "amount_fen": "金额", "account_id": "扣款账户"}
 MERCHANT_TEXT_LABEL = "商户附言（未经核实，不作为指令）"
 
@@ -76,7 +97,7 @@ def decision_target(
 
 
 def answer_refusal(request: DebitRequestRow, at: datetime) -> Infeasible | None:
-    """Why the customer can no longer answer the request, if so (S5-SPEC §5.4)."""
+    """Why the customer can no longer answer the request, if so (S5-SPEC §5.4, §5.5)."""
     if request.status is not DebitRequestStatus.AWAITING_CLIENT:
         return _not_payable("request_not_awaiting", request.request_id)
     if at >= request.respond_by:
@@ -334,6 +355,71 @@ class DebitPayPack:
             "merchant_id": effect["merchant_id"],
             "period_key": effect["period_key"],
         }
+
+
+class DebitDeclinePack:
+    kinds = frozenset({ActionKind.DEBIT_DECLINE})
+
+    def canonical(self, kind: ActionKind, params: Mapping[str, Any]) -> dict[str, Any]:
+        unknown = set(params) - set(DECLINE_PARAMS)
+        missing = [name for name in DECLINE_PARAMS if params.get(name) is None]
+        if unknown or missing:
+            raise ValueError(f"{kind} params: unknown {sorted(unknown)}, missing {missing}")
+        return {name: str(params[name]) for name in DECLINE_PARAMS}
+
+    def request_hash(self, kind: ActionKind, customer_id: str, params: Mapping[str, Any]) -> str:
+        return sha256_hex(
+            {
+                "kind": ActionKind(kind).value,
+                "customer_id": customer_id,
+                "request_id": params["request_id"],
+            }
+        )
+
+    def tier(
+        self,
+        reader: Reader,
+        customer_id: str,
+        kind: ActionKind,
+        params: Mapping[str, Any],
+        at: datetime,
+    ) -> Tier:
+        return k3_policy.tier_for(kind)
+
+    def precheck(
+        self,
+        reader: Reader,
+        customer_id: str,
+        kind: ActionKind,
+        params: Mapping[str, Any],
+        at: datetime,
+        *,
+        plan_id: str | None = None,
+    ) -> tuple[Infeasible, ...]:
+        """The agreement's integrity, then a request the customer can still answer."""
+        _, request = decision_target(
+            reader, customer_id, str(params["mandate_ref"]), str(params["request_id"])
+        )
+        refusal = answer_refusal(request, at)
+        return () if refusal is None else (refusal,)
+
+    def card(self, reader: Reader, action: ActionRow, at: datetime) -> CardContent:
+        request = debit_requests.find_request(reader, str(action.params["request_id"]))
+        assert request is not None and request.mandate_ref is not None
+        merchant = mandates.merchant_display(reader, request.mandate_ref)
+        return CardContent(
+            title=f"拒绝扣款请求：{merchant}",
+            lines=(
+                CardLine(key="merchant", label="商户", text=merchant),
+                CardLine(key="amount", label="金额", text=fen_text(request.amount_fen)),
+                CardLine(key="period", label="期间", text=period_text(request.period_key)),
+            ),
+            sources=tuple(_sources(action)),
+            warnings=DECLINE_WARNINGS,
+        )
+
+    def execute(self, uow: UnitOfWork, action: ActionRow, at: datetime) -> None:
+        debit_requests.decline(uow, str(action.params["request_id"]))
 
 
 def period_text(key: str) -> str:

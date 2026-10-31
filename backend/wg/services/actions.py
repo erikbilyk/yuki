@@ -201,7 +201,7 @@ class ActionService:
             ),
             "account_id": _account_provenance(draft.account_id),
         }
-        return self._insert_draft(
+        return self.insert_draft(
             uow, customer_id, kind, params, provenance, reasons, actor
         ), reasons
 
@@ -301,7 +301,7 @@ class ActionService:
         pack = pack_for(kind)
         params = pack.canonical(kind, {"commitment_id": bill.commitment_id})
         reasons = pack.precheck(uow, customer_id, kind, params, now(uow))
-        action = self._insert_draft(uow, customer_id, kind, params, provenance, reasons, actor)
+        action = self.insert_draft(uow, customer_id, kind, params, provenance, reasons, actor)
         return action, reasons
 
     def draft_reserve(
@@ -320,7 +320,7 @@ class ActionService:
                 risk_reducing=is_risk_reducing(uow, customer_id, kind, params),
             )
             provenance = {"target_fen": {"provenance": Provenance.USER_UTTERANCE.value}}
-            action = self._insert_draft(uow, customer_id, kind, params, provenance, (), actor)
+            action = self.insert_draft(uow, customer_id, kind, params, provenance, (), actor)
             return action, ()
 
         with self._audited(customer_id, "draft_refused", "reserve", actor):
@@ -353,7 +353,7 @@ class ActionService:
                 "txn_id": {"provenance": Provenance.SERVER_RECORD.value},
                 "category": {"provenance": Provenance.USER_UTTERANCE.value},
             }
-            return self._insert_draft(
+            return self.insert_draft(
                 uow, customer_id, kind, params, provenance, reasons, actor
             ), reasons
 
@@ -396,11 +396,11 @@ class ActionService:
         }
         if "remark" in params:
             provenance["remark"] = {"provenance": Provenance.UNTRUSTED_TEXT.value}
-        return self._insert_draft(
+        return self.insert_draft(
             uow, customer_id, kind, params, provenance, reasons, actor
         ), reasons
 
-    def _insert_draft(
+    def insert_draft(
         self,
         uow: UnitOfWork,
         customer_id: str,

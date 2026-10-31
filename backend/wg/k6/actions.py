@@ -219,3 +219,21 @@ def next_open_action(
         (customer_id, *sorted(statuses)),
     ).fetchone()
     return None if row is None else _action(row)
+
+
+def actions_of_kinds(
+    reader: Reader,
+    kinds: Collection[ActionKind],
+    statuses: Collection[ActionStatus],
+    customer_id: str | None = None,
+) -> list[ActionRow]:
+    """Actions of these kinds in these statuses, oldest first; optionally one customer's."""
+    kind_marks = ", ".join("?" for _ in kinds)
+    status_marks = ", ".join("?" for _ in statuses)
+    sql = f"SELECT * FROM actions WHERE kind IN ({kind_marks}) AND status IN ({status_marks})"
+    params: list[object] = [*sorted(k.value for k in kinds), *sorted(s.value for s in statuses)]
+    if customer_id is not None:
+        sql += " AND customer_id = ?"
+        params.append(customer_id)
+    rows = reader.execute(sql + " ORDER BY created_at, rowid", params).fetchall()
+    return [_action(row) for row in rows]
