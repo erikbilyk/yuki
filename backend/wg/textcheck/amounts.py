@@ -68,12 +68,30 @@ _CURRENCY_PREFIX_RE = re.compile(r"(?:[¥￥$₽]|人民币|rmb|cny)\s*$", re.IG
 
 # A bare number followed by one of these is a count, date part or score, not money.
 _COUNT_SUFFIX = frozenset("年月日号天周笔个次人位份只条张岁倍折成点时分秒季期楼层页项名家台件套")
+# After a space only the plain count and date words apply: "340000 分" is fen, "500 成功" a word.
+_SPACED_COUNT_SUFFIX = frozenset("年月日号天周笔个次位份只条张岁季期项名家台件套页")
+_SPACED_SUFFIX_RE = re.compile(r"[ \t]{1,2}(?=\S)")
 _PERCENT_SUFFIX_RE = re.compile(r"\s*(?:[%％]|个百分点|个点|percent|pct)", re.IGNORECASE)
 _NON_MONEY_PREFIX_RE = re.compile(
     r"(?:尾号|末四位|末尾|后四位|后4位|卡号|账号|账户号|编号|代码|单号|订单号|流水号|第|No\.?|#|百分之)\s*[:：]?\s*$",
     re.IGNORECASE,
 )
 _NON_MONEY_SUFFIX_RE = re.compile(r"\s*(?:基金|号)")
+_ACCOUNT_TAIL_PREFIX_RE = re.compile(r"[·•]{2,}\s*$")
+
+# A six-digit product code stands after one of these words, or before an order word.
+_CODE_BEFORE_RE = re.compile(
+    r"(?:基金|产品|代码|赎回|卖出|买入|申购|购入|转入|转出|持有)[A-Za-z]?[约为是：:]?\s*[（(]?\s*$"
+)
+_CODE_AFTER_RE = re.compile(r"\s*[）)]?\s*(?:买入|卖出|赎回|申购|购入|基金)")
+_BARE_CODE_LENGTH = 6
+_MAX_MONEY_DECIMALS = 2
+
+# A list number at the start of a line or sentence: "1. ", "2、", "3)", "（4）".
+_LIST_MARKER = (
+    r"(?m)(?:^|(?<=[。；;！？!?：:]))[ \t>*#\-]*"
+    r"(?:\d{1,2}[.、](?=[ \t]|[一-鿿*])|\d{1,2}[)）]|[（(]\d{1,2}[）)])"
+)
 
 _NON_AMOUNT_SPANS = tuple(
     re.compile(pattern)
@@ -88,6 +106,7 @@ _NON_AMOUNT_SPANS = tuple(
         r"(?<!\d)(?:\+?86[ -]?)?1[3-9]\d[ -]?\d{4}[ -]?\d{4}(?!\d)",
         r"(?<!\d)0\d{2,3}-\d{7,8}(?!\d)",
         r"(?<!\d)\d{3,4}-\d{3,4}-\d{3,4}(?!\d)",
+        _LIST_MARKER,
     )
 )
 
@@ -180,6 +199,28 @@ def _read_number(token: str) -> Decimal | None:
     return None if value is None else Decimal(value)
 
 
+def _is_count_or_date_part(text: str, end: int) -> bool:
+    """Whether a bare number is followed, directly or after a space, by a counting or date word."""
+    if text[end : end + 1] in _COUNT_SUFFIX:
+        return True
+    gap = _SPACED_SUFFIX_RE.match(text, end)
+    return gap is not None and text[gap.end()] in _SPACED_COUNT_SUFFIX
+
+
+def _is_identifier_or_quote(text: str, token: str, start: int, end: int) -> bool:
+    """Whether a bare number is an account tail, a fund code or a NAV or share figure."""
+    if _ACCOUNT_TAIL_PREFIX_RE.search(text[:start]):
+        return True
+    if token[0].isdigit() and len(token.partition(".")[2]) > _MAX_MONEY_DECIMALS:
+        return True
+    if not token.isdigit() or len(token) != _BARE_CODE_LENGTH:
+        return False
+    return (
+        _CODE_BEFORE_RE.search(text[max(0, start - 8) : start]) is not None
+        or _CODE_AFTER_RE.match(text, end) is not None
+    )
+
+
 def find_amounts(text: str) -> list[AmountMatch]:
     """Every money amount in the text, in order of position, with comparator and span."""
     excluded = _excluded_spans(text)
@@ -220,9 +261,11 @@ def find_amounts(text: str) -> list[AmountMatch]:
         if following.isascii() and following.isalpha():
             continue
         if not has_marker:
-            if following in _COUNT_SUFFIX:
+            if _is_count_or_date_part(text, end):
                 continue
             if _NON_MONEY_SUFFIX_RE.match(text, end):
+                continue
+            if _is_identifier_or_quote(text, token, start, end):
                 continue
             if not token[0].isdigit() and len(token) == 1:
                 continue
