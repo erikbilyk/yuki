@@ -7,6 +7,10 @@ A decision draft takes the amount and the account from the request and the agree
 A payment draft runs the whole payment gate: a request that cannot be paid, a changed
 agreement or an amount above the single limit refuses the draft, and the money reasons are
 listed on it like a transfer's.
+
+A change draft takes its kind from the request and, for a new cap, from the direction
+against the current cap; the version comes from the stored agreement. Every reason the
+change cannot be made refuses the draft.
 """
 
 from __future__ import annotations
@@ -23,6 +27,7 @@ from wg.contracts.api import (
     DebitRequestsView,
     DebitRequestView,
     DraftResult,
+    MandateChangeRequest,
     MandatesView,
     MandateView,
     MerchantsView,
@@ -37,6 +42,7 @@ from wg.contracts.enums import (
     AuditActor,
     DebitDecision,
     DebitRequestStatus,
+    MandateChangeKind,
     MandateStatus,
     Provenance,
 )
@@ -51,7 +57,7 @@ from wg.k6.debit_requests import DebitRequestRow, PaidRequest
 from wg.k6.mandates import MandateRow
 from wg.k6.simtime import SHANGHAI, now
 from wg.packs.base import Infeasible
-from wg.packs.mandates import OPEN_DECISION_STATUSES, decision_target
+from wg.packs.mandates import OPEN_DECISION_STATUSES, change_target, decision_target
 from wg.packs.registry import pack_for
 from wg.services.actions import ActionService
 from wg.services.refusals import record_refusal
@@ -68,7 +74,13 @@ _DECISION_KINDS = {
     DebitDecision.PAY: ActionKind.DEBIT_PAY,
     DebitDecision.DECLINE: ActionKind.DEBIT_DECLINE,
 }
+_STATUS_CHANGES = {
+    MandateChangeKind.CANCEL: ActionKind.MANDATE_CANCEL,
+    MandateChangeKind.SUSPEND: ActionKind.MANDATE_SUSPEND,
+    MandateChangeKind.RESUME: ActionKind.MANDATE_RESUME,
+}
 _SERVER_RECORD = {"provenance": Provenance.SERVER_RECORD.value}
+_USER_UTTERANCE = {"provenance": Provenance.USER_UTTERANCE.value}
 
 
 class MandateService:
@@ -200,6 +212,74 @@ class MandateService:
             uow, customer_id, kind, params, provenance, reasons, actor
         )
         return action, reasons
+
+    def draft_mandate_change(
+        self,
+        customer_id: str,
+        body: MandateChangeRequest,
+        actor: AuditActor = AuditActor.CUSTOMER,
+    ) -> DraftResult:
+        """A change of the customer's agreement in DRAFT (S5-SPEC §6.3)."""
+        with self._audited(customer_id, "draft_refused", body.mandate_ref, actor):
+            action = self.db.run_in_uow(
+                lambda uow: self._insert_change(uow, customer_id, body, actor),
+                "draft mandate change",
+            )
+        return DraftResult(
+            logical_action_id=action.logical_action_id,
+            revision=action.revision,
+            kind=action.kind,
+            status=action.status,
+            tier=action.tier,
+            feasible=True,
+            reasons=(),
+        )
+
+    def _insert_change(
+        self, uow: UnitOfWork, customer_id: str, body: MandateChangeRequest, actor: AuditActor
+    ) -> ActionRow:
+        """Ownership, integrity, kind, the pack's checks, a duplicate, then the lock."""
+        mandate = change_target(uow, customer_id, body.mandate_ref)
+        if body.change is MandateChangeKind.SET_CAP:
+            assert body.cap_fen is not None
+            kind = mandate_rules.cap_change_kind(mandate.cap_fen, body.cap_fen)
+            if kind is None:
+                raise WgError(ErrorCode.UNSUPPORTED_REQUEST, {"reason": "cap_unchanged"})
+        else:
+            kind = _STATUS_CHANGES[body.change]
+        params: dict[str, Any] = {
+            "mandate_ref": mandate.mandate_ref,
+            "mandate_version": mandate.version,
+        }
+        provenance: dict[str, Any] = {
+            "mandate_ref": _USER_UTTERANCE,
+            "mandate_version": _SERVER_RECORD,
+        }
+        if body.cap_fen is not None:
+            params["cap_fen"] = body.cap_fen
+            provenance["cap_fen"] = _USER_UTTERANCE
+        pack = pack_for(kind)
+        params = pack.canonical(kind, params)
+        reasons = pack.precheck(uow, customer_id, kind, params, now(uow))
+        if reasons:
+            raise reasons[0].error()
+        for open_action in actions.actions_of_kinds(
+            uow, {kind}, OPEN_DECISION_STATUSES, customer_id
+        ):
+            if open_action.params.get("mandate_ref") == mandate.mandate_ref:
+                raise WgError(
+                    ErrorCode.DUPLICATE_INTENT,
+                    {"logical_action_id": open_action.logical_action_id},
+                )
+        check_not_locked(
+            uow,
+            customer_id,
+            None,
+            risk_reducing=is_risk_reducing(uow, customer_id, kind, params),
+        )
+        return self.action_service.insert_draft(
+            uow, customer_id, kind, params, provenance, reasons, actor
+        )
 
     @contextmanager
     def _audited(self, customer_id: str, event: str, ref: str, actor: AuditActor) -> Iterator[None]:

@@ -1544,6 +1544,13 @@ ROUTES: tuple[Route, ...] = (
         DraftResult,
         DebitDecisionRequest,
     ),
+    _post(
+        "/v1/drafts/mandate-change",
+        _R.CUSTOMER,
+        _G.DRAFTS,
+        DraftResult,
+        MandateChangeRequest,
+    ),
     _post("/v1/funds/plans", _R.CUSTOMER, _G.DRAFTS, PlanDraftResult, RebalancePlanDraftRequest),
     _post("/v1/plans/compose", _R.CUSTOMER, _G.DRAFTS, PlanDraftResult, ComposePlanRequest),
     _post("/v1/actions/{id}/request-approval", _R.CUSTOMER, _G.DRAFTS, ApprovalRequestResult),

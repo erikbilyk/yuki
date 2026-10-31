@@ -15,7 +15,7 @@ from typing import Any
 from wg.contracts.enums import ActionKind, AuditActor, LockScope, OperationStatus, Tier
 from wg.contracts.errors import ErrorCode, WgError
 from wg.contracts.tools import DataSource, Intent
-from wg.k6 import audit, locks
+from wg.k6 import audit, locks, mandates
 from wg.k6.db import Database, Reader, in_transaction
 from wg.k6.reserves import reserve_target
 from wg.k6.simtime import SHANGHAI, to_db
@@ -51,6 +51,9 @@ _FIXED_TIERS: dict[ActionKind, Tier] = {
 }
 
 PLAN_APPROVAL_TIER = Tier.YELLOW
+_ALWAYS_RISK_REDUCING = frozenset(
+    {ActionKind.DEBIT_DECLINE, ActionKind.MANDATE_CANCEL, ActionKind.MANDATE_SUSPEND}
+)
 
 _TIER_ORDER = (Tier.GREEN, Tier.YELLOW, Tier.RED, Tier.FORBIDDEN)
 
@@ -162,12 +165,16 @@ def is_risk_reducing(
 ) -> bool:
     """True for a write that only raises protection (SPEC §16, S5-SPEC §5.9).
 
-    A reserve increase, and declining a merchant's request: no money moves and the period
-    stays protected until the request's deadline.
+    A reserve increase; declining a merchant's request (no money moves and the period stays
+    protected until the request's deadline); closing or suspending an agreement, or lowering
+    its cap below the current one (merchants can then take less, never more).
     """
     kind = ActionKind(kind)
-    if kind is ActionKind.DEBIT_DECLINE:
+    if kind in _ALWAYS_RISK_REDUCING:
         return True
+    if kind is ActionKind.MANDATE_CAP_LOWER:
+        mandate = mandates.find_mandate(reader, str(params["mandate_ref"]))
+        return mandate is not None and int(params["cap_fen"]) < mandate.cap_fen
     if kind is not ActionKind.DESIGNATE_RESERVE:
         return False
     return int(params["target_fen"]) >= reserve_target(reader, customer_id)
