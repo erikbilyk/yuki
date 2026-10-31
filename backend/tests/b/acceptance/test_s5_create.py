@@ -149,6 +149,7 @@ def test_t107_a_term_over_twelve_months_is_refused(wg: WgClient, months: int) ->
 @pytest.mark.case("T107")
 def test_t107_a_draft_alone_creates_no_agreement_and_no_protection(wg: WgClient) -> None:
     reset_s5(wg)
+    operations = operation_count(wg)
 
     draft = body(create_response(wg), 201)
 
@@ -156,4 +157,4 @@ def test_t107_a_draft_alone_creates_no_agreement_and_no_protection(wg: WgClient)
     assert {m["mandate_ref"] for m in mandates(wg)["mandates"]} == EXISTING
     assert_subscriptions(wg, 24_500)
     assert stored_requests(wg) == []
-    assert operation_count(wg) == 0
+    assert operation_count(wg) == operations
