@@ -61,6 +61,9 @@ EVENT_TEXT: dict[str, str] = {
     "unlock_refused": "解除暂停未被接受",
     "operator_reconcile": "运营人员核实了执行结果",
     "sim_crash": "模拟服务中断",
+    "debit_request_received": "收到商户扣款请求",
+    "debit_request_refused": "商户扣款请求格式不正确，未受理",
+    "debit_request_repeat_mismatch": "商户重复请求的内容不一致",
 }
 
 

@@ -1556,6 +1556,7 @@ ROUTES: tuple[Route, ...] = (
     _post("/sim/sms", _R.DEMO, _G.SIMULATOR, SimSmsResult, SimSmsRequest),
     _post("/sim/incoming-payment", _R.DEMO, _G.SIMULATOR, SimPostingResult, IncomingPaymentRequest),
     _post("/sim/external-debit", _R.DEMO, _G.SIMULATOR, SimPostingResult, ExternalDebitRequest),
+    _post("/sim/debit-requests", _R.DEMO, _G.SIMULATOR, SimDebitResult, SimDebitRequest),
     _post("/sim/crash", _R.DEMO, _G.SIMULATOR, None),
     _post("/sim/agent-mode", _R.DEMO, _G.SIMULATOR, None, AgentModeRequest),
     # IM channel adapter

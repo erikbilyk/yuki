@@ -98,9 +98,15 @@ POST /v1/channels/feishu/messages
 GET /healthz
 """
 
+# The direct-debit routes of S5-SPEC §3.5 built so far; each arrives with its handler.
+S5_ROUTES = """
+POST /sim/debit-requests
+"""
+
 
 def _spec_routes() -> set[tuple[str, str]]:
-    return {tuple(line.split()) for line in SPEC_ROUTES.strip().splitlines()}
+    lines = (SPEC_ROUTES + S5_ROUTES).strip().splitlines()
+    return {tuple(line.split()) for line in lines if line}
 
 
 def test_routes_equal_the_spec_table():
