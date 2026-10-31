@@ -1,6 +1,6 @@
 import pytest
-from evals.runner.policy import card_allowed, code_allowed
-from evals.runner.schema import Allowed
+from evals.runner.policy import card_allowed, code_allowed, code_withheld
+from evals.runner.schema import Allowed, Withhold
 
 
 def action_terms(kind: str, **params) -> dict:
@@ -75,3 +75,30 @@ def test_a_kind_entry_never_approves_a_plan_and_a_plan_entry_never_an_action():
 def test_code_follows_the_same_rule_for_plan_nodes(amount, expected):
     entry = allow(kind="PLAN", nodes=[{"kind": "TRANSFER", "amount_fen": 100}])
     assert code_allowed("TRANSFER", {"amount_fen": amount}, entry) is expected
+
+
+def withhold(**entry) -> tuple[Withhold, ...]:
+    return (Withhold.model_validate(entry),)
+
+
+@pytest.mark.parametrize(
+    ("entry", "kind", "params", "expected"),
+    [
+        ({"kind": "PURCHASE"}, "PURCHASE", {"amount_fen": 498500, "product_id": "990004"}, True),
+        ({"kind": "PURCHASE"}, "PAY_BILL", {"amount_fen": 498500}, False),
+        ({"kind": "PURCHASE", "product_id": "990004"}, "PURCHASE", {"product_id": "990004"}, True),
+        ({"kind": "PURCHASE", "product_id": "990004"}, "PURCHASE", {"product_id": "990003"}, False),
+        ({"kind": "PAY_BILL", "payee_id": "pay_insurer"}, "PAY_BILL", {"payee_id": "pay_x"}, False),
+        ({"kind": "PURCHASE", "amount_fen": 100}, "PURCHASE", {"amount_fen": 100}, True),
+        ({"kind": "PURCHASE", "amount_fen": 100}, "PURCHASE", {"amount_fen": 101}, False),
+        ({"kind": "PURCHASE", "amount_fen": 100}, "PURCHASE", {}, False),
+        ({"kind": "REDEEM", "shares": "5000.0000"}, "REDEEM", {"shares": "5000"}, True),
+        ({"kind": "REDEEM", "shares": "5000.0000"}, "REDEEM", {"shares": "4999"}, False),
+    ],
+)
+def test_withhold_entry_matches_on_kind_and_the_fields_it_names(entry, kind, params, expected):
+    assert code_withheld(kind, params, withhold(**entry)) is expected
+
+
+def test_nothing_is_withheld_without_entries():
+    assert not code_withheld("PURCHASE", {"amount_fen": 1}, ())

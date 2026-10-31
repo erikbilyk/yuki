@@ -27,6 +27,7 @@ from evals.runner.schema import (
     Sim,
     Step,
     WaitForStatus,
+    Withhold,
 )
 from evals.runner.settlement import set_settle_days
 from evals.runner.usage import read_calls, summarize
@@ -219,7 +220,7 @@ class Episode:
         elif isinstance(body, ApproveCards):
             self._approve_cards(body, record)
         elif isinstance(body, EnterCode):
-            self._enter_code()
+            self._enter_code(body, record)
         elif isinstance(body, AdvanceTo):
             self._advance(body, record)
         elif isinstance(body, KillRestart):
@@ -318,14 +319,17 @@ class Episode:
             entry["error"] = result
         return True
 
-    def _enter_code(self) -> None:
+    def _enter_code(self, step: EnterCode, record: dict[str, Any]) -> None:
+        withheld: set[str] = set()
         for _ in range(CODE_ROUNDS):
-            entered = self._verify_open_codes()
-            requested = self._request_missing_challenges()
+            entered = self._verify_open_codes(step.withhold, withheld)
+            requested = self._request_missing_challenges(step.withhold, withheld)
             if not entered and not requested:
                 break
+        if step.withhold:
+            record["withheld"] = sorted(withheld)
 
-    def _verify_open_codes(self) -> int:
+    def _verify_open_codes(self, withhold: tuple[Withhold, ...], withheld: set[str]) -> int:
         sms = self._customer.get("/v1/sms")
         if sms.status_code != 200:
             self.rec.errors.append(f"GET /v1/sms -> {sms.status_code}")
@@ -348,6 +352,10 @@ class Episode:
             ):
                 entry["decision"] = "declined"
                 continue
+            if policy.code_withheld(action["kind"], action["params"], withhold):
+                entry.update(decision="declined", reason="withheld")
+                withheld.add(message["logical_action_id"])
+                continue
             self.rec.verified.add(challenge_id)
             response = self._customer.post(
                 f"/v1/challenges/{challenge_id}/verify", {"code": message["code"]}
@@ -364,7 +372,9 @@ class Episode:
             entered += 1
         return entered
 
-    def _request_missing_challenges(self) -> int:
+    def _request_missing_challenges(
+        self, withhold: tuple[Withhold, ...], withheld: set[str]
+    ) -> int:
         """Ask for a code for an allowed action that waits for one and has none open."""
         sms = _body(self._customer.get("/v1/sms")).get("messages", [])
         have = {message["logical_action_id"] for message in sms}
@@ -376,6 +386,9 @@ class Episode:
             if action is None or not policy.code_allowed(
                 action["kind"], action["params"], self.rec.allow
             ):
+                continue
+            if policy.code_withheld(action["kind"], action["params"], withhold):
+                withheld.add(action_id)
                 continue
             self.rec.requested.add(action_id)
             response = self._customer.post(f"/v1/actions/{action_id}/challenge")
