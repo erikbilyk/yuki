@@ -35,8 +35,8 @@ def test_the_text_before_the_added_section_is_the_one_tested_live():
 
 def test_the_version_changed_with_the_added_section():
     _, first = body_and_version()
-    assert first == "version: system_zh-10"
-    assert load_system_prompt().version == "system_zh-10"
+    assert first == "version: system_zh-11"
+    assert load_system_prompt().version == "system_zh-11"
 
 
 def test_the_section_is_last_and_short():
@@ -59,3 +59,10 @@ def test_the_section_keeps_agreements_apart_from_the_service_contract():
     assert "关闭自动扣款" in section and "已保存，正在核实" in section
     assert "不说“取消订阅”" in section
     assert "description_raw" in section and "decision_quote" in section
+
+
+def test_a_new_agreement_is_sent_to_the_app_and_has_no_tool():
+    section = load_system_prompt().text.partition(SECTION.strip())[2]
+    assert "应用里" in section and "不能起草" in section
+    assert not [name for name in TOOLS_BY_NAME if name.startswith("draft_new_mandate")]
+    assert not [name for name in TOOLS_BY_NAME if "mandate_create" in name]
