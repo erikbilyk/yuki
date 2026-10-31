@@ -7,8 +7,6 @@ judged on the stored actions, audit rows and the results the model was sent.
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -17,28 +15,15 @@ from wg.agent.registry import ToolContext, ToolOutcome
 from wg.contracts.api import DebitRequestsView, DraftResult, MandatesView, SubscriptionSpendView
 from wg.contracts.enums import ActionKind, ActionStatus, Channel
 from wg.contracts.errors import ErrorCode
-from wg.contracts.fixture import load_fixture
 from wg.core.k3_policy import extra_read_count
-from wg.k6 import audit, fixture
+from wg.k6 import audit
 
-from ..api.conftest import Browser, make_client
 from ..api.s5_flows import merchant_request
-from ..s5_profile import write_profile
 from .scripted import Agent
 
 pytestmark = pytest.mark.layer("U")
 
 SUBSCRIPTIONS = {"intent": "subscriptions.manage"}
-
-
-@pytest.fixture
-def s5(tmp_path: Path) -> Iterator[Agent]:
-    with make_client(tmp_path / "wg.db") as client:
-        browser = Browser(client)
-        browser.login("opr_demo")
-        fixture.reset(browser.db, load_fixture(write_profile(tmp_path)), None)
-        browser.login("cus_main")
-        yield Agent(browser, tmp_path)
 
 
 def context(utterance: str) -> ToolContext:

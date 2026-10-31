@@ -189,3 +189,18 @@ def running_agent(tmp_path: Path) -> Iterator[Agent]:
         assert browser.sim("/sim/reset", {}).status_code == 200
         browser.login("cus_main")
         yield Agent(browser, tmp_path)
+
+
+def running_s5_agent(tmp_path: Path) -> Iterator[Agent]:
+    """The agent for cus_main on the direct-debit test profile (S5-SPEC §10)."""
+    from wg.contracts.fixture import load_fixture
+    from wg.k6 import fixture
+
+    from ..s5_profile import write_profile
+
+    with make_client(tmp_path / "wg.db") as client:
+        browser = Browser(client)
+        browser.login("opr_demo")
+        fixture.reset(browser.db, load_fixture(write_profile(tmp_path)), None)
+        browser.login("cus_main")
+        yield Agent(browser, tmp_path)

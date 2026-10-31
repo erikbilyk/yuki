@@ -58,6 +58,16 @@ class FactConcept(StrEnum):
     ACCOUNT = "account"
     DUE_DATE = "due_date"
     SETTLE_DATE = "settle_date"
+    MANDATE_STATUS = "mandate_status"
+    MANDATE_CAP = "mandate_cap"
+    MANDATE_EXPECTED = "mandate_expected"
+    SUBSCRIPTION_MONTHLY_TOTAL = "subscription_monthly_total"
+    SUBSCRIPTION_PAID = "subscription_paid"
+    DEBIT_REQUEST_STATUS = "debit_request_status"
+    DEBIT_REQUEST_AMOUNT = "debit_request_amount"
+    DEBIT_REQUEST_REASON = "debit_request_reason"
+    RESPOND_BY = "respond_by"
+    EFFECT_CHECK = "effect_check"
 
 
 class _FactBase(ContractModel):
