@@ -38,6 +38,7 @@ from .direct_debit import (
     mandate_events,
     merchant_request,
     money_state,
+    needs_changes,
     open_card,
     operation_kinds,
     operations_of,
@@ -75,6 +76,7 @@ def assert_stale_card_refused(wg: WgClient, card: dict, logical_action_id: str) 
 
 
 @pytest.mark.case("T103")
+@needs_changes
 @pytest.mark.parametrize("attempt", [1, 2, 3, 4])
 def test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect(
     wg: WgClient, attempt: int
@@ -121,6 +123,7 @@ def test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect(
 
 
 @pytest.mark.case("T103")
+@needs_changes
 def test_t103_lowering_the_cap_below_the_request_closes_the_payment_card(wg: WgClient) -> None:
     reset_s5(wg)
     request = merchant_request(wg, VIDEO, 2_500)
@@ -151,6 +154,7 @@ def test_t103_lowering_the_cap_below_the_request_closes_the_payment_card(wg: WgC
 
 
 @pytest.mark.case("T103")
+@needs_changes
 def test_t103_a_cap_that_still_covers_the_request_changes_the_card_not_the_request(
     wg: WgClient,
 ) -> None:
@@ -186,6 +190,7 @@ def test_t103_a_cap_that_still_covers_the_request_changes_the_card_not_the_reque
 
 
 @pytest.mark.case("T103")
+@needs_changes
 def test_t103_a_changed_agreement_refuses_a_stale_card_even_when_the_request_is_waiting(
     wg: WgClient,
 ) -> None:

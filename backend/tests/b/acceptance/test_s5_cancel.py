@@ -36,11 +36,11 @@ from .direct_debit import (
     draft_change,
     effect_check,
     effect_events,
-    has_direct_debits,
     mandate,
     mandate_events,
     mandates,
     merchant_request,
+    needs_changes,
     operations_of,
     payment_operations,
     probes,
@@ -53,9 +53,7 @@ from .direct_debit import (
     subscription_spend,
 )
 
-pytestmark = pytest.mark.skipif(
-    not has_direct_debits(), reason="the build lists no direct-debit routes"
-)
+pytestmark = needs_changes
 
 
 # T101

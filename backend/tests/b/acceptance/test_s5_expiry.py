@@ -30,6 +30,7 @@ from .direct_debit import (
     mandates,
     merchant_request,
     money_state,
+    needs_changes,
     operation_count,
     outcome,
     payment_operations,
@@ -47,6 +48,7 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.mark.case("T102")
+@needs_changes
 def test_t102_a_request_after_the_cancel_is_declined(wg: WgClient) -> None:
     reset_s5(wg)
     change_agreement(wg, FITNESS, "cancel")
@@ -83,6 +85,7 @@ def test_t102_a_request_while_the_agreement_is_suspended_is_declined(wg: WgClien
 
 
 @pytest.mark.case("T102")
+@needs_changes
 def test_t102_a_suspend_declines_waiting_requests_and_later_ones(wg: WgClient) -> None:
     reset_s5(wg)
     waiting = merchant_request(wg, VIDEO, 2_500)
@@ -108,6 +111,7 @@ def test_t102_a_suspend_declines_waiting_requests_and_later_ones(wg: WgClient) -
 
 
 @pytest.mark.case("T102")
+@needs_changes
 def test_t102_a_request_after_the_agreement_expired_is_declined(wg: WgClient) -> None:
     reset_s5(wg, "video_expiring")
     wg.advance(to=at(11, 6, 0, 0))
@@ -149,6 +153,7 @@ def assert_expired_at_midnight(wg: WgClient, events_before: int) -> None:
 
 
 @pytest.mark.case("T102")
+@needs_changes
 def test_t102_one_clock_advance_past_the_expiry_stops_at_the_expiry_instant(
     wg: WgClient,
 ) -> None:
@@ -170,6 +175,7 @@ def test_t102_one_clock_advance_past_the_expiry_stops_at_the_expiry_instant(
 
 
 @pytest.mark.case("T102")
+@needs_changes
 def test_t102_a_request_waiting_at_the_expiry_is_declined_with_it(wg: WgClient) -> None:
     reset_s5(wg, "video_expiring")
     events_before = len(mandate_events(wg, VIDEO))

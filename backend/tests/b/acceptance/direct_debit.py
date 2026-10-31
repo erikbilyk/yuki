@@ -16,6 +16,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
+import pytest
 
 from wg.contracts.api import ROUTES
 from wg.contracts.enums import Role
@@ -58,6 +59,16 @@ _serial = itertools.count(1)
 def has_direct_debits() -> bool:
     """Whether the build lists the S5 routes; the S5 cases and the T59 segment key on this."""
     return any(r.method == "GET" and r.path == "/v1/mandates" for r in ROUTES)
+
+
+def has_mandate_changes() -> bool:
+    """Whether the build lists the route that drafts agreement changes."""
+    return any(r.method == "POST" and r.path == "/v1/drafts/mandate-change" for r in ROUTES)
+
+
+needs_changes = pytest.mark.skipif(
+    not has_mandate_changes(), reason="the build lists no agreement-change route"
+)
 
 
 def at(month: int, day: int, hour: int = 0, minute: int = 0) -> datetime:

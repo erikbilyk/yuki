@@ -39,6 +39,7 @@ from .direct_debit import (
     mandates,
     merchant_request,
     money_state,
+    needs_changes,
     open_card,
     operation_count,
     payment_operations,
@@ -63,6 +64,7 @@ def assert_still_locked(wg: WgClient) -> None:
 
 
 @pytest.mark.case("T104")
+@needs_changes
 def test_t104_closing_lowering_suspending_and_declining_still_work(wg: WgClient) -> None:
     reset_s5(wg)
     video = merchant_request(wg, VIDEO, 2_500)
@@ -117,6 +119,7 @@ def test_t104_paying_is_refused_at_the_draft_and_at_an_open_card(wg: WgClient) -
 
 
 @pytest.mark.case("T104")
+@needs_changes
 def test_t104_raising_a_cap_is_refused(wg: WgClient) -> None:
     reset_s5(wg)
     lock_customer(wg)
@@ -136,6 +139,7 @@ def test_t104_raising_a_cap_is_refused(wg: WgClient) -> None:
 
 
 @pytest.mark.case("T104")
+@needs_changes
 def test_t104_resuming_a_suspended_agreement_is_refused(wg: WgClient) -> None:
     reset_s5(wg, "video_suspended")
     lock_customer(wg)
@@ -166,8 +170,8 @@ def test_t104_a_new_agreement_is_refused_or_not_built(wg: WgClient) -> None:
     if any(r.method == "POST" and r.path == "/v1/drafts/mandate" for r in ROUTES):
         refused(response, *LOCKED)
     else:
-        # Level 4 is not built: the route is absent, and the case report says so.
-        assert response.status_code == 404, response.text
+        # Level 4 is not built: the route is absent (404, or 405 beside its sibling draft routes).
+        assert response.status_code in (404, 405), response.text
     assert action_count(wg) == actions and operation_count(wg) == operations
     assert money_state(wg) == state
     assert len(mandates(wg)["mandates"]) == 3

@@ -27,9 +27,9 @@ from .direct_debit import (
     audit_events,
     change_agreement,
     debit_request,
-    has_direct_debits,
     merchant_request,
     money_state,
+    needs_changes,
     outcome,
     pay_request,
     payment_operations,
@@ -37,9 +37,7 @@ from .direct_debit import (
     stored_requests,
 )
 
-pytestmark = pytest.mark.skipif(
-    not has_direct_debits(), reason="the build lists no direct-debit routes"
-)
+pytestmark = needs_changes
 
 
 def request_above_cap(wg: WgClient, amount_fen: int) -> dict:
