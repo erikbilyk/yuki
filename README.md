@@ -1,11 +1,26 @@
-# WealthGuard
+# YUKI - 安全可控的跨场景 AI 银行智能体
 
 ## 1. Project Overview
 
-- Track: AI track (domestic)
-- Team name: [to be confirmed]
-- Project name: WealthGuard
-- One-line summary: a banking agent prototype that plans and carries out everyday money tasks (transfers, cash and bills, fund rebalancing) on a simulated bank, where the language model can only read and draft and every money movement needs the customer's approval at the right tier.
+- Track: 银行 AI 智能体（AI Banking Agent）
+- Team name: YUKI
+- Project name: YUKI - 安全可控的跨场景 AI 银行智能体
+- One-line summary: a banking agent prototype for personal customers that plans and carries out everyday money tasks (transfers, cash and bills, fund rebalancing, direct-debit agreements) on a simulated bank, where the language model can only read and draft and every money movement needs the customer's approval at the right tier.
+
+The repository and the code are named WealthGuard (backend package `wg`).
+
+The pattern is: the model proposes, rules check, the customer authorizes, and a gateway executes. In this prototype the customer can ask in natural language to:
+
+- look up accounts, bills and the cash that is free to spend;
+- pay a saved payee or a bill;
+- check fund positions and the fees, turnover and sector exposure of a rebalancing trade, and read dated diagnostics from the public reports of two real funds, including the overlap of their holdings;
+- see subscriptions and direct-debit agreements, and answer or change them.
+
+Several of these tasks can be joined into one plan: redeem a fund, pay a bill, change the cash reserve and buy another fund with the cash that remains. The customer approves the plan within stated bounds; each fund order and other red-tier step in it still needs its own one-time code. When a new bill arrives, the system re-checks the remaining steps: it revises the purchase within the approved bounds or pauses the step; a step outside the bounds needs a new approval. A redemption that settles late delays the purchase that depends on it, and the plan's checkpoint records a missed target instead of a pass.
+
+Money and sensitive settings change by risk tier: a card approval for smaller actions, and a card plus a one-time code for larger ones. The model cannot change an account. The gateway applies idempotency keys and writes audit rows in the same transaction as each change, a failure breaker locks a plan or customer after repeated unexpected failures, and secrets such as PINs and codes are removed from text before the model sees it. Direct debits are never automatic: the customer confirms each one.
+
+Not covered: managing bank cards (freezing, reporting a card lost, card limits) is not built. The prototype runs on synthetic data and a simulated bank; it connects to no real account or payment network.
 
 The customer talks to the agent in Chinese, English or Russian; all customer-facing text is Simplified Chinese. The agent reads the customer's accounts, proposes actions and explains results. It cannot approve, verify, submit, settle or unlock anything. Approval happens on a server-rendered card outside the chat, and risky actions also need a one-time code that appears only in a simulated SMS panel.
 
