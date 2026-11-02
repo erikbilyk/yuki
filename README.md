@@ -7,8 +7,6 @@
 - Project name: YUKI - 安全可控的跨场景 AI 银行智能体
 - One-line summary: a banking agent prototype for personal customers that plans and carries out everyday money tasks (transfers, cash and bills, fund rebalancing, direct-debit agreements) on a simulated bank, where the language model can only read and draft and every money movement needs the customer's approval at the right tier.
 
-The repository and the code are named WealthGuard (backend package `wg`).
-
 The pattern is: the model proposes, rules check, the customer authorizes, and a gateway executes. In this prototype the customer can ask in natural language to:
 
 - look up accounts, bills and the cash that is free to spend;

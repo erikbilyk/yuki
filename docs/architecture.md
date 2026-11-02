@@ -1,6 +1,6 @@
 # Architecture
 
-YUKI - 安全可控的跨场景 AI 银行智能体 (the repository and code are named WealthGuard) is one repository, one backend process and one SQLite database file per working copy. This document describes the parts, how a request flows through them, and the rules that keep the language model away from money movement. Commands to run the system are in the [README](../README.md); test layers are in [testing.md](testing.md).
+YUKI - 安全可控的跨场景 AI 银行智能体 is one repository, one backend process and one SQLite database file per working copy. This document describes the parts, how a request flows through them, and the rules that keep the language model away from money movement. Commands to run the system are in the [README](../README.md); test layers are in [testing.md](testing.md).
 
 ## 1. Parts
 

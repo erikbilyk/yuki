@@ -345,7 +345,7 @@ def test_an_unsettled_hold_counts_against_headroom(bench: Bench):
 
 def test_insufficient_posted_money_is_refused_at_submission(bench: Bench):
     action = bench.ready(50_000)
-    # ¥17,900 leaves the account outside WealthGuard after the transfer was approved.
+    # ¥17,900 leaves the account outside YUKI after the transfer was approved.
     _drain(bench, 1_790_000)
 
     with pytest.raises(WgError) as refused:

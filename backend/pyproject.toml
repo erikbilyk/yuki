@@ -1,7 +1,7 @@
 [project]
 name = "wg"
 version = "0.1.0"
-description = "WealthGuard banking agent prototype"
+description = "YUKI banking agent prototype"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi",

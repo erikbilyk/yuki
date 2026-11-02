@@ -591,7 +591,7 @@ def post_external_debit(
     merchant: str,
     at: datetime,
 ) -> OperationRow:
-    """Debit a customer account for a payment the bank did not take through WealthGuard.
+    """Debit a customer account for a payment the bank did not take through YUKI.
 
     The money has left already, so nothing can refuse it except a balance that cannot cover
     it. The merchant text is untrusted and stored as received.
