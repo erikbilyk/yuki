@@ -268,7 +268,7 @@ The agreements load through the demo panel; `scripts/reset-fixture.sh` loads `fi
 
 | Command | What it runs |
 | --- | --- |
-| `scripts/check.sh` | ruff lint, ruff format check, the pytest suites (`tests/a` and B's `engines`, `goldens`, `sources`, `evals`, `im`), the write-path scan and the secret scan |
+| `scripts/check.sh` | ruff lint, ruff format check, the pytest suites in `tests/a` and in `tests/b` (`engines`, `goldens`, `sources`, `evals`, `im`), the write-path scan and the secret scan |
 | `scripts/acceptance.sh --gate G1` | The backend gate: the 36 core P0 cases and regressions R1–R6 at layers D, H and K |
 | `scripts/acceptance.sh --gate G2` | G1 plus the scripted-model variants and the other G2 cases |
 | `scripts/acceptance.sh --gate G3` | The freeze gate: G2 plus T13, T77 and R7–R10 |
@@ -330,7 +330,8 @@ How the test layers are built and what each one checks is in [docs/testing.md](d
 
 ## 6. Repository and Deployment
 
-- GitHub / Git repository: [to be added at release]
+- GitHub / Git repository: <https://github.com/erikbilyk/yuki>
+- Release archive: `scripts/package.sh <git-ref>` writes `dist/yuki-<ref>.zip` with `git archive` (no `.git`, `.env` or `var/`) and prints its SHA-256.
 - Live demo: none. The prototype is intended for local use; a public deployment would need HTTPS and its own review.
 - Deployment instructions: local only. Follow section 4. The backend binds to `127.0.0.1`; put a reverse proxy with TLS in front of it if it is ever exposed, set `WG_DEMO_MODE=0` and change the fixture passwords.
 
