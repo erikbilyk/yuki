@@ -1,8 +1,8 @@
 {
-  "build": "freeze-3",
-  "freeze_tag": "freeze-3",
+  "build": "freeze-4",
+  "freeze_tag": "freeze-4",
   "frozen": true,
-  "generated_at": "2026-10-31T21:48:42Z",
+  "generated_at": "2026-11-02T08:30:33Z",
   "environment": {
     "python": "3.12.16",
     "pytest": "9.2.0",
@@ -30,15 +30,15 @@
   "runs": [
     {
       "exit_status": 0,
-      "duration_s": 34.3
+      "duration_s": 46.7
     },
     {
       "exit_status": 0,
-      "duration_s": 33.8
+      "duration_s": 33.3
     },
     {
       "exit_status": 0,
-      "duration_s": 34.1
+      "duration_s": 33.2
     }
   ],
   "features": [

@@ -2,10 +2,10 @@
 
 | Item | Value |
 | --- | --- |
-| Build | Tag `freeze-3`, commit `6585924` (`65859246d16a939f63335cdfa7f307d50afac759`), build ID `freeze-3`. `git diff --quiet freeze-3 -- backend frontend` succeeded before the first run and after the last run, so every run below is on the frozen code |
-| Date (CST) | 2026-11-01 (deterministic runs 05:11 to 05:59; live, T60 and comparison runs 05:59 to 06:35) |
+| Build | Tag `freeze-4`, commit `7a0440f` (`7a0440f7dce833fa339a42c6a9f254636db4bd7c`), build ID `freeze-4`. Every raw report records frozen build: yes. `git diff --quiet freeze-4 -- backend frontend` succeeded before the gate and browser runs and after the last of them, so every run below is on the frozen code. Live and comparison runs were made on freeze-3 (6585924). freeze-4 differs from freeze-3 by the project name in 11 files (12 lines); the system prompt system_zh-11, the tool schema versions f6d323703719 and 4f53cda18c2b and the model deepseek-flash with thinking disabled are unchanged, so the results apply to freeze-4. No model run was repeated on freeze-4. |
+| Date (CST) | Deterministic runs and browser tests: 2026-11-02 (reports written 16:28 to 16:50). Live, T60 and comparison runs: 2026-11-01, on freeze-3 |
 | Environment | Ubuntu 24.04.5 LTS under WSL2 (kernel 6.18.54.1), Python 3.12.16 (project environment), pytest 9.2.0, Node v24.22.1, uv 0.13.6 |
-| Model | requested `deepseek-flash`, returned `deepseek-flash`, thinking disabled; system prompt `system_zh-11`; tool schema versions `f6d323703719` (coordinated) and `4f53cda18c2b` (flat agent). Acceptance runs use the stub provider; only the live trials and the comparison call the model |
+| Model | requested `deepseek-flash`, returned `deepseek-flash`, thinking disabled; system prompt `system_zh-11`; tool schema versions `f6d323703719` (coordinated) and `4f53cda18c2b` (flat agent). Acceptance runs use the stub provider; only the live trials and the comparison call the model, and they ran on freeze-3 (see Live trials and comparison) |
 | Fixture hash | `11049f3d1e62dff51695cf20c14cb236a36b71e457d7b75f4338448bd2fcac04` |
 | Feature flags | `s5` (direct-debit agreements) is listed by the build and counts in the denominators |
 
@@ -13,7 +13,7 @@ Machine-readable form: `acceptance-report.json` (the 3-run report). Raw reports:
 
 ## Counts by set
 
-Applicability follows the denominator rules in `docs/testing.md`. Source: `reports/acceptance-freeze-3-20261031T214636Z.md`, 3 consecutive runs of `scripts/acceptance.sh --repeat 3`. The catalogue holds T1 to T114 (114 cases, 53 P0) and R1 to R10 plus R-S5-1.
+Applicability follows the denominator rules in `docs/testing.md`. Source: `reports/acceptance-freeze-4-20261102T082808Z.md`, 3 consecutive runs of `scripts/acceptance.sh --repeat 3`. The catalogue holds T1 to T114 (114 cases, 53 P0) and R1 to R10 plus R-S5-1.
 
 | Set | Cases | P0 | Applicable | Implemented | Passed | Reproducible | Not applicable |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -26,7 +26,7 @@ Applicability follows the denominator rules in `docs/testing.md`. Source: `repor
 | R (R1 to R10) | 10 | 0 | 10 | 10 | 10 | 10 | 0 |
 | Total | 125 | 53 | 104 | 102 | 101 | 101 | 21 |
 
-101 of 104 applicable cases are reproducible, that is, passed in each of the 3 runs. All 44 applicable P0 cases (36 in S1, S2, S3 and S6, plus the 8 S5 P0 cases T98 to T105), T13, T77 and R1 to R10 are reproducible. Each run executed 506 tests and passed all 506 (11:40, 11:53 and 11:50 minutes); no failure and no error in any run.
+101 of 104 applicable cases are reproducible, that is, passed in each of the 3 runs. All 44 applicable P0 cases (36 in S1, S2, S3 and S6, plus the 8 S5 P0 cases T98 to T105), T13, T77 and R1 to R10 are reproducible. Each run executed 506 tests and passed all 506 (11:24, 11:30 and 11:36 minutes); no failure and no error in any run.
 
 ## S5 (direct-debit agreements)
 
@@ -51,17 +51,17 @@ Facts about the S5 surface as built:
 | Gate | Required | Passed | Result | Report |
 | --- | --- | --- | --- | --- |
 | G1 | 75 | 75 | passed | from the 3-run report |
-| G2 | 89 | 89 | passed | from the 3-run report; live items T1/L, T17/L, T39/L, T60/L, T60/U are external to the deterministic run (see `live-trials.md`) |
-| G3 | 97 | 97 | passed | `reports/acceptance-freeze-3-20261031T215553Z.md`: `--gate G3`, 306 passed, 200 deselected |
-| GS5 | 16 | 16 | passed | `reports/acceptance-freeze-3-20261031T215841Z.md`: `--gate GS5`, 110 passed, 396 deselected |
-| GS5-U | 3 | 3 | passed | `cd frontend && npm run build && npm run e2e` on the frozen build: 6 passed (three GS5-U stories in `e2e/s5.spec.ts`, T60, T67, T70) |
+| G2 | 89 | 89 | passed | from the 3-run report; live items T1/L, T17/L, T39/L, T60/L, T60/U are external to the deterministic run (freeze-3 results in `live-trials.md`) |
+| G3 | 97 | 97 | passed | `reports/acceptance-freeze-4-20261102T084711Z.md`: `--gate G3`, 306 passed, 200 deselected |
+| GS5 | 16 | 16 | passed | `reports/acceptance-freeze-4-20261102T085017Z.md`: `--gate GS5`, 110 passed, 396 deselected |
+| GS5-U | 3 | 3 | passed | `cd frontend && npm ci && npm run build && npm run e2e` on the frozen build freeze-4: 6 passed (three GS5-U stories in `e2e/s5.spec.ts`, T60, T67, T70) |
 
 ## Repeat runs
 
 | Run set | Command | Result | Report |
 | --- | --- | --- | --- |
-| All applicable cases ×3 | `scripts/acceptance.sh --repeat 3` | 506 passed in each run, no failure or error | `reports/acceptance-freeze-3-20261031T214636Z.*` |
-| S3 repeat set ×3 | `scripts/acceptance.sh --only T39,T46,T47,T48 --repeat 3` | 20 passed in each run, no failure | `reports/acceptance-freeze-3-20261031T214842Z.*` |
+| All applicable cases ×3 | `scripts/acceptance.sh --repeat 3` | 506 passed in each run, no failure or error | `reports/acceptance-freeze-4-20261102T082808Z.*` |
+| S3 repeat set ×3 | `scripts/acceptance.sh --only T39,T46,T47,T48 --repeat 3` | 20 passed in each run, no failure | `reports/acceptance-freeze-4-20261102T083033Z.*` |
 
 The S5 cases are part of the first row.
 
@@ -85,7 +85,7 @@ All eight attack families, with the S5 additions, passed in each of the 3 runs (
 
 ## Live trials and comparison
 
-All three live blocks, the T60 repeats and the comparison ran on the frozen build (`runs/`). Model spend was 2.614483 CNY in total.
+Live and comparison runs were made on freeze-3 (6585924). freeze-4 differs from freeze-3 by the project name in 11 files (12 lines); the system prompt system_zh-11, the tool schema versions f6d323703719 and 4f53cda18c2b and the model deepseek-flash with thinking disabled are unchanged, so the results apply to freeze-4. No model run was repeated on freeze-4. The records are in `runs/`, unchanged; each carries commit `65859246d16a`. Model spend was 2.614483 CNY in total (all on freeze-3).
 
 | Run set | Episodes | Passed | Unauthorized | Duplicate | K7 replaced turns |
 | --- | --- | --- | --- | --- | --- |
