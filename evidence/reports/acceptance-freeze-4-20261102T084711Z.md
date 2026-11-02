@@ -1,7 +1,7 @@
 # Acceptance report
 
-- Build: `freeze-3`; frozen build: yes (tag: freeze-3)
-- Generated (UTC): 2026-10-31T21:55:53Z; runs: 1
+- Build: `freeze-4`; frozen build: yes (tag: freeze-4)
+- Generated (UTC): 2026-11-02T08:47:11Z; runs: 1
 - Selection: gate G3; only all; layers D, H, K, S
 - Environment: Python 3.12.16, pytest 9.2.0, Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39
 - Fixture hash: `11049f3d1e62dff51695cf20c14cb236a36b71e457d7b75f4338448bd2fcac04`

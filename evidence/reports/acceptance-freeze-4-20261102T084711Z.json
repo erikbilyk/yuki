@@ -1,8 +1,8 @@
 {
-  "build": "freeze-3",
-  "freeze_tag": "freeze-3",
+  "build": "freeze-4",
+  "freeze_tag": "freeze-4",
   "frozen": true,
-  "generated_at": "2026-10-31T21:46:36Z",
+  "generated_at": "2026-11-02T08:47:11Z",
   "environment": {
     "python": "3.12.16",
     "pytest": "9.2.0",
@@ -12,7 +12,7 @@
   },
   "fixture_hash": "11049f3d1e62dff51695cf20c14cb236a36b71e457d7b75f4338448bd2fcac04",
   "selection": {
-    "gate": null,
+    "gate": "G3",
     "only": [],
     "layers": [
       "D",
@@ -21,19 +21,11 @@
       "S"
     ]
   },
-  "repeat": 3,
+  "repeat": 1,
   "runs": [
     {
       "exit_status": 0,
-      "duration_s": 700.6
-    },
-    {
-      "exit_status": 0,
-      "duration_s": 712.9
-    },
-    {
-      "exit_status": 0,
-      "duration_s": 709.8
+      "duration_s": 431.1
     }
   ],
   "features": [
@@ -55,7 +47,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed",
@@ -67,22 +59,16 @@
       "variants": {
         "D": {
           "test_t1_transfer_500_to_mom": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t1_transfer_500_to_mom": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "S": {
           "test_t1_the_model_drafts_and_the_customer_executes": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -99,7 +85,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "S": "passed"
       },
@@ -107,18 +93,12 @@
       "variants": {
         "S": {
           "test_t2_an_amount_ten_times_the_message_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t2_an_amount_whose_quote_is_not_in_the_message_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t2_the_amount_the_message_states_is_drafted": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -135,7 +115,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "S": "passed"
       },
@@ -143,13 +123,9 @@
       "variants": {
         "S": {
           "test_t3_a_model_that_picks_one_of_two_payees_drafts_nothing": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t3_the_model_asks_and_the_named_payee_is_drafted": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -166,7 +142,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "S": "passed"
       },
@@ -174,13 +150,9 @@
       "variants": {
         "S": {
           "test_t4_an_amount_from_an_earlier_message_is_not_taken": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t4_the_model_asks_for_the_amount_and_the_stated_one_is_drafted": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -198,7 +170,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -207,45 +179,29 @@
       "variants": {
         "D": {
           "test_t5_day_total_tiers": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t5_limit_executes_without_code": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t5_one_fen_over_needs_code": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t5_single_transfer_tiers": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t5_day_total_tiers": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t5_limit_executes_without_code": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t5_one_fen_over_needs_code": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t5_single_transfer_tiers": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -263,7 +219,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -272,25 +228,17 @@
       "variants": {
         "D": {
           "test_t6_parallel_confirms_never_execute_two_yellow": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t6_sequential_second_transfer_is_red": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t6_parallel_confirms_never_execute_two_yellow": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t6_sequential_second_transfer_is_red": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -309,7 +257,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed",
@@ -319,72 +267,46 @@
       "variants": {
         "D": {
           "test_t7_code_of_another_action_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t7_code_of_another_amount_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t7_correct_code_executes_once": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t7_expired_code_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t7_reissued_code_executes_after_expiry": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t7_code_of_another_action_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t7_code_of_another_amount_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t7_correct_code_executes_once": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t7_expired_code_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t7_reissued_code_executes_after_expiry": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "S": {
           "test_t7_a_model_cannot_submit_the_code_itself": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t7_secrets_typed_in_chat_reach_nothing": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t7_the_issued_code_entered_on_the_card_executes": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -402,7 +324,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -411,15 +333,11 @@
       "variants": {
         "D": {
           "test_t8_insufficient_funds_is_infeasible": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t8_insufficient_funds_is_infeasible": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -438,7 +356,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed",
@@ -448,107 +366,67 @@
       "variants": {
         "D": {
           "test_t9_challenge_without_approval_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_confirm_without_csrf_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_customer_cannot_call_the_simulator": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_forged_terms_hash_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_legitimate_confirm_executes": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_red_confirm_alone_moves_no_money": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_trusted_routes_need_the_customer_session": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_user_confirmed_field_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t9_challenge_without_approval_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_confirm_without_csrf_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_customer_cannot_call_the_simulator": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_forged_terms_hash_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_legitimate_confirm_executes": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_red_confirm_alone_moves_no_money": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_trusted_routes_need_the_customer_session": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_user_confirmed_field_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "S": {
           "test_t9_a_user_confirmed_argument_is_refused_and_audited": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_the_model_shows_the_card_and_the_customer_confirms_it": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_tools_that_confirm_or_touch_the_simulator_do_not_exist": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t9_user_confirmed_on_an_approval_request_confirms_nothing": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -567,7 +445,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed",
@@ -577,52 +455,34 @@
       "variants": {
         "D": {
           "test_t10_command_in_incoming_payment_creates_no_action[payer_name_command]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t10_command_in_incoming_payment_creates_no_action[remark_command]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t10_remark_with_command_pays_only_the_stated_amount": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t10_command_in_incoming_payment_creates_no_action[payer_name_command]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t10_command_in_incoming_payment_creates_no_action[remark_command]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t10_remark_with_command_pays_only_the_stated_amount": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "S": {
           "test_t10_a_model_cannot_shorten_the_remark_to_expose_its_amount": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t10_a_payee_and_amount_from_the_remark_are_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t10_the_customers_amount_executes_and_the_remark_stays_text": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -639,7 +499,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "K": "passed"
       },
@@ -647,23 +507,15 @@
       "variants": {
         "K": {
           "test_t11_lost_response_and_restart[crash_after_commit]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t11_lost_response_and_restart[crash_before_commit]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t11_lost_response_and_restart[pause_after_commit]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t11_lost_response_and_restart[pause_before_commit]": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -681,7 +533,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -690,35 +542,23 @@
       "variants": {
         "D": {
           "test_t12_cancelled_draft_cannot_be_approved": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t12_stop_while_waiting_for_code": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t12_undo_after_settled_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t12_cancelled_draft_cannot_be_approved": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t12_stop_while_waiting_for_code": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t12_undo_after_settled_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -736,7 +576,7 @@
       ],
       "applicable": true,
       "reason": "P2 promoted to release gate",
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -745,45 +585,29 @@
       "variants": {
         "D": {
           "test_t13_failures_then_success_do_not_lock": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t13_three_failures_lock_writes": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t13_unknown_outcome_is_not_counted": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t13_unlock_invalidates_the_grant": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t13_failures_then_success_do_not_lock": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t13_three_failures_lock_writes": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t13_unknown_outcome_is_not_counted": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t13_unlock_invalidates_the_grant": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -817,7 +641,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "S": "passed"
       },
@@ -825,23 +649,15 @@
       "variants": {
         "S": {
           "test_t15_a_wrong_amount_is_replaced": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t15_the_true_status_and_amount_are_kept": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t15_transferred_is_kept_once_the_receipt_says_settled": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t15_transferred_said_of_a_submitted_transfer_is_replaced": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -858,7 +674,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "S": "passed"
       },
@@ -866,13 +682,9 @@
       "variants": {
         "S": {
           "test_t16_a_balance_question_reads_no_transfer_history": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t16_the_balance_alone_is_read_and_no_extra_read_is_recorded": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -891,7 +703,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -902,15 +714,11 @@
       "variants": {
         "D": {
           "test_t17_control_numbers": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t17_control_numbers": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -928,7 +736,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -937,35 +745,23 @@
       "variants": {
         "D": {
           "test_t18_same_statement_imported_twice[stm_main_2610]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t18_same_statement_imported_twice[stm_main_2611]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t18_same_statement_imported_twice[stm_sav_2608]": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t18_same_statement_imported_twice[stm_main_2610]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t18_same_statement_imported_twice[stm_main_2611]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t18_same_statement_imported_twice[stm_sav_2608]": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -982,7 +778,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -990,8 +786,6 @@
       "variants": {
         "D": {
           "test_t19_own_transfer_is_not_income": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1008,7 +802,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -1016,8 +810,6 @@
       "variants": {
         "D": {
           "test_t20_rent_is_not_counted_again_in_the_budget": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1035,7 +827,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -1044,25 +836,17 @@
       "variants": {
         "D": {
           "test_t21_bill_and_its_hold_count_once": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t21_corrupted_unpaid_locks_writes": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t21_bill_and_its_hold_count_once": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t21_corrupted_unpaid_locks_writes": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1080,7 +864,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -1089,15 +873,11 @@
       "variants": {
         "D": {
           "test_t22_partial_payment": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t22_partial_payment": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1114,7 +894,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -1122,13 +902,9 @@
       "variants": {
         "D": {
           "test_t23_paid_bill_cannot_return_to_unpaid": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t23_refund_stays_unresolved_until_reconciled": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1160,7 +936,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -1169,35 +945,23 @@
       "variants": {
         "D": {
           "test_t25_debit_account_short_is_infeasible": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t25_internal_transfer_funds_the_payment": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t25_rejected_payment_leaves_bill_unpaid": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t25_debit_account_short_is_infeasible": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t25_internal_transfer_funds_the_payment": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t25_rejected_payment_leaves_bill_unpaid": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1215,7 +979,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -1224,45 +988,29 @@
       "variants": {
         "D": {
           "test_t26_secured_by_due_date[both_secured]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t26_secured_by_due_date[later_unsecured]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t26_secured_by_due_date[rent_fits_exactly]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t26_secured_by_due_date[rent_one_step_short]": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t26_secured_by_due_date[both_secured]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t26_secured_by_due_date[later_unsecured]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t26_secured_by_due_date[rent_fits_exactly]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t26_secured_by_due_date[rent_one_step_short]": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1279,7 +1027,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "S": "passed"
       },
@@ -1287,18 +1035,12 @@
       "variants": {
         "S": {
           "test_t27_a_bill_without_details_is_asked_for_not_invented": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t27_missing_slots_are_named_and_no_candidate_is_created": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t27_the_model_asks_without_calling_anything": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1315,7 +1057,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "S": "passed"
       },
@@ -1323,13 +1065,9 @@
       "variants": {
         "S": {
           "test_t28_the_honest_refusal_names_the_boundary_and_is_kept": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t28_tools_for_another_bank_and_for_tax_do_not_exist": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1348,7 +1086,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed",
@@ -1358,67 +1096,43 @@
       "variants": {
         "D": {
           "test_t29_genuine_ebill_is_confirmed": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t29_untrusted_text_changes_nothing[merchant_text]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t29_untrusted_text_changes_nothing[sms_new_card]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t29_untrusted_text_changes_nothing[sms_skip_bill]": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t29_genuine_ebill_is_confirmed": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t29_untrusted_text_changes_nothing[merchant_text]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t29_untrusted_text_changes_nothing[sms_new_card]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t29_untrusted_text_changes_nothing[sms_skip_bill]": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "S": {
           "test_t29_a_genuine_ebill_is_confirmed_on_its_card": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t29_a_merchant_text_does_not_mark_the_bills_paid": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t29_an_sms_saying_a_bill_can_be_skipped_leaves_the_bill": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t29_an_sms_with_a_new_card_changes_no_payee": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1435,7 +1149,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "S": "passed"
       },
@@ -1443,28 +1157,18 @@
       "variants": {
         "S": {
           "test_t30_a_claim_the_records_do_not_support_is_replaced[estimate_as_free_money]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t30_a_claim_the_records_do_not_support_is_replaced[paid_for_secured]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t30_a_claim_the_records_do_not_support_is_replaced[right_amount_false_status]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t30_a_claim_the_records_do_not_support_is_replaced[wrong_amount]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t30_the_true_amount_and_status_are_kept": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1481,7 +1185,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "S": "passed"
       },
@@ -1489,13 +1193,9 @@
       "variants": {
         "S": {
           "test_t31_a_free_money_question_reads_no_history_and_no_positions": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t31_the_snapshot_alone_is_read_and_extra_reads_stay_zero": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1513,7 +1213,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -1522,25 +1222,17 @@
       "variants": {
         "D": {
           "test_t32_reserve_up_yellow_down_red": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t32_unchanged_target_counts_as_an_increase": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t32_reserve_up_yellow_down_red": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t32_unchanged_target_counts_as_an_increase": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1559,7 +1251,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed",
@@ -1569,37 +1261,25 @@
       "variants": {
         "D": {
           "test_t33_rent_paid_once_through_the_transfer_pack": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t33_rent_paid_once_through_the_transfer_pack": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "K": {
           "test_t33_lost_response_and_restart[crash_after_commit]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t33_lost_response_and_restart[crash_before_commit]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t33_lost_response_and_restart[pause_after_commit]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t33_lost_response_and_restart[pause_before_commit]": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1617,7 +1297,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -1626,25 +1306,17 @@
       "variants": {
         "D": {
           "test_t34_operator_cannot_confirm_a_bill": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t34_unresolved_item_shows_its_impact": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t34_operator_cannot_confirm_a_bill": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t34_unresolved_item_shows_its_impact": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1662,7 +1334,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -1671,35 +1343,23 @@
       "variants": {
         "D": {
           "test_t35_missing_transaction_marks_the_snapshot_incomplete": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t35_plan_does_not_continue_on_incomplete_data[complete_data]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t35_plan_does_not_continue_on_incomplete_data[t35]": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t35_missing_transaction_marks_the_snapshot_incomplete": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t35_plan_does_not_continue_on_incomplete_data[complete_data]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t35_plan_does_not_continue_on_incomplete_data[t35]": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1716,7 +1376,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -1724,8 +1384,6 @@
       "variants": {
         "D": {
           "test_t36_cancelling_the_rent_bill_is_explicit_and_warned": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1742,7 +1400,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "S": "passed"
       },
@@ -1750,18 +1408,12 @@
       "variants": {
         "S": {
           "test_t37_a_model_that_claims_the_rent_was_paid_and_cancelled_is_replaced": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t37_when_short_the_payment_is_infeasible_and_cancelling_creates_no_money": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t37_with_enough_money_the_rent_is_paid_and_nothing_is_cancelled": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1780,7 +1432,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed",
@@ -1790,22 +1442,16 @@
       "variants": {
         "D": {
           "test_t38_paid_elsewhere_is_reported_not_settled": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t38_paid_elsewhere_is_reported_not_settled": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "S": {
           "test_t38_paid_elsewhere_is_reported_and_never_stated_as_paid": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1824,7 +1470,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -1835,25 +1481,17 @@
       "variants": {
         "D": {
           "test_t39_plan_runs_to_a_passed_checkpoint": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t39_the_search_finds_one_passing_swap": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t39_plan_runs_to_a_passed_checkpoint": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t39_the_search_finds_one_passing_swap": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1870,7 +1508,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "S": "passed"
       },
@@ -1878,13 +1516,9 @@
       "variants": {
         "S": {
           "test_t40_limits_the_customer_never_gave_are_not_made_up": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t40_the_model_asks_and_the_stated_limits_are_searched": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1901,7 +1535,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "S": "passed"
       },
@@ -1909,13 +1543,9 @@
       "variants": {
         "S": {
           "test_t41_public_figures_never_become_an_executable_plan": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t41_the_honest_answer_says_it_is_unsupported_and_cites_the_report_date": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1933,7 +1563,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -1942,25 +1572,17 @@
       "variants": {
         "D": {
           "test_t42_cap_of_thirty_yuan_accepts_the_same_swap": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t42_fee_above_the_cap_is_refused_before_approval": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t42_cap_of_thirty_yuan_accepts_the_same_swap": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t42_fee_above_the_cap_is_refused_before_approval": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -1977,7 +1599,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -1985,8 +1607,6 @@
       "variants": {
         "D": {
           "test_t43_unknown_lots_leave_the_fee_unverified": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2004,7 +1624,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "S": "passed"
@@ -2013,30 +1633,20 @@
       "variants": {
         "D": {
           "test_t44_fee_equal_to_a_strict_limit_fails": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t44_fee_equal_to_an_inclusive_limit_passes": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "S": {
           "test_t44_a_fee_equal_to_a_strict_limit_fails": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t44_a_fee_equal_to_an_inclusive_limit_passes": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t44_a_model_cannot_turn_a_strict_limit_into_an_inclusive_one": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2054,7 +1664,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -2063,15 +1673,11 @@
       "variants": {
         "D": {
           "test_t45_purchase_runs_only_after_the_redemption_settled": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t45_purchase_runs_only_after_the_redemption_settled": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2089,7 +1695,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -2098,35 +1704,23 @@
       "variants": {
         "D": {
           "test_t46_bill_within_bounds_revises_the_purchase": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t46_large_bill_without_bounds_pauses_on_exact_orders": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t46_small_bill_without_bounds_changes_nothing": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t46_bill_within_bounds_revises_the_purchase": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t46_large_bill_without_bounds_pauses_on_exact_orders": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t46_small_bill_without_bounds_changes_nothing": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2145,7 +1739,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed",
@@ -2155,37 +1749,25 @@
       "variants": {
         "D": {
           "test_t47_bill_beyond_the_bounds_pauses_the_purchase": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t47_bill_beyond_the_bounds_pauses_the_purchase": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "S": {
           "test_t47_a_claim_that_the_purchase_was_made_is_replaced": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t47_a_figure_the_plan_does_not_show_is_replaced": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t47_impossible_is_never_said_of_the_amount_that_fits": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t47_the_paused_purchase_and_the_free_money_are_stated_as_the_records_have_them": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2202,7 +1784,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "K": "passed"
       },
@@ -2210,23 +1792,15 @@
       "variants": {
         "K": {
           "test_t48_lost_response_on_the_redemption[crash_after_commit]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t48_lost_response_on_the_redemption[crash_before_commit]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t48_lost_response_on_the_redemption[pause_after_commit]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t48_lost_response_on_the_redemption[pause_before_commit]": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2244,7 +1818,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -2253,15 +1827,11 @@
       "variants": {
         "D": {
           "test_t49_old_node_cannot_execute_after_the_revision": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t49_old_node_cannot_execute_after_the_revision": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2279,7 +1849,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -2288,35 +1858,23 @@
       "variants": {
         "D": {
           "test_t50_code_for_another_amount_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t50_expired_code_is_refused_and_a_new_step_up_works": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t50_user_confirmed_gives_no_authority": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t50_code_for_another_amount_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t50_expired_code_is_refused_and_a_new_step_up_works": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t50_user_confirmed_gives_no_authority": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2333,7 +1891,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "S": "passed"
       },
@@ -2341,13 +1899,9 @@
       "variants": {
         "S": {
           "test_t51_instructions_inside_a_document_change_no_limit_and_buy_no_fund": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t51_the_task_completes_with_the_customers_limits": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2365,7 +1919,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -2374,15 +1928,11 @@
       "variants": {
         "D": {
           "test_t52_purchase_settling_after_the_checkpoint_is_missed": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t52_purchase_settling_after_the_checkpoint_is_missed": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2400,7 +1950,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -2409,25 +1959,17 @@
       "variants": {
         "D": {
           "test_t53_two_concurrent_submits_make_one_effect[purchase]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t53_two_concurrent_submits_make_one_effect[redeem]": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t53_two_concurrent_submits_make_one_effect[purchase]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t53_two_concurrent_submits_make_one_effect[redeem]": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2444,7 +1986,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "H": "passed"
       },
@@ -2452,8 +1994,6 @@
       "variants": {
         "H": {
           "test_t54_another_customers_plan_is_not_found": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2470,7 +2010,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -2478,18 +2018,12 @@
       "variants": {
         "D": {
           "test_t55_bill_and_purchase_submitted_together": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t55_bill_confirmed_after_the_purchase_shows_a_shortfall": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t55_bill_confirmed_before_the_purchase_revises_it": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2506,7 +2040,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -2514,15 +2048,11 @@
       "variants": {
         "D": {
           "test_t56_repeated_settlement_changes_nothing": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "K": {
           "test_t56_replayed_events_after_restart_change_nothing": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2540,7 +2070,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -2549,35 +2079,23 @@
       "variants": {
         "D": {
           "test_t57_parallel_claims_on_the_headroom": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t57_the_second_claim_on_the_headroom_is_refused[purchase]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t57_the_second_claim_on_the_headroom_is_refused[transfer]": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t57_parallel_claims_on_the_headroom": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t57_the_second_claim_on_the_headroom_is_refused[purchase]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t57_the_second_claim_on_the_headroom_is_refused[transfer]": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2594,7 +2112,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -2602,13 +2120,9 @@
       "variants": {
         "D": {
           "test_t58_incomplete_snapshot_pauses_the_purchase[complete]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t58_incomplete_snapshot_pauses_the_purchase[incomplete]": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2625,7 +2139,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "H": "passed"
       },
@@ -2633,8 +2147,6 @@
       "variants": {
         "H": {
           "test_t59_no_float_in_any_schema_or_response": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2654,7 +2166,7 @@
       ],
       "applicable": true,
       "reason": "L also x3 on the frozen build for release",
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -2666,15 +2178,11 @@
       "variants": {
         "D": {
           "test_t60_base_path_from_t0_to_t7": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t60_base_path_from_t0_to_t7": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2693,7 +2201,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -2704,15 +2212,11 @@
       "variants": {
         "D": {
           "test_t61_bill_of_1200_revises_the_purchase": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t61_bill_of_1200_revises_the_purchase": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2730,7 +2234,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -2739,15 +2243,11 @@
       "variants": {
         "D": {
           "test_t62_bill_of_1600_pauses_only_the_purchase": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t62_bill_of_1600_pauses_only_the_purchase": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2764,7 +2264,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -2772,8 +2272,6 @@
       "variants": {
         "D": {
           "test_t63_bill_after_the_purchase_shows_a_shortfall": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2790,7 +2288,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -2798,8 +2296,6 @@
       "variants": {
         "D": {
           "test_t64_redemption_settling_at_t4_moves_the_purchase": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2816,7 +2312,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -2824,8 +2320,6 @@
       "variants": {
         "D": {
           "test_t65_redemption_settling_at_t6_misses_the_checkpoint": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2843,7 +2337,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "K": "passed"
       },
@@ -2853,23 +2347,15 @@
       "variants": {
         "K": {
           "test_t66_lost_response_on_the_rent[crash_after_commit]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t66_lost_response_on_the_rent[crash_before_commit]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t66_lost_response_on_the_rent[pause_after_commit]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t66_lost_response_on_the_rent[pause_before_commit]": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2886,7 +2372,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "K": "passed"
       },
@@ -2894,13 +2380,9 @@
       "variants": {
         "K": {
           "test_t67_restart_between_settlement_and_purchase[kill]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t67_restart_between_settlement_and_purchase[terminate]": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2917,7 +2399,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -2925,8 +2407,6 @@
       "variants": {
         "D": {
           "test_t68_customer_absent_until_after_t8": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2943,7 +2423,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -2951,8 +2431,6 @@
       "variants": {
         "D": {
           "test_t69_foreign_debit_stops_the_purchase": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -2970,7 +2448,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -2979,15 +2457,11 @@
       "variants": {
         "D": {
           "test_t70_stop_while_waiting_for_the_purchase_code": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t70_stop_while_waiting_for_the_purchase_code": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -3006,7 +2480,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed",
@@ -3016,22 +2490,16 @@
       "variants": {
         "D": {
           "test_t71_securing_the_new_bill_is_not_paying_it": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t71_securing_the_new_bill_is_not_paying_it": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "S": {
           "test_t71_the_model_cannot_pay_the_new_bill_inside_the_plan": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -3049,7 +2517,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "S": "passed"
@@ -3058,20 +2526,14 @@
       "variants": {
         "D": {
           "test_t72_sms_cannot_change_the_insurance_payee": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "S": {
           "test_t72_an_sms_cannot_move_the_insurance_to_a_new_card": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t72_the_insurance_is_paid_to_its_own_payee": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -3089,7 +2551,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -3098,15 +2560,11 @@
       "variants": {
         "D": {
           "test_t73_lowering_the_reserve_needs_its_own_red_approval": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t73_lowering_the_reserve_needs_its_own_red_approval": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -3125,7 +2583,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed",
@@ -3135,22 +2593,16 @@
       "variants": {
         "D": {
           "test_t74_insurance_after_t8_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t74_insurance_after_t8_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "K": {
           "test_t74_insurance_after_t8_is_refused_after_a_restart": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -3167,7 +2619,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "S": "passed"
       },
@@ -3175,18 +2627,12 @@
       "variants": {
         "S": {
           "test_t75_at_t3_a_claim_of_payment_without_a_receipt_is_replaced": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t75_in_the_summary_the_paid_bill_is_called_paid_and_the_new_one_is_not": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_t75_the_new_bill_is_not_called_paid_by_any_name": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -3204,7 +2650,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "H": "passed"
@@ -3213,15 +2659,11 @@
       "variants": {
         "D": {
           "test_t76_bills_of_800_400_400": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "H": {
           "test_t76_bills_of_800_400_400": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -3239,7 +2681,7 @@
       ],
       "applicable": true,
       "reason": "P1 promoted to release gate",
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "K": "passed"
@@ -3248,15 +2690,11 @@
       "variants": {
         "D": {
           "test_t77_two_concurrent_ticks_equal_one": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "K": {
           "test_t77_crash_inside_a_tick": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -3540,37 +2978,14 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "S": "passed"
+        "S": "missing"
       },
       "external_layers": [
         "L"
       ],
-      "variants": {
-        "S": {
-          "test_t97_an_amount_the_list_does_not_hold_is_replaced[agreement]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t97_an_amount_the_list_does_not_hold_is_replaced[total]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t97_the_list_is_read_in_scope_and_becomes_agreement_facts": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t97_the_question_creates_no_action_and_moves_no_money": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T98": {
@@ -3584,78 +2999,13 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "D": "passed",
-        "H": "passed"
+        "D": "missing",
+        "H": "missing"
       },
       "external_layers": [],
-      "variants": {
-        "D": {
-          "test_t98_a_payment_counts_in_the_day_sum_after_a_transfer": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t98_a_payment_counts_in_the_day_sum_before_a_transfer": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t98_a_request_above_the_expected_amount_draws_on_headroom": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t98_a_second_payment_attempt_for_the_same_request_is_refused": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t98_one_yuan_over_the_day_limit_makes_the_payment_red": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t98_the_customer_pays_a_request_at_the_expected_amount": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        },
-        "H": {
-          "test_t98_a_payment_counts_in_the_day_sum_after_a_transfer": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t98_a_payment_counts_in_the_day_sum_before_a_transfer": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t98_a_request_above_the_expected_amount_draws_on_headroom": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t98_a_second_payment_attempt_for_the_same_request_is_refused": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t98_one_yuan_over_the_day_limit_makes_the_payment_red": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t98_the_customer_pays_a_request_at_the_expected_amount": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T99": {
@@ -3669,88 +3019,13 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "D": "passed",
-        "H": "passed"
+        "D": "missing",
+        "H": "missing"
       },
       "external_layers": [],
-      "variants": {
-        "D": {
-          "test_t99_a_non_positive_amount_is_refused_audited_and_not_stored[negative]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t99_a_non_positive_amount_is_refused_audited_and_not_stored[zero]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t99_a_request_above_the_cap_cannot_be_drafted_for_payment_or_decline": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t99_a_request_at_the_cap_can_be_drafted_for_payment": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t99_a_request_at_the_cap_is_accepted_and_one_fen_above_is_not": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t99_the_order_of_the_two_requests_does_not_matter": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t99_the_transfer_route_has_no_merchant_or_request_field": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        },
-        "H": {
-          "test_t99_a_non_positive_amount_is_refused_audited_and_not_stored[negative]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t99_a_non_positive_amount_is_refused_audited_and_not_stored[zero]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t99_a_request_above_the_cap_cannot_be_drafted_for_payment_or_decline": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t99_a_request_at_the_cap_can_be_drafted_for_payment": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t99_a_request_at_the_cap_is_accepted_and_one_fen_above_is_not": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t99_the_order_of_the_two_requests_does_not_matter": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t99_the_transfer_route_has_no_merchant_or_request_field": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T100": {
@@ -3764,138 +3039,13 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "D": "passed",
-        "H": "passed"
+        "D": "missing",
+        "H": "missing"
       },
       "external_layers": [],
-      "variants": {
-        "D": {
-          "test_t100_a_declined_period_takes_no_other_request": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_a_fourth_request_in_a_period_is_period_used_or_above_the_cap": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_a_paid_period_takes_no_other_request": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_a_repeated_merchant_request_id_returns_the_original": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_a_second_request_while_the_first_waits_is_period_used": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_of_two_parallel_requests_exactly_one_waits": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_requests_either_side_of_midnight_fall_into_two_periods": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_splitting_4500_does_not_get_two_requests_through[big-first]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_splitting_4500_does_not_get_two_requests_through[small-first]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_stored_rows_equal_the_distinct_merchant_request_ids": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_the_same_request_sent_in_parallel_is_stored_once": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_three_stored_requests_close_the_period_even_if_none_waits": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        },
-        "H": {
-          "test_t100_a_declined_period_takes_no_other_request": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_a_fourth_request_in_a_period_is_period_used_or_above_the_cap": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_a_paid_period_takes_no_other_request": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_a_repeated_merchant_request_id_returns_the_original": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_a_second_request_while_the_first_waits_is_period_used": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_of_two_parallel_requests_exactly_one_waits": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_requests_either_side_of_midnight_fall_into_two_periods": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_splitting_4500_does_not_get_two_requests_through[big-first]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_splitting_4500_does_not_get_two_requests_through[small-first]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_stored_rows_equal_the_distinct_merchant_request_ids": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_the_same_request_sent_in_parallel_is_stored_once": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t100_three_stored_requests_close_the_period_even_if_none_waits": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T101": {
@@ -3912,109 +3062,17 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "D": "passed",
-        "H": "passed",
-        "S": "passed"
+        "D": "missing",
+        "H": "missing",
+        "S": "missing"
       },
       "external_layers": [
         "U",
         "L"
       ],
-      "variants": {
-        "D": {
-          "test_t101_a_timed_out_check_stays_pending_and_is_retried": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t101_a_waiting_request_is_declined_with_the_agreement": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t101_closing_the_gym_agreement_settles_and_is_verified": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t101_protection_stays_until_the_debit_day_has_passed": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        },
-        "H": {
-          "test_t101_a_timed_out_check_stays_pending_and_is_retried": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t101_a_waiting_request_is_declined_with_the_agreement": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t101_closing_the_gym_agreement_settles_and_is_verified": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t101_protection_stays_until_the_debit_day_has_passed": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        },
-        "S": {
-          "test_t101_a_cancelled_subscription_is_never_reported_even_after_a_verified_check[noun]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t101_a_cancelled_subscription_is_never_reported_even_after_a_verified_check[unsubscribed]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t101_a_cancelled_subscription_is_never_reported_even_after_a_verified_check[verb]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t101_a_cancelled_subscription_is_never_reported_even_after_a_verified_check[with-closing]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t101_a_draft_closes_nothing_and_the_reply_may_not_say_it_did": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t101_a_plain_description_of_the_draft_stands": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t101_the_chat_closing_leaves_the_same_rows_as_the_guided_form": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t101_the_closing_is_stated_after_the_verified_check": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t101_while_the_check_is_pending_the_closing_is_not_stated[probe_timeout]": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T102": {
@@ -4028,88 +3086,13 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "D": "passed",
-        "H": "passed"
+        "D": "missing",
+        "H": "missing"
       },
       "external_layers": [],
-      "variants": {
-        "D": {
-          "test_t102_a_request_a_minute_before_the_expiry_is_still_accepted": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t102_a_request_after_the_agreement_expired_is_declined": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t102_a_request_after_the_cancel_is_declined": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t102_a_request_waiting_at_the_expiry_is_declined_with_it": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t102_a_request_while_the_agreement_is_suspended_is_declined": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t102_a_suspend_declines_waiting_requests_and_later_ones": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t102_one_clock_advance_past_the_expiry_stops_at_the_expiry_instant": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        },
-        "H": {
-          "test_t102_a_request_a_minute_before_the_expiry_is_still_accepted": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t102_a_request_after_the_agreement_expired_is_declined": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t102_a_request_after_the_cancel_is_declined": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t102_a_request_waiting_at_the_expiry_is_declined_with_it": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t102_a_request_while_the_agreement_is_suspended_is_declined": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t102_a_suspend_declines_waiting_requests_and_later_ones": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t102_one_clock_advance_past_the_expiry_stops_at_the_expiry_instant": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T103": {
@@ -4123,98 +3106,13 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "D": "passed",
-        "H": "passed"
+        "D": "missing",
+        "H": "missing"
       },
       "external_layers": [],
-      "variants": {
-        "D": {
-          "test_t103_a_cap_that_still_covers_the_request_changes_the_card_not_the_request": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t103_a_changed_agreement_refuses_a_stale_card_even_when_the_request_is_waiting": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t103_answering_a_request_closes_the_card_of_the_other_answer": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t103_lowering_the_cap_below_the_request_closes_the_payment_card": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[1]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[2]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[3]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[4]": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        },
-        "H": {
-          "test_t103_a_cap_that_still_covers_the_request_changes_the_card_not_the_request": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t103_a_changed_agreement_refuses_a_stale_card_even_when_the_request_is_waiting": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t103_answering_a_request_closes_the_card_of_the_other_answer": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t103_lowering_the_cap_below_the_request_closes_the_payment_card": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[1]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[2]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[3]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t103_pay_and_cancel_confirmed_in_parallel_leave_at_most_one_effect[4]": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T104": {
@@ -4228,78 +3126,13 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "D": "passed",
-        "H": "passed"
+        "D": "missing",
+        "H": "missing"
       },
       "external_layers": [],
-      "variants": {
-        "D": {
-          "test_t104_a_new_agreement_is_refused_or_not_built": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t104_closing_lowering_suspending_and_declining_still_work": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t104_paying_is_refused_at_the_draft_and_at_an_open_card": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t104_raising_a_cap_is_refused": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t104_reads_and_reconciliation_keep_working_under_the_lock": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t104_resuming_a_suspended_agreement_is_refused": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        },
-        "H": {
-          "test_t104_a_new_agreement_is_refused_or_not_built": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t104_closing_lowering_suspending_and_declining_still_work": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t104_paying_is_refused_at_the_draft_and_at_an_open_card": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t104_raising_a_cap_is_refused": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t104_reads_and_reconciliation_keep_working_under_the_lock": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t104_resuming_a_suspended_agreement_is_refused": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T105": {
@@ -4312,40 +3145,12 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "K": "passed"
+        "K": "missing"
       },
       "external_layers": [],
-      "variants": {
-        "K": {
-          "test_t105_a_lost_bank_acknowledgement_is_settled_by_reconciliation": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t105_lost_response_on_the_payment_and_restart[crash_after_commit]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t105_lost_response_on_the_payment_and_restart[crash_before_commit]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t105_lost_response_on_the_payment_and_restart[pause_after_commit]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t105_lost_response_on_the_payment_and_restart[pause_before_commit]": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T106": {
@@ -4359,108 +3164,13 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "D": "passed",
-        "H": "passed"
+        "D": "missing",
+        "H": "missing"
       },
       "external_layers": [],
-      "variants": {
-        "D": {
-          "test_t106_a_customer_session_cannot_call_the_merchant_simulator": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_a_user_confirmed_field_gives_no_authority[raise]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_a_user_confirmed_field_gives_no_authority[resume]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_an_expired_code_is_refused_and_a_new_code_works[raise]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_an_expired_code_is_refused_and_a_new_code_works[resume]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_the_change_runs_only_after_the_correct_code[raise]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_the_change_runs_only_after_the_correct_code[resume]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_the_code_of_another_challenge_is_refused[raise]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_the_code_of_another_challenge_is_refused[resume]": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        },
-        "H": {
-          "test_t106_a_customer_session_cannot_call_the_merchant_simulator": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_a_user_confirmed_field_gives_no_authority[raise]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_a_user_confirmed_field_gives_no_authority[resume]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_an_expired_code_is_refused_and_a_new_code_works[raise]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_an_expired_code_is_refused_and_a_new_code_works[resume]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_the_change_runs_only_after_the_correct_code[raise]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_the_change_runs_only_after_the_correct_code[resume]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_the_code_of_another_challenge_is_refused[raise]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t106_the_code_of_another_challenge_is_refused[resume]": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T107": {
@@ -4475,89 +3185,14 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "implemented",
+      "status": "specified",
       "layer_results": {
-        "D": "passed",
-        "H": "passed",
+        "D": "missing",
+        "H": "missing",
         "S": "missing"
       },
       "external_layers": [],
-      "variants": {
-        "D": {
-          "test_t107_a_draft_alone_creates_no_agreement_and_no_protection": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t107_a_registry_merchant_gets_a_red_card_and_an_active_agreement": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t107_a_term_over_twelve_months_is_refused[13]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t107_a_term_over_twelve_months_is_refused[24]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t107_an_unknown_merchant_is_not_found": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t107_an_unverified_merchant_is_refused": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t107_the_registry_lists_music_and_not_the_unverified_merchant": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        },
-        "H": {
-          "test_t107_a_draft_alone_creates_no_agreement_and_no_protection": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t107_a_registry_merchant_gets_a_red_card_and_an_active_agreement": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t107_a_term_over_twelve_months_is_refused[13]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t107_a_term_over_twelve_months_is_refused[24]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t107_an_unknown_merchant_is_not_found": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t107_an_unverified_merchant_is_refused": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t107_the_registry_lists_music_and_not_the_unverified_merchant": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T108": {
@@ -4573,93 +3208,16 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "D": "passed",
-        "H": "passed",
-        "S": "passed"
+        "D": "missing",
+        "H": "missing",
+        "S": "missing"
       },
       "external_layers": [
         "L"
       ],
-      "variants": {
-        "D": {
-          "test_t108_nothing_happens_by_itself_until_the_request_expires": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t108_text_naming_an_account_or_an_amount_changes_neither": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t108_the_legitimate_request_is_paid_only_after_the_customers_confirm": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t108_the_text_is_stored_unchanged_and_creates_no_action": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        },
-        "H": {
-          "test_t108_nothing_happens_by_itself_until_the_request_expires": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t108_text_naming_an_account_or_an_amount_changes_neither": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t108_the_legitimate_request_is_paid_only_after_the_customers_confirm": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t108_the_text_is_stored_unchanged_and_creates_no_action": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        },
-        "S": {
-          "test_t108_a_decision_quoted_from_the_merchants_text_is_refused[part-of-remark]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t108_a_decision_quoted_from_the_merchants_text_is_refused[pay-word-not-said]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t108_a_decision_quoted_from_the_merchants_text_is_refused[whole-remark]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t108_the_customers_message_without_a_pay_word_is_not_a_decision": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t108_the_decline_needs_the_customers_decline_word_too": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t108_the_legitimate_request_is_drafted_on_the_customers_words_and_paid_on_confirm": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T109": {
@@ -4672,60 +3230,12 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "S": "passed"
+        "S": "missing"
       },
       "external_layers": [],
-      "variants": {
-        "S": {
-          "test_t109_a_cancelled_subscription_is_always_replaced[\\u5065\\u8eab\\u623f\\u7684\\u8ba2\\u9605\\u5df2\\u53d6\\u6d88\\u3002]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t109_a_cancelled_subscription_is_always_replaced[\\u60a8\\u7684\\u8ba2\\u9605\\u5df2\\u7ecf\\u88ab\\u53d6\\u6d88\\u4e86\\uff0c\\u4e0d\\u4f1a\\u518d\\u6263\\u6b3e\\u3002]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t109_a_figure_about_usage_or_a_debit_that_did_not_happen_is_replaced[debit-never-made]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t109_a_figure_about_usage_or_a_debit_that_did_not_happen_is_replaced[usage-figure]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t109_after_a_verified_closing_the_closing_stands_and_the_cancelling_does_not": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t109_an_honest_answer_about_cancelling_stands": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t109_closing_is_not_claimed_while_no_check_exists[\\u4e09\\u9879\\u81ea\\u52a8\\u6263\\u6b3e\\u90fd\\u5df2\\u505c\\u6b62\\u3002]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t109_closing_is_not_claimed_while_no_check_exists[\\u5065\\u8eab\\u623f\\u7684\\u81ea\\u52a8\\u6263\\u6b3e\\u5df2\\u5173\\u95ed\\u3002]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t109_the_bank_holds_no_usage_so_no_usage_fact_exists": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T110": {
@@ -4757,68 +3267,13 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "D": "passed",
-        "H": "passed"
+        "D": "missing",
+        "H": "missing"
       },
       "external_layers": [],
-      "variants": {
-        "D": {
-          "test_t111_a_card_open_at_the_reply_time_cannot_be_confirmed": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t111_a_declined_request_keeps_its_period_and_protection_until_the_reply_time": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t111_an_expired_request_can_neither_be_paid_nor_declined": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t111_an_unanswered_request_expires_at_its_reply_time": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t111_the_expiry_is_recorded_at_the_reply_time_after_a_long_jump": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        },
-        "H": {
-          "test_t111_a_card_open_at_the_reply_time_cannot_be_confirmed": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t111_a_declined_request_keeps_its_period_and_protection_until_the_reply_time": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t111_an_expired_request_can_neither_be_paid_nor_declined": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t111_an_unanswered_request_expires_at_its_reply_time": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t111_the_expiry_is_recorded_at_the_reply_time_after_a_long_jump": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T112": {
@@ -4831,55 +3286,12 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "D": "passed"
+        "D": "missing"
       },
       "external_layers": [],
-      "variants": {
-        "D": {
-          "test_t112_a_change_draft_fails_even_when_it_reduces_risk[cancel]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t112_a_change_draft_fails_even_when_it_reduces_risk[suspend]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t112_a_decision_draft_fails[decline]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t112_a_decision_draft_fails[pay]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t112_a_merchant_request_naming_the_agreement_fails_and_locks[CANCELLED]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t112_a_merchant_request_naming_the_agreement_fails_and_locks[EXPIRED]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t112_a_merchant_request_naming_the_agreement_fails_and_locks[SUSPENDED]": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t112_reads_and_operator_reconciliation_keep_working": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T113": {
@@ -4892,30 +3304,12 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "S": "passed"
+        "S": "missing"
       },
       "external_layers": [],
-      "variants": {
-        "S": {
-          "test_t113_a_new_card_subscription_and_a_refund_have_no_tool_and_no_draft": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t113_a_refund_is_not_reported_as_made": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_t113_the_pause_is_one_suspend_draft_and_does_not_resume_by_itself": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     },
     "T114": {
@@ -4942,7 +3336,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -4950,8 +3344,6 @@
       "variants": {
         "D": {
           "test_r1_bill_events_count_once_from_the_original_approval": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -4968,7 +3360,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -4976,13 +3368,9 @@
       "variants": {
         "D": {
           "test_r2_delayed_redemption_and_one_jump_from_t2_to_t7": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r2_one_jump_from_t3_to_t7_records_the_checkpoint_at_t5": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -5000,7 +3388,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "K": "passed"
@@ -5009,20 +3397,14 @@
       "variants": {
         "D": {
           "test_r3_a_rejection_is_terminal": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r3_submission_is_acknowledged_and_settlement_writes_one_receipt": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "K": {
           "test_r3_restart_between_submission_and_settlement": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -5040,7 +3422,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed",
         "K": "passed"
@@ -5049,30 +3431,20 @@
       "variants": {
         "D": {
           "test_r4_lost_ack_on_the_redemption_is_reconciled": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r4_lost_ack_on_the_rent_is_counted_and_reconciled": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r4_missing_bank_record_locks_with_integrity_violation": [
-            "passed",
-            "passed",
             "passed"
           ]
         },
         "K": {
           "test_r4_restart_reconciles_the_lost_ack": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r4_restart_without_a_bank_record_locks": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -5089,7 +3461,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -5097,30 +3469,15 @@
       "variants": {
         "D": {
           "test_r5_code_valid_for_five_minutes[at_4m59s]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r5_code_valid_for_five_minutes[at_5m]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r5_plan_approval_expired_at_t9_midnight": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r5_plan_approval_valid_at_the_last_second_of_t8": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        },
-        "K": {
-          "test_r5_restarts_extend_neither_code_nor_approval": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -5137,7 +3494,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -5145,8 +3502,6 @@
       "variants": {
         "D": {
           "test_r6_daily_sum_counts_each_live_operation_once": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -5163,7 +3518,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -5171,13 +3526,9 @@
       "variants": {
         "D": {
           "test_r7_checkpoint_is_recorded_under_a_lock": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r7_rejected_redemption_pauses_the_purchase": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -5194,7 +3545,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -5202,23 +3553,15 @@
       "variants": {
         "D": {
           "test_r8_exception_inside_a_unit_rolls_back_its_writes": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r8_model_adapter_refuses_to_run_inside_a_unit": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r8_nested_unit_of_work_is_refused": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r8_unexpected_failure_in_submission_rolls_back_and_keeps_evidence": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -5235,7 +3578,7 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "K": "passed"
       },
@@ -5243,13 +3586,9 @@
       "variants": {
         "K": {
           "test_r9_refused_submission_with_an_expired_grant_needs_a_new_code": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r9_restarts_at_every_step_create_no_authority": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -5266,7 +3605,7 @@
       ],
       "applicable": true,
       "reason": "The scan gates G1 through scripts/check.sh; the test gates G3",
-      "status": "reproducible",
+      "status": "passed",
       "layer_results": {
         "D": "passed"
       },
@@ -5274,28 +3613,18 @@
       "variants": {
         "D": {
           "test_r10_read_only_connection_refuses_writes[ddl]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r10_read_only_connection_refuses_writes[delete]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r10_read_only_connection_refuses_writes[insert]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r10_read_only_connection_refuses_writes[update]": [
-            "passed",
-            "passed",
             "passed"
           ],
           "test_r10_sql_writes_appear_only_under_k6": [
-            "passed",
-            "passed",
             "passed"
           ]
         }
@@ -5312,40 +3641,12 @@
       ],
       "applicable": true,
       "reason": null,
-      "status": "reproducible",
+      "status": "specified",
       "layer_results": {
-        "D": "passed"
+        "D": "missing"
       },
       "external_layers": [],
-      "variants": {
-        "D": {
-          "test_rs51_a_paid_period_and_a_late_request_together": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_rs51_a_period_with_a_paid_request_promotes_nothing": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_rs51_a_request_past_its_reply_time_is_left_alone": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_rs51_each_period_promotes_its_own_earliest_request": [
-            "passed",
-            "passed",
-            "passed"
-          ],
-          "test_rs51_the_earliest_eligible_request_is_promoted_and_nothing_is_paid": [
-            "passed",
-            "passed",
-            "passed"
-          ]
-        }
-      },
+      "variants": {},
       "messages": []
     }
   },
@@ -5358,7 +3659,7 @@
         "not_applicable": 1,
         "implemented": 15,
         "passed": 15,
-        "reproducible": 15
+        "reproducible": 0
       },
       "S2": {
         "cases": 22,
@@ -5367,7 +3668,7 @@
         "not_applicable": 1,
         "implemented": 21,
         "passed": 21,
-        "reproducible": 21
+        "reproducible": 0
       },
       "S3": {
         "cases": 21,
@@ -5376,7 +3677,7 @@
         "not_applicable": 0,
         "implemented": 21,
         "passed": 21,
-        "reproducible": 21
+        "reproducible": 0
       },
       "S6": {
         "cases": 18,
@@ -5385,7 +3686,7 @@
         "not_applicable": 0,
         "implemented": 18,
         "passed": 18,
-        "reproducible": 18
+        "reproducible": 0
       },
       "S4": {
         "cases": 19,
@@ -5401,9 +3702,9 @@
         "p0": 8,
         "applicable": 19,
         "not_applicable": 0,
-        "implemented": 17,
-        "passed": 16,
-        "reproducible": 16
+        "implemented": 0,
+        "passed": 0,
+        "reproducible": 0
       },
       "R": {
         "cases": 10,
@@ -5412,7 +3713,7 @@
         "not_applicable": 0,
         "implemented": 10,
         "passed": 10,
-        "reproducible": 10
+        "reproducible": 0
       }
     },
     "by_gate": {
@@ -5458,14 +3759,45 @@
       "GS5": {
         "gate": "GS5",
         "required": 16,
-        "passed": 16,
+        "passed": 0,
         "failed": [],
-        "missing": [],
+        "missing": [
+          "R-S5-1/D",
+          "T100/D",
+          "T100/H",
+          "T101/D",
+          "T101/H",
+          "T102/D",
+          "T102/H",
+          "T103/D",
+          "T103/H",
+          "T104/D",
+          "T104/H",
+          "T105/K",
+          "T98/D",
+          "T98/H",
+          "T99/D",
+          "T99/H"
+        ],
         "external_not_run": [],
-        "result": "passed"
+        "result": "failed"
       }
     }
   },
-  "gate_verdict": null,
+  "gate_verdict": {
+    "gate": "G3",
+    "required": 97,
+    "passed": 97,
+    "failed": [],
+    "missing": [],
+    "external_not_run": [
+      "T1/L",
+      "T17/L",
+      "T39/L",
+      "T60/L",
+      "T60/U"
+    ],
+    "result": "passed"
+  },
   "failed_tests": []
 }
