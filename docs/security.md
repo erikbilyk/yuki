@@ -1,6 +1,6 @@
 # Security
 
-This document describes the controls that protect money movement in WealthGuard, how they were tested and what they do not cover. Test numbers come from the files under `evidence/` (build `freeze-3`, tag `freeze-3`, commit `6585924`) and are not repeated anywhere else. Result wording is "N items passed in 3 runs", not "secure".
+This document describes the controls that protect money movement in YUKI, how they were tested and what they do not cover. Test numbers come from the files under `evidence/` (build `freeze-3`, tag `freeze-3`, commit `6585924`) and are not repeated anywhere else. Result wording is "N items passed in 3 runs", not "secure".
 
 The prototype runs on synthetic data, a simulated bank and simulated merchants. It is not designed or assessed for real financial operations.
 

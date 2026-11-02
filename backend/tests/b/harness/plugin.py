@@ -25,7 +25,7 @@ MESSAGE_LIMIT = 400
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
-    group = parser.getgroup("wg", "WealthGuard acceptance harness")
+    group = parser.getgroup("wg", "YUKI acceptance harness")
     group.addoption(
         "--wg-gate", default=None, help="run the cases a gate requires: G1, G2, G3, GS5"
     )
