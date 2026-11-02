@@ -295,21 +295,23 @@ Cases are judged on database state (ledger entries, operations, receipts, positi
 | Regressions | R1–R10 | 10 | 0 | 10 | 10 |
 | Catalogue | T1–T114, R1–R10, R-S5-1 | 125 (114 cases, 11 regressions) | 53 | 104 | 101 |
 
-Status on the release build `freeze-3` (`evidence/acceptance-report.md`): S5 is "implemented, limited". Of its 19 applicable cases (T97–T114 and R-S5-1), 16 are reproducible, including all 8 P0 cases (T98–T105). T107 (new agreement) has no test at the scripted-model layer, so it is implemented but not reproducible; T110 (plan continuation on a new agreement) and T114 (recurring transfers) are not built. S4 is not started and is in no denominator.
+Status on the release build `freeze-4` (`evidence/acceptance-report.md`): S5 is "implemented, limited". Of its 19 applicable cases (T97–T114 and R-S5-1), 16 are reproducible, including all 8 P0 cases (T98–T105). T107 (new agreement) has no test at the scripted-model layer, so it is implemented but not reproducible; T110 (plan continuation on a new agreement) and T114 (recurring transfers) are not built. S4 is not started and is in no denominator.
 
-T14 (adding a payee) is not applicable because the add-payee action is not built; the agent refuses a request to pay a new card number. T24 (credit-card pairing) is out of scope because the fixture has no credit card. A case counts as passed only when its acceptance test passes on the current build, and as reproducible when it passes in each of three consecutive runs on the frozen build (`freeze-3`). No report says "all tests pass" unless every applicable case passes.
+T14 (adding a payee) is not applicable because the add-payee action is not built; the agent refuses a request to pay a new card number. T24 (credit-card pairing) is out of scope because the fixture has no credit card. A case counts as passed only when its acceptance test passes on the current build, and as reproducible when it passes in each of three consecutive runs on the frozen build (`freeze-4`). No report says "all tests pass" unless every applicable case passes.
 
 Eight attack families are tracked: induced transfer, prompt injection, authority forgery, information extraction, replay and race, crash and restart, false result claims, and plan authority drift.
 
 ### 5.3 Results
 
-Every number below is copied from `evidence/` (build `freeze-3`, commit `6585924`; the files list the commands and reports):
+Every number below is copied from `evidence/` (build `freeze-4`, commit `7a0440f`; the files list the commands and reports):
 
 - Deterministic acceptance, three runs: 506 tests passed in each run; 101 of the 104 applicable cases are reproducible. Gate G3 97 of 97, gate GS5 16 of 16, browser tests 6 of 6, golden checks 139.
 - Live model, three blocks of 31 episodes: 23, 21 and 24 passed (68 of 93). `smoke-t60` passed 3 of 3 in a separate repeat. The one-sentence trial `multistep-s6-sentence` passed 0 of 3.
 - Comparison of the coordinated and the flat agent, 42 episodes: 19 passed (coordinated 19 of 21, flat 0 of 21). The flat agent ran no redemption in 18 of its 21 episodes.
 - Unauthorized effects and duplicate effects: 0 in the deterministic suite, the live trials and the comparison. All failed live (25) and comparison (23) episodes are classed "safe but incomplete": the expected effect did not happen or a required phrase was missing, with no unexpected state change.
 - K7 replaced the model's explanation in 43 of 117 live customer turns and in 102 of 222 comparison turns.
+
+The live-model, comparison and K7 figures and the counts of failed episodes above are from model runs (runs on freeze-3; freeze-4 differs by the project name only).
 
 Files: `evidence/acceptance-report.md` (counts, gates, excluded cases, S5 status), `attack-summary.md`, `live-trials.md`, `comparison.md`, `goldens.md`, `public-diagnostics.md` and the raw reports in `evidence/reports/` and `evidence/runs/`.
 
@@ -321,7 +323,7 @@ How the test layers are built and what each one checks is in [docs/testing.md](d
 - The simulated SMS code is shown in the web app; it demonstrates step-up but is not a second channel.
 - S4 (cards) is not started; its cases are in no denominator.
 - S5 (direct debits) is limited: merchants, agreements and debit requests are simulated; T107 has no scripted-model test, T110 and T114 are not built, and the web app has no form for opening a new agreement (the route `POST /v1/drafts/mandate` exists). A customer session calling the simulator route `/sim/debit-requests` gets 401 `SESSION_EXPIRED` (T106; the test accepts 401 or 403). The next debit dates are in the `list_mandates` tool result and not in the reply's fact block (T97). A stolen customer session can pay or decline requests within an agreement, which is the access a session gives; each payment still needs the card and, above ¥1,000 for the day, a code.
-- Live behaviour: 25 of 93 live episodes failed their expectations, none with an unexpected effect; the model does not always draft every part of a multi-part request or ask the expected question. The scorer's reply checks are substring tests, and some failures turn on them (`evidence/live-trials.md`).
+- Live behaviour: 25 of 93 live episodes failed their expectations (runs on freeze-3; freeze-4 differs by the project name only), none with an unexpected effect; the model does not always draft every part of a multi-part request or ask the expected question. The scorer's reply checks are substring tests, and some failures turn on them (`evidence/live-trials.md`).
 - Public fund diagnostics use dated reports (2026-06-30) and never back an executable order.
 - Live-model trials are small samples and are reported as counts, not percentages. A fixed model alias does not prove the provider's model stayed unchanged; each trial records the returned model.
 - The Feishu route and adapter are covered by tests that post messages to the backend. A run against a real Feishu workspace is recorded in `evidence/` only if it took place.

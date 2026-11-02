@@ -1,6 +1,6 @@
 # Testing
 
-This document describes how the system is tested, how cases are counted and where the results are kept. Result numbers are in the files under `evidence/`, each produced by a recorded command on a recorded build (`freeze-3`); this document repeats only the counts that define the denominators and the status of the direct-debit set (S5).
+This document describes how the system is tested, how cases are counted and where the results are kept. Result numbers are in the files under `evidence/`, each produced by a recorded command on a recorded build (`freeze-4`); this document repeats only the counts that define the denominators and the status of the direct-debit set (S5).
 
 ## 1. Principles
 
@@ -104,7 +104,7 @@ The regressions R1–R10 and R-S5-1 are counted separately from the 114 cases. O
 
 Status ladder: `specified`, `implemented` (test code exists and runs), `passed` (passes on the current `main`), `reproducible` (passes three consecutive times on the frozen build from a clean checkout). Other labels are `not applicable` (with a reason) and `planned/omitted`.
 
-The release build is the tag `freeze-3`. A run counts as being on the frozen build only when `git diff --quiet freeze-3 -- backend frontend` succeeds; the report records this flag.
+The release build is the tag `freeze-4` (commit `7a0440f`). A run counts as being on the frozen build only when `git diff --quiet freeze-4 -- backend frontend` succeeds; the report records this flag.
 
 Applicability:
 
@@ -114,7 +114,7 @@ Applicability:
 - S5 is built and the build lists the feature `s5` in `GET /healthz`, so all 18 S5 cases and R-S5-1 are applicable (19 in the S5 row of the report). A case whose level is not built stays in the denominator and is reported as not passed, with the reason.
 - T13 and T77 are promoted to release gates.
 
-S5 status on `freeze-3` (`evidence/acceptance-report.md`): of the 19 applicable S5 cases, 17 are implemented, 16 passed and 16 are reproducible; the 8 P0 cases (T98–T105) are all reproducible. `--gate GS5` passed 16 of 16 (110 tests passed), and the three direct-debit browser stories of GS5-U passed (6 browser tests in all). The wording is "S5 implemented, limited". The cases that are not reproducible:
+S5 status on `freeze-4` (`evidence/acceptance-report.md`): of the 19 applicable S5 cases, 17 are implemented, 16 passed and 16 are reproducible; the 8 P0 cases (T98–T105) are all reproducible. `--gate GS5` passed 16 of 16 (110 tests passed), and the three direct-debit browser stories of GS5-U passed (6 browser tests in all). The wording is "S5 implemented, limited". The cases that are not reproducible:
 
 | Case | Status | Reason |
 | --- | --- | --- |
@@ -180,7 +180,7 @@ Live trials run after the scripted gates, on the frozen build with the real mode
 
 Each trial records the requested and returned model, thinking mode, prompt and tool-schema versions, build ID, turns, tool calls, disposition, state outcome, K7 replacements, cost in CNY, latency, errors and timeouts. A trial passes when the disposition is correct and no unauthorized or duplicate effect occurred. With fewer than 30 trials per category, results are reported as counts, not percentages.
 
-The direct-debit trials are `colloquial-close-gym-debit` (T101), `grounded-subscriptions-total` (T97) and `injected-debit-request-text` (T108). Each passed in each of the three live blocks.
+The direct-debit trials are `colloquial-close-gym-debit` (T101), `grounded-subscriptions-total` (T97) and `injected-debit-request-text` (T108). Each passed in each of the three live blocks (live trials and comparison: runs on freeze-3; freeze-4 differs by the project name only).
 
 The comparison runs seven plan cases (T61, T62, T64, T65, T66, T67, T68) three times each on two systems, the coordinated agent and a flat agent, with the same model, tools, gateway, data, step budget and customer script. The scorer reads the database for task outcome, unauthorized or duplicate effects, customer actions needed, turns, tool calls and cost. Gateway protections are not credited to the coordinator. Ties and losses are reported as such. If the episodes are not run, the documents say "planned/omitted" with the reason.
 
