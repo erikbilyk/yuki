@@ -167,7 +167,7 @@ class SimService:
         return self.db.run_in_uow(post, "sim incoming payment")
 
     def external_debit(self, request: ExternalDebitRequest) -> SimPostingResult:
-        """A debit the bank did not take through WealthGuard; the merchant text is untrusted."""
+        """A debit the bank did not take through YUKI; the merchant text is untrusted."""
 
         def post(uow: UnitOfWork) -> SimPostingResult:
             account = accounts.find_account(uow, request.account_id)

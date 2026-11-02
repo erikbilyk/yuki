@@ -1344,7 +1344,7 @@ class IncomingPaymentRequest(ContractModel):
 
 
 class ExternalDebitRequest(ContractModel):
-    """A debit the bank did not originate through WealthGuard (T69)."""
+    """A debit the bank did not originate through YUKI (T69)."""
 
     account_id: AccountId
     amount_fen: PositiveFen

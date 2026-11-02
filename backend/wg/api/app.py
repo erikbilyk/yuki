@@ -139,7 +139,7 @@ def create_app(settings: Settings, frontend_dist: Path = FRONTEND_DIST) -> FastA
 
     docs = settings.demo_mode
     app = FastAPI(
-        title="WealthGuard",
+        title="YUKI",
         docs_url="/docs" if docs else None,
         redoc_url="/redoc" if docs else None,
         openapi_url="/openapi.json" if docs else None,

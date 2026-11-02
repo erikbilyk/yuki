@@ -3,7 +3,7 @@
 import type { ActionKind, ActionStatus, NodePhrase } from "./types.ts";
 
 export const S = {
-  appName: "WealthGuard 财富守护",
+  appName: "YUKI",
   login: {
     title: "登录",
     handle: "账号",
